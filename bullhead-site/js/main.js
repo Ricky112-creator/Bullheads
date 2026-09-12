@@ -9,6 +9,20 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 window.addEventListener('load', () => window.scrollTo(0, 0));
 
+// --- Cart badge on Contact links, so a pending order stays visible ---
+if (typeof getCart === 'function') {
+  const count = cartCount(getCart());
+  if (count > 0) {
+    document.querySelectorAll('a[href="contact.html"]').forEach((a) => {
+      if (a.querySelector('.nav-badge')) return;
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      badge.textContent = count;
+      a.appendChild(badge);
+    });
+  }
+}
+
 // --- Mobile menu toggle: runs first, no dependency on GSAP loading ---
 const navBurger = document.getElementById('navBurger');
 const mobileMenu = document.getElementById('mobileMenu');

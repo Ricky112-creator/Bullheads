@@ -184,6 +184,22 @@ h1, h2, h3 {
 @media (min-width: 800px) {
   .mobile-menu { display: none; }
 }
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 100px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.mobile-menu .nav-badge { font-size: 0.9rem; height: 24px; min-width: 24px; }
 
 /* ============================================
    HERO
@@ -762,6 +778,10 @@ h1, h2, h3 {
 }
 @media (max-width: 420px) {
   .form-field-row { grid-template-columns: 1fr; }
+}
+.form-field[hidden],
+.form-field-row[hidden] {
+  display: none !important;
 }
 .form-field label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
 .form-field input,

@@ -6,6 +6,74 @@
 <title>Visit — Bullhead</title>
 <meta name="description" content="Bullhead One and Bullhead Two in Emali — hours, contact, how to pay, and how to spot us. Open 24 hours.">
 <link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="apple-touch-icon" href="assets/img/icon-180.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#241712">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Visit — Bullhead">
+<meta property="og:description" content="Bullhead One and Bullhead Two in Emali — hours, contact, how to pay, and how to spot us. Open 24 hours.">
+<meta property="og:image" content="assets/img/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Visit — Bullhead">
+<meta name="twitter:description" content="Bullhead One and Bullhead Two in Emali — hours, contact, how to pay, and how to spot us. Open 24 hours.">
+<meta name="twitter:image" content="assets/img/og-image.jpg">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Restaurant",
+      "name": "Bullhead Hotel & Butchery 1",
+      "servesCuisine": ["Nyama Choma", "Butchery", "Fish"],
+      "priceRange": "KES",
+      "telephone": "+254720707323",
+      "url": "https://example.com/visit.html",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "00:00",
+        "closes": "23:59"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -2.078670,
+        "longitude": 37.469386
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Emali",
+        "addressRegion": "Makueni County",
+        "addressCountry": "KE"
+      }
+    },
+    {
+      "@type": "Restaurant",
+      "name": "Bullhead Hotel & Butchery 2",
+      "servesCuisine": ["Nyama Choma", "Butchery", "Fish"],
+      "priceRange": "KES",
+      "telephone": "+254720707323",
+      "url": "https://example.com/visit.html",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "00:00",
+        "closes": "23:59"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -2.079304,
+        "longitude": 37.473449
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Emali",
+        "addressRegion": "Makueni County",
+        "addressCountry": "KE"
+      }
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +84,7 @@
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
 <header class="site-nav" id="siteNav">
-  <a href="index.html" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo">Bullhead</a>
+  <a href="index.html" class="nav-mark"><img loading="lazy" src="assets/img/logo-mark.png" alt="" class="nav-logo">Bullhead</a>
   <nav class="nav-links">
     <a href="index.html">Home</a>
     <a href="menu.html">Menu</a>
@@ -53,7 +121,7 @@
     <div class="locations-grid">
       <article class="location-card">
         <div class="location-media">
-          <img src="assets/img/gallery-01.jpg" alt="Bullhead One storefront in Emali">
+          <img loading="lazy" src="assets/img/gallery-01.jpg" alt="Bullhead One storefront in Emali">
         </div>
         <div class="location-info">
           <h3>Bullhead One</h3>
@@ -67,7 +135,7 @@
       </article>
       <article class="location-card">
         <div class="location-media">
-          <img src="assets/img/location-bullhead-two.jpg" alt="Bullhead Two storefront in Emali">
+          <img loading="lazy" src="assets/img/location-bullhead-two.jpg" alt="Bullhead Two storefront in Emali">
         </div>
         <div class="location-info">
           <h3>Bullhead Two</h3>
@@ -126,6 +194,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/cart.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

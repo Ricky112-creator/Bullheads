@@ -1,0 +1,12 @@
+{
+  "name": "Bullhead Butchery & Hotel",
+  "short_name": "Bullhead",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#241712",
+  "theme_color": "#241712",
+  "icons": [
+    { "src": "assets/img/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
