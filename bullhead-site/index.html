@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bullhead — Emali's 24-Hour Butchery & Hotel</title>
+<meta name="description" content="Bullhead Butchery & Hotel — two locations in Emali, open 24 hours. The stop between Nairobi and Mombasa that people go back for.">
+<link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+<header class="site-nav" id="siteNav">
+  <a href="index.html" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo">Bullhead</a>
+  <nav class="nav-links">
+    <a href="index.html" class="active" aria-current="page">Home</a>
+    <a href="menu.html">Menu</a>
+    <a href="visit.html">Visit</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div style="display:flex; align-items:center;">
+    <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html" class="active">Home</a>
+  <a href="menu.html">Menu</a>
+  <a href="visit.html">Visit</a>
+  <a href="contact.html">Contact</a>
+</div>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-media">
+      <img src="assets/img/hero-bullhead-one.jpg" alt="Bullhead Butchery & Hotel storefront lit up at dusk in Emali" id="heroImg">
+      <div class="hero-scrim"></div>
+      <div id="splineLayer" class="spline-hero-layer"></div>
+    </div>
+    <div class="hero-content">
+      <img src="assets/img/logo-mark.png" alt="Bullhead" class="hero-logo">
+      <p class="hero-kicker">Emali, on the Nairobi–Mombasa road</p>
+      <h1 class="hero-headline">Somewhere past the halfway<br>mark, everyone stops<br>talking about Bullhead.</h1>
+      <p class="hero-sub">A butchery and hotel that never closes — because the road doesn't either. Two locations, a hundred metres apart, both wide open right now.</p>
+      <div class="hero-actions">
+        <a href="visit.html" class="btn btn-primary">Find us in Emali</a>
+        <a href="https://wa.me/254720707323" class="btn btn-ghost" target="_blank" rel="noopener">Message on WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-open-badge">
+      <span class="dot"></span>
+      Open 24 hours, every day
+    </div>
+  </section>
+
+  <!-- ALWAYS ON STRIP -->
+  <section class="strip" id="strip">
+    <p class="strip-line" id="stripLine">The grill doesn't go out. The lights don't go off. Bullhead doesn't close — not at midnight, not at 4am, not ever.</p>
+  </section>
+
+  <!-- CONDENSED STORY -->
+  <section class="story">
+    <div class="story-media">
+      <img src="assets/img/story-truckstop.jpg" alt="Trucks parked outside Bullhead in Emali town">
+    </div>
+    <div class="story-copy">
+      <h2>It started as one butchery on this street.</h2>
+      <p>Long-haul drivers heading for Mombasa learned the name first — a light still on at 2am, a plate of meat that made the last stretch of road worth it. What was one counter became two, a hundred metres apart, both keeping the same hours as the highway itself: all of them.</p>
+      <p>Bullhead was never built for people who already knew Emali. It was built for the ones just passing through, who weren't planning to stop — until they did.</p>
+    </div>
+  </section>
+
+  <!-- LOOK AROUND -->
+  <section class="explore">
+    <h2>Look around</h2>
+    <div class="explore-grid">
+      <a href="menu.html" class="explore-card">
+        <img src="assets/img/interior-seating-01.jpg" alt="Dining room at Bullhead">
+        <div class="explore-card-scrim"></div>
+        <div class="explore-card-label">
+          <h3>The Menu</h3>
+          <p>Butchery cuts, the grill, and a plate of tilapia</p>
+        </div>
+      </a>
+      <a href="visit.html" class="explore-card">
+        <img src="assets/img/location-bullhead-two.jpg" alt="Bullhead Two storefront">
+        <div class="explore-card-scrim"></div>
+        <div class="explore-card-label">
+          <h3>Visit</h3>
+          <p>Both locations, hours, contact, and how to pay</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="visit" style="padding-top:48px;">
+    <div class="visit-footer" style="border-top:none; padding-top:0;">
+      <span>Bullhead Butchery &amp; Hotel — Emali</span>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="visit.html">Visit</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <span>Site by Ricky</span>
+    </div>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

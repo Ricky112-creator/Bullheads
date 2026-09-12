@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu — Bullhead</title>
+<meta name="description" content="Butchery cuts, the grill, and a full plate of tilapia and ugali at Bullhead, Emali. Build your order and send it straight to WhatsApp.">
+<link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+<header class="site-nav" id="siteNav">
+  <a href="index.html" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo">Bullhead</a>
+  <nav class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="menu.html" class="active" aria-current="page">Menu</a>
+    <a href="visit.html">Visit</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div style="display:flex; align-items:center;">
+    <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="menu.html" class="active">Menu</a>
+  <a href="visit.html">Visit</a>
+  <a href="contact.html">Contact</a>
+</div>
+
+<main>
+
+  <section class="page-hero">
+    <img src="assets/img/interior-seating-02.jpg" alt="Dining room at Bullhead">
+    <div class="page-hero-scrim"></div>
+    <div class="page-hero-content">
+      <p class="page-hero-kicker">The Menu</p>
+      <h1>Off the fire, off the ice, straight to the table.</h1>
+    </div>
+  </section>
+
+  <section class="kitchen">
+    <div class="kitchen-head">
+      <h2>The room and the counters</h2>
+      <p>Final dish photography is being shot on location — what you're seeing here is the actual room, not stock photos.</p>
+    </div>
+    <div class="kitchen-grid">
+      <figure class="kitchen-card kitchen-card--wide">
+        <img src="assets/img/interior-seating-01.jpg" alt="Dining room at Bullhead">
+        <figcaption>The dining room — mirrored walls, orange tables, always a seat</figcaption>
+      </figure>
+      <figure class="kitchen-card">
+        <img src="assets/img/interior-fridge-01.jpg" alt="Drinks fridge and entrance at Bullhead">
+        <figcaption>Cold drinks, right at the door</figcaption>
+      </figure>
+      <figure class="kitchen-card">
+        <img src="assets/img/interior-seating-03.jpg" alt="Service counter at Bullhead">
+        <figcaption>The counter — order, sit, wait for the smell to reach you</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section style="background: var(--rose); padding-top: 8px;">
+    <div style="max-width:720px; margin:0 auto; padding: 48px var(--edge) 0;">
+      <h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 10px;">Build your order</h2>
+      <p style="color: var(--ink-soft); margin: 0;">Tap + to add items. When you're ready, review and send the order straight to WhatsApp — no calls, no waiting on hold. Prices shown are sample figures pending final confirmation.</p>
+    </div>
+    <div id="menuList" class="menu-list"></div>
+  </section>
+
+  <div class="order-bar" id="orderBar">
+    <div class="order-bar-info">
+      <strong id="orderBarCount">0 items</strong>
+      <span id="orderBarTotal">KES 0</span>
+    </div>
+    <a href="contact.html" class="order-bar-link">Review order</a>
+  </div>
+
+  <footer class="visit" style="padding-top:48px;">
+    <div class="visit-footer" style="border-top:none; padding-top:0;">
+      <span>Bullhead Butchery &amp; Hotel — Emali</span>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="visit.html">Visit</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <span>Site by Ricky</span>
+    </div>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/menu-data.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/menu-page.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

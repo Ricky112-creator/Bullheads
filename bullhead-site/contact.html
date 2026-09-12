@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Bullhead</title>
+<meta name="description" content="Review your order and send it straight to Bullhead on WhatsApp, or send a general reservation request.">
+<link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+<header class="site-nav" id="siteNav">
+  <a href="index.html" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo">Bullhead</a>
+  <nav class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="menu.html">Menu</a>
+    <a href="visit.html">Visit</a>
+    <a href="contact.html" class="active" aria-current="page">Contact</a>
+  </nav>
+  <div style="display:flex; align-items:center;">
+    <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="index.html">Home</a>
+  <a href="menu.html">Menu</a>
+  <a href="visit.html">Visit</a>
+  <a href="contact.html" class="active">Contact</a>
+</div>
+
+<main>
+
+  <section class="page-hero">
+    <img src="assets/img/interior-fridge-02.jpg" alt="Entrance at Bullhead">
+    <div class="page-hero-scrim"></div>
+    <div class="page-hero-content">
+      <p class="page-hero-kicker">Contact</p>
+      <h1>Dine in, deliver, drive through, or reserve — your call.</h1>
+    </div>
+  </section>
+
+  <section class="contact-wrap">
+
+    <div id="orderEmpty" class="order-empty">
+      No items selected yet. <a href="menu.html">Go build an order on the Menu</a> — or just send a message below and we'll sort you out directly.
+    </div>
+
+    <div id="orderSummary" class="order-summary" hidden></div>
+    <div class="order-total-row" id="orderTotalRow">
+      <span>Total</span>
+      <span id="orderTotal">KES 0</span>
+    </div>
+
+    <form id="orderForm" class="order-form">
+      <div class="form-field">
+        <label>How would you like this?</label>
+        <div class="order-type-group" role="radiogroup" aria-label="Order type">
+          <button type="button" class="order-type-btn active" data-type="dine-in">Dine In</button>
+          <button type="button" class="order-type-btn" data-type="delivery">Delivery</button>
+          <button type="button" class="order-type-btn" data-type="drive-through">Drive-Through</button>
+          <button type="button" class="order-type-btn" data-type="reserve">Reserve a Table</button>
+        </div>
+        <input type="hidden" id="orderType" name="orderType" value="dine-in">
+      </div>
+
+      <div class="form-field" id="field-partySize">
+        <label for="partySize">How many people?</label>
+        <input type="number" id="partySize" name="partySize" min="1" max="40" placeholder="e.g. 4">
+      </div>
+
+      <div class="form-field" id="field-address" hidden>
+        <label for="address">Delivery address</label>
+        <textarea id="address" name="address" placeholder="e.g. Near Emali Police Station, blue gate, ask for James"></textarea>
+      </div>
+
+      <div class="form-field" id="field-pickupTime" hidden>
+        <label for="pickupTime">What time will you arrive?</label>
+        <input type="time" id="pickupTime" name="pickupTime">
+      </div>
+
+      <div class="form-field-row" id="field-reserveDateTime" hidden>
+        <div class="form-field">
+          <label for="reserveDate">Date</label>
+          <input type="date" id="reserveDate" name="reserveDate">
+        </div>
+        <div class="form-field">
+          <label for="reserveTime">Time</label>
+          <input type="time" id="reserveTime" name="reserveTime">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="name">Your name (optional)</label>
+        <input type="text" id="name" name="name" placeholder="e.g. James">
+      </div>
+      <div class="form-field">
+        <label for="location">Which counter?</label>
+        <select id="location" name="location">
+          <option value="Bullhead One">Bullhead One — the original counter</option>
+          <option value="Bullhead Two">Bullhead Two — a hundred metres on</option>
+          <option value="Either / whichever is closer">Either — whichever is closer</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="notes">Custom instructions (optional)</label>
+        <textarea id="notes" name="notes" placeholder="e.g. no chili, extra ugali, birthday table..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary order-submit">Send to WhatsApp</button>
+    </form>
+
+  </section>
+
+  <footer class="visit" style="padding-top:48px;">
+    <div class="visit-footer" style="border-top:none; padding-top:0;">
+      <span>Bullhead Butchery &amp; Hotel — Emali</span>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="visit.html">Visit</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <span>Site by Ricky</span>
+    </div>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/menu-data.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/contact-page.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
