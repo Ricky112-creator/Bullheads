@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (reserveDateInput) reserveDateInput.min = today;
 
   const FIELD_VISIBILITY = {
-    'dine-in':      { partySize: true,  address: false, pickupTime: false, reserveDateTime: false },
-    'delivery':     { partySize: false, address: true,  pickupTime: false, reserveDateTime: false },
-    'drive-through':{ partySize: false, address: false, pickupTime: true,  reserveDateTime: false },
-    'reserve':      { partySize: true,  address: false, pickupTime: false, reserveDateTime: true  },
+    'dine-in':       { partySize: true,  address: false, pickupTime: false, reserveDateTime: false },
+    'delivery':      { partySize: false, address: true,  pickupTime: false, reserveDateTime: false },
+    'drive-through': { partySize: false, address: false, pickupTime: true,  reserveDateTime: false },
+    'reserve':       { partySize: true,  address: false, pickupTime: false, reserveDateTime: true  },
   };
 
   function applyOrderType(type) {
@@ -91,8 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '';
+
     const cart = getCart();
     const lines = cartLines(cart);
     const type = orderTypeInput.value;
@@ -112,11 +115,33 @@ document.addEventListener('DOMContentLoaded', () => {
       'reserve': 'Table Reservation',
     };
 
+    let liveLocationUrl = '';
+
+    // If order is Delivery, request live GPS location coordinates
+    if (type === 'delivery' && 'geolocation' in navigator) {
+      if (submitBtn) submitBtn.textContent = 'Getting location...';
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 8000
+          });
+        });
+        const { latitude, longitude } = position.coords;
+        liveLocationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+      } catch (err) {
+        console.warn('Geolocation permission denied or timed out:', err);
+      } finally {
+        if (submitBtn) submitBtn.textContent = originalBtnText;
+      }
+    }
+
     let message = `Hi Bullhead, I'd like to place an order.\n`;
     message += `\nType: ${TYPE_LABELS[type]}`;
 
     if (type === 'dine-in' && partySize) message += `\nParty size: ${partySize}`;
     if (type === 'delivery' && address) message += `\nDelivery address: ${address}`;
+    if (liveLocationUrl) message += `\nGoogle Maps Location: ${liveLocationUrl}`;
     if (type === 'drive-through' && pickupTime) message += `\nArriving at: ${pickupTime}`;
     if (type === 'reserve') {
       if (partySize) message += `\nParty size: ${partySize}`;
@@ -134,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
       message += `\n\n(No items selected on the Menu page — just reaching out.)`;
     }
 
-    message += `\n\nLocation: ${location}`;
+    message += `\n\nCounter: ${location}`;
     if (name) message += `\nName: ${name}`;
     if (notes) message += `\nCustom instructions: ${notes}`;
 
