@@ -901,3 +901,25 @@ h1, h2, h3 {
 @media (min-width: 700px) {
   .visit-footer { flex-direction: row; justify-content: space-between; }
 }
+/* ============================================
+   INDEPENDENT MENU SCROLLING
+   ============================================ */
+.menu-list {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 12px;
+  scroll-behavior: smooth;
+}
+
+/* Custom subtle scrollbar */
+.menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+.menu-list::-webkit-scrollbar-track {
+  background: rgba(36, 23, 18, 0.05);
+  border-radius: 4px;
+}
+.menu-list::-webkit-scrollbar-thumb {
+  background: var(--rust);
+  border-radius: 4px;
+}
