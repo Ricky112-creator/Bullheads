@@ -60,6 +60,7 @@ const MENU_ITEMS = [
   // Butchery — per kg
   { id: 'beef', category: 'Butchery — per kg', name: 'Beef', price: 900 },
   { id: 'goat-meat', category: 'Butchery — per kg', name: 'Goat meat', price: 900 },
+  { id: 'matumbo', category: 'Butchery — per kg', name: 'Matumbo', price: 400 },
 
   // The Grill
   { id: 'grill-beef', category: 'The Grill', name: 'Grilled beef plate', price: '---' },
