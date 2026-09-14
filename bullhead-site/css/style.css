@@ -907,7 +907,7 @@ h1, h2, h3 {
 .menu-list {
   max-height: 60vh;
   overflow-y: auto !important;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto; /* Allows smooth scroll transfer to the parent page */
   padding: 20px 16px;
   margin-bottom: 40px;
   border-radius: 16px;
