@@ -902,23 +902,26 @@ h1, h2, h3 {
   .visit-footer { flex-direction: row; justify-content: space-between; }
 }
 /* ============================================
-   INDEPENDENT MENU SCROLLING
+   INDEPENDENT MENU CONTAINER SCROLL
    ============================================ */
 .menu-list {
-  max-height: 70vh;
-  overflow-y: auto;
+  max-height: 60vh;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
   padding-right: 12px;
-  scroll-behavior: smooth;
+  margin-bottom: 40px;
 }
 
-/* Custom subtle scrollbar */
+/* Scrollbar Styling matching Bullhead palette */
 .menu-list::-webkit-scrollbar {
   width: 6px;
 }
+
 .menu-list::-webkit-scrollbar-track {
-  background: rgba(36, 23, 18, 0.05);
+  background: rgba(36, 23, 18, 0.08);
   border-radius: 4px;
 }
+
 .menu-list::-webkit-scrollbar-thumb {
   background: var(--rust);
   border-radius: 4px;
