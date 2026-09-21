@@ -13,7 +13,7 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
 if (typeof getCart === 'function') {
   const count = cartCount(getCart());
   if (count > 0) {
-    document.querySelectorAll('a[href="contact.html"]').forEach((a) => {
+    document.querySelectorAll('a[href="/contact"]').forEach((a) => {
       if (a.querySelector('.nav-badge')) return;
       const badge = document.createElement('span');
       badge.className = 'nav-badge';
