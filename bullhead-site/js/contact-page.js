@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (reserveDateInput) reserveDateInput.min = today;
 
   const FIELD_VISIBILITY = {
-    'dine-in':       { partySize: true,  address: false, pickupTime: false, reserveDateTime: false },
+    'dine-in':       { partySize: true,  address: false, pickupTime: true,  reserveDateTime: false },
     'delivery':      { partySize: false, address: true,  pickupTime: false, reserveDateTime: false },
     'drive-through': { partySize: false, address: false, pickupTime: true,  reserveDateTime: false },
     'reserve':       { partySize: true,  address: false, pickupTime: false, reserveDateTime: true  },
@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     message += `\nType: ${TYPE_LABELS[type]}`;
 
     if (type === 'dine-in' && partySize) message += `\nParty size: ${partySize}`;
+    if (type === 'dine-in' && pickupTime) message += `\nArriving at: ${pickupTime}`;
     if (type === 'delivery' && address) message += `\nDelivery address: ${address}`;
     if (liveLocationUrl) message += `\nGoogle Maps Location: ${liveLocationUrl}`;
     if (type === 'drive-through' && pickupTime) message += `\nArriving at: ${pickupTime}`;
