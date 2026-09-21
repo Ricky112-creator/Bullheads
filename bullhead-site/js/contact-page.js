@@ -11,7 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalEl = document.getElementById('orderTotal');
   const totalRowEl = document.getElementById('orderTotalRow');
   const form = document.getElementById('orderForm');
+  const tableBannerEl = document.getElementById('tableBanner');
   if (!summaryEl) return;
+
+  const activeTable = typeof getActiveTable === 'function' ? getActiveTable() : null;
+  if (activeTable && tableBannerEl) {
+    tableBannerEl.hidden = false;
+    tableBannerEl.textContent = `Ordering for Table ${activeTable}`;
+  }
 
   // --- Order type toggle ---
   const orderTypeInput = document.getElementById('orderType');
@@ -141,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let message = `Hi Bullhead, I'd like to place an order.\n`;
     message += `\nType: ${TYPE_LABELS[type]}`;
+    if (activeTable) message += `\nTable: ${activeTable}`;
 
     if (type === 'dine-in' && partySize) message += `\nParty size: ${partySize}`;
     if (type === 'dine-in' && pickupTime) message += `\nArriving at: ${pickupTime}`;

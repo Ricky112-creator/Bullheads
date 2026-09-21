@@ -9,9 +9,42 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 window.addEventListener('load', () => window.scrollTo(0, 0));
 
-// --- Cart badge on Contact links, so a pending order stays visible ---
+// --- Table QR: capture ?table=N from the URL, remember it briefly.
+//     Printed QR at each table links to /menu?table=5 (or /contact?table=5).
+//     getActiveTable() is used by contact-page.js to tag the order. ---
+const TABLE_KEY = 'bullheadTable';
+const TABLE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours — long enough for one visit
+
+(function captureTableParam() {
+  const table = new URLSearchParams(window.location.search).get('table');
+  if (table) {
+    try {
+      localStorage.setItem(TABLE_KEY, JSON.stringify({ table, ts: Date.now() }));
+    } catch (e) {}
+  }
+})();
+
+function getActiveTable() {
+  try {
+    const raw = localStorage.getItem(TABLE_KEY);
+    if (!raw) return null;
+    const { table, ts } = JSON.parse(raw);
+    if (!table || Date.now() - ts > TABLE_TTL_MS) {
+      localStorage.removeItem(TABLE_KEY);
+      return null;
+    }
+    return table;
+  } catch (e) {
+    return null;
+  }
+}
+
+// --- Cart badge on Contact links, so a pending order stays visible.
+//     Counts distinct items, not summed quantity, so a kg item doesn't
+//     turn the badge into something like "3.5". ---
 if (typeof getCart === 'function') {
-  const count = cartCount(getCart());
+  const cart = getCart();
+  const count = Object.keys(cart).length;
   if (count > 0) {
     document.querySelectorAll('a[href="/contact"]').forEach((a) => {
       if (a.querySelector('.nav-badge')) return;

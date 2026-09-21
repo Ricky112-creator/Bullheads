@@ -952,3 +952,14 @@ h1, h2, h3 {
   color: var(--ink-soft);
   font-style: italic;
 }
+
+/* Table QR banner on the contact page */
+.table-banner {
+  background: var(--cream, #f4ead9);
+  border: 1px solid rgba(36,23,18,0.12);
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  text-align: center;
+}
