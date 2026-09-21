@@ -18,7 +18,7 @@ function setCart(cart) {
 
 function changeQty(id, delta) {
   const cart = getCart();
-  const next = Math.max(0, (cart[id] || 0) + delta);
+  const next = Math.max(0, Math.round(((cart[id] || 0) + delta) * 100) / 100);
   if (next === 0) {
     delete cart[id];
   } else {
@@ -40,7 +40,7 @@ function cartLines(cart) {
   return Object.entries(cart)
     .map(([id, qty]) => {
       const item = MENU_ITEMS.find((i) => i.id === id);
-      if (!item) return null;
+      if (!item || typeof item.price !== 'number') return null;
       return { ...item, qty, lineTotal: item.price * qty };
     })
     .filter(Boolean);

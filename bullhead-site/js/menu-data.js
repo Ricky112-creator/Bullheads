@@ -1,5 +1,9 @@
 // =========================================================
 // BULLHEAD - menu data
+// unit: 'kg' — sold by weight. The stepper moves in 0.5kg
+// steps and price is treated as KES per kg.
+// price: null — not yet priced. Shown on the menu but
+// cannot be added to an order until the client confirms.
 // =========================================================
 
 const MENU_ITEMS = [
@@ -37,7 +41,8 @@ const MENU_ITEMS = [
   { id: 'chapati-main', category: 'Main Dishes', name: 'Chapati', price: 20 },
   { id: 'beans-chapati', category: 'Main Dishes', name: 'Beans chapati', price: 50 },
   { id: 'pilau', category: 'Main Dishes', name: 'Pilau', price: 70 },
-  { id: 'githeri', category: 'Main Dishes', name: 'Githeri', price: '50/80' },
+  { id: 'githeri-small', category: 'Main Dishes', name: 'Githeri (small)', price: 50 },
+  { id: 'githeri-large', category: 'Main Dishes', name: 'Githeri (large)', price: 80 },
   { id: 'cabbage-ugali', category: 'Main Dishes', name: 'Cabbage ugali', price: 60 },
   { id: 'sukuma-ugali', category: 'Main Dishes', name: 'Sukuma ugali', price: 60 },
   { id: 'kunde-ugali', category: 'Main Dishes', name: 'Kunde ugali', price: 80 },
@@ -58,18 +63,18 @@ const MENU_ITEMS = [
   { id: 'beef-fry-plain', category: 'Main Dishes', name: 'Beef fry plain', price: 100 },
 
   // Butchery — per kg
-  { id: 'beef', category: 'Butchery — per kg', name: 'Beef', price: 900 },
-  { id: 'goat-meat', category: 'Butchery — per kg', name: 'Goat meat', price: 900 },
-  { id: 'matumbo', category: 'Butchery — per kg', name: 'Matumbo', price: 400 },
+  { id: 'beef', category: 'Butchery — per kg', name: 'Beef', price: 900, unit: 'kg' },
+  { id: 'goat-meat', category: 'Butchery — per kg', name: 'Goat meat', price: 900, unit: 'kg' },
+  { id: 'matumbo', category: 'Butchery — per kg', name: 'Matumbo', price: 400, unit: 'kg' },
 
-  // The Grill
-  { id: 'grill-beef', category: 'The Grill', name: 'Grilled beef plate', price: '---' },
-  { id: 'grill-goat', category: 'The Grill', name: 'Grilled goat plate', price: '---' },
-  { id: 'grill-mixed', category: 'The Grill', name: 'Mixed grill plate', price: '---' },
+  // The Grill — prices to confirm with client
+  { id: 'grill-beef', category: 'The Grill', name: 'Grilled beef plate', price: null },
+  { id: 'grill-goat', category: 'The Grill', name: 'Grilled goat plate', price: null },
+  { id: 'grill-mixed', category: 'The Grill', name: 'Mixed grill plate', price: null },
 
-  // Fish Specialty
-  { id: 'tilapia-whole', category: 'Fish Specialty', name: 'Tilapia & ugali — whole', price: '---' },
-  { id: 'tilapia-half', category: 'Fish Specialty', name: 'Tilapia & ugali — half', price: '---' },
+  // Fish Specialty — prices to confirm with client
+  { id: 'tilapia-whole', category: 'Fish Specialty', name: 'Tilapia & ugali — whole', price: null },
+  { id: 'tilapia-half', category: 'Fish Specialty', name: 'Tilapia & ugali — half', price: null },
 
   // Sides & Extras
   { id: 'extra-ugali', category: 'Sides & Extras', name: 'Extra ugali', price: 30 },

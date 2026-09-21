@@ -68,14 +68,17 @@ document.addEventListener('DOMContentLoaded', () => {
     totalRowEl.hidden = false;
 
     summaryEl.innerHTML = lines
-      .map(
-        (l) => `
+      .map((l) => {
+        const qtyText = l.unit === 'kg'
+          ? `${l.qty.toFixed(1).replace(/\.0$/, '')} kg`
+          : `${l.qty} ×`;
+        return `
       <div class="order-line" data-id="${l.id}">
-        <span class="order-line-name">${l.qty} × ${l.name}</span>
+        <span class="order-line-name">${qtyText} ${l.name}</span>
         <span class="order-line-total">${formatKES(l.lineTotal)}</span>
         <button type="button" class="order-line-remove" aria-label="Remove ${l.name}">×</button>
-      </div>`
-      )
+      </div>`;
+      })
       .join('');
 
     totalEl.textContent = formatKES(cartTotal(cart));
@@ -153,7 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lines.length) {
       message += `\n\nOrder:\n`;
       lines.forEach((l) => {
-        message += `- ${l.qty} x ${l.name} (${formatKES(l.lineTotal)})\n`;
+        const qtyText = l.unit === 'kg' ? `${l.qty.toFixed(1).replace(/\.0$/, '')}kg` : `${l.qty}x`;
+        message += `- ${qtyText} ${l.name} (${formatKES(l.lineTotal)})\n`;
       });
       message += `\nTotal: ${formatKES(cartTotal(cart))}`;
     } else {

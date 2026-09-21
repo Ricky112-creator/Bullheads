@@ -944,3 +944,11 @@ h1, h2, h3 {
 .skip-link:focus {
   left: 0;
 }
+
+/* Unpriced menu items (Grill, Fish — awaiting client pricing) */
+.menu-item-price.unpriced { color: var(--ink-soft); font-style: italic; }
+.menu-item-unavailable {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}

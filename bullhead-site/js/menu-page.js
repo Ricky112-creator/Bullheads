@@ -12,6 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const categories = [...new Set(MENU_ITEMS.map((i) => i.category))];
 
+  function priceLabel(item) {
+    if (typeof item.price !== 'number') return 'Ask staff';
+    return item.unit === 'kg' ? `${formatKES(item.price)} / kg` : formatKES(item.price);
+  }
+
+  function qtyLabel(item, qty) {
+    if (item.unit === 'kg') return qty.toFixed(1).replace(/\.0$/, '') + ' kg';
+    return String(qty);
+  }
+
   listEl.innerHTML = categories
     .map((cat) => {
       const items = MENU_ITEMS.filter((i) => i.category === cat);
@@ -20,20 +30,24 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3 class="menu-category-title">${cat}</h3>
           <div class="menu-items">
             ${items
-              .map(
-                (item) => `
+              .map((item) => {
+                const unpriced = typeof item.price !== 'number';
+                return `
               <div class="menu-item" data-id="${item.id}">
                 <div class="menu-item-info">
                   <p class="menu-item-name">${item.name}</p>
-                  <p class="menu-item-price">${formatKES(item.price)}</p>
+                  <p class="menu-item-price${unpriced ? ' unpriced' : ''}">${priceLabel(item)}</p>
                 </div>
-                <div class="qty-stepper" data-id="${item.id}">
-                  <button class="qty-btn qty-minus" aria-label="Remove one ${item.name}">−</button>
-                  <span class="qty-count">0</span>
-                  <button class="qty-btn qty-plus" aria-label="Add one ${item.name}">+</button>
-                </div>
-              </div>`
-              )
+                ${unpriced
+                  ? `<span class="menu-item-unavailable">Not yet orderable — ask staff</span>`
+                  : `<div class="qty-stepper" data-id="${item.id}" data-unit="${item.unit || ''}">
+                      <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">−</button>
+                      <span class="qty-count">${item.unit === 'kg' ? '0 kg' : '0'}</span>
+                      <button class="qty-btn qty-plus" aria-label="Add ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">+</button>
+                    </div>`
+                }
+              </div>`;
+              })
               .join('')}
           </div>
         </div>`;
@@ -44,13 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const cart = getCart();
     listEl.querySelectorAll('.qty-stepper').forEach((stepper) => {
       const id = stepper.dataset.id;
-      stepper.querySelector('.qty-count').textContent = cart[id] || 0;
+      const item = MENU_ITEMS.find((i) => i.id === id);
+      const qty = cart[id] || 0;
+      stepper.querySelector('.qty-count').textContent = item ? qtyLabel(item, qty) : qty;
     });
-    const count = cartCount(cart);
+    const itemCount = Object.keys(cart).length;
     const total = cartTotal(cart);
     if (barEl) {
-      barEl.classList.toggle('visible', count > 0);
-      if (barCountEl) barCountEl.textContent = count + (count === 1 ? ' item' : ' items');
+      barEl.classList.toggle('visible', itemCount > 0);
+      if (barCountEl) barCountEl.textContent = itemCount + (itemCount === 1 ? ' item' : ' items');
       if (barTotalEl) barTotalEl.textContent = formatKES(total);
     }
   }
@@ -60,7 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!btn) return;
     const stepper = btn.closest('.qty-stepper');
     const id = stepper.dataset.id;
-    changeQty(id, btn.classList.contains('qty-plus') ? 1 : -1);
+    const step = stepper.dataset.unit === 'kg' ? 0.5 : 1;
+    changeQty(id, btn.classList.contains('qty-plus') ? step : -step);
     syncUI();
   });
 
