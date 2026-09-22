@@ -25,29 +25,30 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
+<a class="skip-link" href="#main-content" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
 
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
 <header class="site-nav" id="siteNav">
   <a href="/" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
   <nav class="nav-links">
-    <a href="/">Home</a>
-    <a href="/menu" class="active" aria-current="page">Menu</a>
-    <a href="/visit">Visit</a>
-    <a href="/contact">Contact</a>
+    <a href="/" data-sw="Nyumbani">Home</a>
+    <a href="/menu" class="active" aria-current="page" data-sw="Menyu">Menu</a>
+    <a href="/visit" data-sw="Tembelea">Visit</a>
+    <a href="/contact" data-sw="Wasiliana">Contact</a>
   </nav>
   <div style="display:flex; align-items:center;">
+    <button id="langToggle" type="button" style="margin-right:10px; background:none; border:1px solid currentColor; border-radius:999px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">SW</button>
     <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
     <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
 </header>
 
 <div class="mobile-menu" id="mobileMenu">
-  <a href="/">Home</a>
-  <a href="/menu" class="active">Menu</a>
-  <a href="/visit">Visit</a>
-  <a href="/contact">Contact</a>
+  <a href="/" data-sw="Nyumbani">Home</a>
+  <a href="/menu" class="active" data-sw="Menyu">Menu</a>
+  <a href="/visit" data-sw="Tembelea">Visit</a>
+  <a href="/contact" data-sw="Wasiliana">Contact</a>
 </div>
 
 <main id="main-content">
@@ -56,36 +57,36 @@
     <img src="assets/img/interior-seating-02.jpg" alt="Dining room at Bullhead" width="1600" height="720">
     <div class="page-hero-scrim"></div>
     <div class="page-hero-content">
-      <p class="page-hero-kicker">The Menu</p>
-      <h1>Off the fire, off the ice, straight to the table.</h1>
+      <p class="page-hero-kicker" data-sw="Menyu">The Menu</p>
+      <h1 data-sw="Kutoka motoni, kutoka barafuni, moja kwa moja mezani.">Off the fire, off the ice, straight to the table.</h1>
     </div>
   </section>
 
   <section class="kitchen">
     <div class="kitchen-head">
-      <h2>The room and the counters</h2>
-      <p>Final dish photography is being shot on location — what you're seeing here is the actual room, not stock photos.</p>
+      <h2 data-sw="Chumba na kaunta">The room and the counters</h2>
+      <p data-sw="Picha za mwisho za sahani zinapigwa papo hapo — unachokiona hapa ni chumba halisi, si picha za mtandaoni.">Final dish photography is being shot on location — what you're seeing here is the actual room, not stock photos.</p>
     </div>
     <div class="kitchen-grid">
       <figure class="kitchen-card kitchen-card--wide">
         <img loading="lazy" src="assets/img/interior-seating-01.jpg" alt="Dining room at Bullhead" width="1600" height="720">
-        <figcaption>The dining room — mirrored walls, orange tables, always a seat</figcaption>
+        <figcaption data-sw="Chumba cha kulia — kuta zenye vioo, meza za rangi ya machungwa, kiti daima kipo">The dining room — mirrored walls, orange tables, always a seat</figcaption>
       </figure>
       <figure class="kitchen-card">
         <img loading="lazy" src="assets/img/interior-fridge-01.jpg" alt="Drinks fridge and entrance at Bullhead" width="1400" height="630">
-        <figcaption>Cold drinks, right at the door</figcaption>
+        <figcaption data-sw="Vinywaji baridi, mlangoni tu">Cold drinks, right at the door</figcaption>
       </figure>
       <figure class="kitchen-card">
         <img loading="lazy" src="assets/img/interior-seating-03.jpg" alt="Service counter at Bullhead" width="1600" height="720">
-        <figcaption>The counter — order, sit, wait for the smell to reach you</figcaption>
+        <figcaption data-sw="Kaunta — agiza, kaa, subiri harufu ikufikie">The counter — order, sit, wait for the smell to reach you</figcaption>
       </figure>
     </div>
   </section>
 
   <section style="background: var(--rose); padding-top: 8px;">
     <div style="max-width:720px; margin:0 auto; padding: 48px var(--edge) 0;">
-      <h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 10px;">Build your order</h2>
-      <p style="color: var(--ink-soft); margin: 0;">Tap + to add items. When you're ready, review and send the order straight to WhatsApp — no calls, no waiting on hold. A few items are priced by the day and marked "Ask staff" — everything else here is final.</p>
+      <h2 style="font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 10px;" data-sw="Jenga oda yako">Build your order</h2>
+      <p style="color: var(--ink-soft); margin: 0;" data-sw="Gusa + kuongeza bidhaa. Ukiwa tayari, kagua na tuma oda moja kwa moja kwa WhatsApp — hakuna simu, hakuna kusubiri. Bidhaa chache bei yake hutegemea siku na zimeandikwa &quot;Uliza mhudumu&quot; — zingine zote hapa ni bei ya mwisho.">Tap + to add items. When you're ready, review and send the order straight to WhatsApp — no calls, no waiting on hold. A few items are priced by the day and marked "Ask staff" — everything else here is final.</p>
     </div>
 <div id="menuList" class="menu-list" data-lenis-prevent></div>  </section>
 
@@ -95,17 +96,17 @@
       <strong id="orderBarCount">0 items</strong>
       <span id="orderBarTotal">KES 0</span>
     </div>
-    <a href="/contact" class="order-bar-link">Review order</a>
+    <a href="/contact" class="order-bar-link" data-sw="Kagua oda">Review order</a>
   </div>
 
   <footer class="visit" style="padding-top:48px;">
     <div class="visit-footer" style="border-top:none; padding-top:0;">
       <span>Bullhead Butchery &amp; Hotel — Emali</span>
       <div class="footer-links">
-        <a href="/">Home</a>
-        <a href="/menu">Menu</a>
-        <a href="/visit">Visit</a>
-        <a href="/contact">Contact</a>
+        <a href="/" data-sw="Nyumbani">Home</a>
+        <a href="/menu" data-sw="Menyu">Menu</a>
+        <a href="/visit" data-sw="Tembelea">Visit</a>
+        <a href="/contact" data-sw="Wasiliana">Contact</a>
       </div>
       <a href="https://wa.me/254789077483" target="_blank" rel="noopener">Buy the developer some coffee</a>
     </div>
@@ -120,5 +121,32 @@
 <script src="js/cart.js"></script>
 <script src="js/menu-page.js"></script>
 <script src="js/main.js"></script>
+<script>
+(function () {
+  var STORAGE_KEY = 'bullheadLang';
+  var els = document.querySelectorAll('[data-sw]');
+  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
+  var toggle = document.getElementById('langToggle');
+
+  function apply(lang) {
+    els.forEach(function (el) {
+      el.innerHTML = lang === 'sw' ? el.dataset.sw : el.dataset.en;
+    });
+    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
+  }
+
+  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
+  apply(saved);
+
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var current = localStorage.getItem(STORAGE_KEY) || 'en';
+      var next = current === 'en' ? 'sw' : 'en';
+      localStorage.setItem(STORAGE_KEY, next);
+      apply(next);
+    });
+  }
+})();
+</script>
 </body>
 </html>
