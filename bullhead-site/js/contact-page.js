@@ -168,6 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
         message += `- ${qtyText} ${l.name} (${formatKES(l.lineTotal)})\n`;
       });
       message += `\nTotal: ${formatKES(cartTotal(cart))}`;
+
+      // Snapshot this order so a returning visitor can repeat it later.
+      try {
+        localStorage.setItem('bullheadLastOrder', JSON.stringify({ items: cart, ts: Date.now() }));
+      } catch (e) {}
     } else {
       message += `\n\n(No items selected on the Menu page — just reaching out.)`;
     }
@@ -178,6 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const url = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener');
+
+    if (lines.length) {
+      clearCart();
+      render();
+    }
   });
 
   render();
