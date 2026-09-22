@@ -84,29 +84,30 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
+<a class="skip-link" href="#main-content" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
 
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
 <header class="site-nav" id="siteNav">
   <a href="/" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
   <nav class="nav-links">
-    <a href="/">Home</a>
-    <a href="/menu">Menu</a>
-    <a href="/visit" class="active" aria-current="page">Visit</a>
-    <a href="/contact">Contact</a>
+    <a href="/" data-sw="Nyumbani">Home</a>
+    <a href="/menu" data-sw="Menyu">Menu</a>
+    <a href="/visit" class="active" aria-current="page" data-sw="Tembelea">Visit</a>
+    <a href="/contact" data-sw="Wasiliana">Contact</a>
   </nav>
   <div style="display:flex; align-items:center;">
+    <button id="langToggle" type="button" style="margin-right:10px; background:none; border:1px solid currentColor; border-radius:999px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">SW</button>
     <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
     <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
 </header>
 
 <div class="mobile-menu" id="mobileMenu">
-  <a href="/">Home</a>
-  <a href="/menu">Menu</a>
-  <a href="/visit" class="active">Visit</a>
-  <a href="/contact">Contact</a>
+  <a href="/" data-sw="Nyumbani">Home</a>
+  <a href="/menu" data-sw="Menyu">Menu</a>
+  <a href="/visit" class="active" data-sw="Tembelea">Visit</a>
+  <a href="/contact" data-sw="Wasiliana">Contact</a>
 </div>
 
 <main id="main-content">
@@ -115,14 +116,14 @@
     <img src="assets/img/gallery-02.jpg" alt="Bullhead storefront in Emali" width="720" height="1600">
     <div class="page-hero-scrim"></div>
     <div class="page-hero-content">
-      <p class="page-hero-kicker">Visit</p>
-      <h1>The two counters everyone on this road eventually finds.</h1>
+      <p class="page-hero-kicker" data-sw="Tembelea">Visit</p>
+      <h1 data-sw="Kaunta mbili ambazo kila mtu kwenye barabara hii huishia kuzipata.">The two counters everyone on this road eventually finds.</h1>
     </div>
   </section>
 
   <section class="locations">
-    <h2>Bullhead One &amp; Bullhead Two</h2>
-    <p class="locations-sub">Bullhead One is the original — the one the truckers started talking about first. Bullhead Two opened a hundred metres down for the nights the first ran out of tables, which, at this hour, it usually has.</p>
+    <h2 data-sw="Bullhead One na Bullhead Two">Bullhead One &amp; Bullhead Two</h2>
+    <p class="locations-sub" data-sw="Bullhead One ndiyo ya kwanza — ile ambayo madereva wa malori walianza kuizungumzia kwanza. Bullhead Two ilifunguliwa mita mia moja chini kwa ajili ya usiku ambapo ya kwanza inakosa meza, jambo ambalo, saa hizi, hutokea mara kwa mara.">Bullhead One is the original — the one the truckers started talking about first. Bullhead Two opened a hundred metres down for the nights the first ran out of tables, which, at this hour, it usually has.</p>
     <div class="locations-grid">
       <article class="location-card">
         <div class="location-media">
@@ -130,10 +131,10 @@
         </div>
         <div class="location-info">
           <h3>Bullhead One</h3>
-          <p class="location-tag">Where it started</p>
-          <p>Emali town centre, on the main strip. Look for the green awning and the red sign — most nights, you'll hear it before you see it.</p>
-          <a href="https://www.google.com/maps/search/?api=1&query=Bullhead+Hotel+and+Butchery+Emali" class="location-link" target="_blank" rel="noopener">Get directions</a>
-          <a href="https://g.page/r/CZlFY4eey516EBM/review" class="location-link" target="_blank" rel="noopener">Leave a review</a>
+          <p class="location-tag" data-sw="Ilipoanzia">Where it started</p>
+          <p data-sw="Katikati ya mji wa Emali, kwenye barabara kuu. Tafuta kivuli cha kijani na ishara nyekundu — mara nyingi utaisikia kabla ya kuiona.">Emali town centre, on the main strip. Look for the green awning and the red sign — most nights, you'll hear it before you see it.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Bullhead+Hotel+and+Butchery+Emali" class="location-link" target="_blank" rel="noopener" data-sw="Pata Maelekezo">Get directions</a>
+          <a href="https://g.page/r/CZlFY4eey516EBM/review" class="location-link" target="_blank" rel="noopener" data-sw="Acha Maoni">Leave a review</a>
         </div>
         <div class="location-map">
           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3987.192885805414!2d37.46938597496739!3d-2.078669697902706!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x183abb0047746825%3A0x7a9dcb9e87634599!2sBullhead%20Hotel%20%26%20Butchery%201!5e0!3m2!1sen!2ske!4v1789229026720!5m2!1sen!2ske" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Map to Bullhead One"></iframe>
@@ -145,10 +146,10 @@
         </div>
         <div class="location-info">
           <h3>Bullhead Two</h3>
-          <p class="location-tag">The overflow that became its own name</p>
-          <p>Same fire, more seats, its own butchery counter and fridge — built for the nights Bullhead One simply couldn't fit everyone.</p>
-          <a href="https://www.google.com/maps/search/?api=1&query=Bullhead+Hotel+and+Butchery+2+Emali" class="location-link" target="_blank" rel="noopener">Get directions</a>
-          <a href="https://g.page/r/CYM5D_xsP-3oEBM/review" class="location-link" target="_blank" rel="noopener">Leave a review</a>
+          <p class="location-tag" data-sw="Nyongeza iliyokuwa jina lake lenyewe">The overflow that became its own name</p>
+          <p data-sw="Moto uleule, viti zaidi, kaunta yake ya bucha na friji — ilijengwa kwa ajili ya usiku ambapo Bullhead One haikuweza kuwabeba wote.">Same fire, more seats, its own butchery counter and fridge — built for the nights Bullhead One simply couldn't fit everyone.</p>
+          <a href="https://www.google.com/maps/search/?api=1&query=Bullhead+Hotel+and+Butchery+2+Emali" class="location-link" target="_blank" rel="noopener" data-sw="Pata Maelekezo">Get directions</a>
+          <a href="https://g.page/r/CYM5D_xsP-3oEBM/review" class="location-link" target="_blank" rel="noopener" data-sw="Acha Maoni">Leave a review</a>
         </div>
         <div class="location-map">
           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1993.5956422273819!2d37.473449200000005!3d-2.0793035999999896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x183abb007cf200a7%3A0xe8ed3f6cfc0f3983!2sBullhead%20Hotel%20%26%20Butchery%202!5e0!3m2!1sen!2ske!4v1789229108378!5m2!1sen!2ske" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Map to Bullhead Two"></iframe>
@@ -159,20 +160,20 @@
 
   <section class="visit" style="color: var(--ink); background: var(--rose);">
     <div class="visit-inner">
-      <h2 style="color:var(--ink);">The details</h2>
+      <h2 style="color:var(--ink);" data-sw="Maelezo">The details</h2>
       <div class="visit-grid">
         <div class="visit-block">
-          <h3>Hours</h3>
-          <p style="color:var(--ink-soft);">Open 24 hours<br>Every day of the week</p>
+          <h3 data-sw="Masaa">Hours</h3>
+          <p style="color:var(--ink-soft);" data-sw="Wazi masaa 24<br>Kila siku ya wiki">Open 24 hours<br>Every day of the week</p>
         </div>
         <div class="visit-block">
-          <h3>Talk to us</h3>
+          <h3 data-sw="Ongea Nasi">Talk to us</h3>
           <p style="color:var(--ink-soft);"><a href="https://wa.me/254720707323" target="_blank" rel="noopener">WhatsApp: 0720 707 323</a><br>
           <a href="tel:+254720707323">Call: 0720 707 323</a><br>
           <a href="sms:+254720707323">SMS: 0720 707 323</a></p>
         </div>
         <div class="visit-block">
-          <h3>Pay how you already do</h3>
+          <h3 data-sw="Lipa jinsi unavyozoea">Pay how you already do</h3>
           <p style="color:var(--ink-soft);">Lipa na M-Pesa<br>Buy Goods Till: 3502492</p>
         </div>
       </div>
@@ -180,17 +181,17 @@
   </section>
 
   <section class="strip">
-    <p class="strip-line" id="stripLine">Whatever time you arrive, someone is already at the grill.</p>
+    <p class="strip-line" id="stripLine" data-sw="Wakati wowote utakapofika, mtu tayari yuko kwenye moto wa kuchoma.">Whatever time you arrive, someone is already at the grill.</p>
   </section>
 
   <footer class="visit" style="padding-top:48px;">
     <div class="visit-footer" style="border-top:none; padding-top:0;">
       <span>Bullhead Butchery &amp; Hotel — Emali</span>
       <div class="footer-links">
-        <a href="/">Home</a>
-        <a href="/menu">Menu</a>
-        <a href="/visit">Visit</a>
-        <a href="/contact">Contact</a>
+        <a href="/" data-sw="Nyumbani">Home</a>
+        <a href="/menu" data-sw="Menyu">Menu</a>
+        <a href="/visit" data-sw="Tembelea">Visit</a>
+        <a href="/contact" data-sw="Wasiliana">Contact</a>
       </div>
       <a href="https://wa.me/254789077483" target="_blank" rel="noopener">Buy the developer some coffee</a>
     </div>
@@ -203,5 +204,32 @@
 <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/main.js"></script>
+<script>
+(function () {
+  var STORAGE_KEY = 'bullheadLang';
+  var els = document.querySelectorAll('[data-sw]');
+  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
+  var toggle = document.getElementById('langToggle');
+
+  function apply(lang) {
+    els.forEach(function (el) {
+      el.innerHTML = lang === 'sw' ? el.dataset.sw : el.dataset.en;
+    });
+    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
+  }
+
+  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
+  apply(saved);
+
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var current = localStorage.getItem(STORAGE_KEY) || 'en';
+      var next = current === 'en' ? 'sw' : 'en';
+      localStorage.setItem(STORAGE_KEY, next);
+      apply(next);
+    });
+  }
+})();
+</script>
 </body>
 </html>
