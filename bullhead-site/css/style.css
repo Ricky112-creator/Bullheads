@@ -371,6 +371,9 @@ h1, h2, h3 {
              installNudge 6s 2s ease-in-out infinite;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.install-btn[hidden] {
+  display: none;
+}
 .install-btn svg {
   flex-shrink: 0;
   animation: iconBounce 1.6s 0.6s ease-in-out infinite;
