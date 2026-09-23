@@ -123,41 +123,46 @@ if (nav) {
 (function revealStripLine() {
   const stripLine = document.getElementById('stripLine');
   if (!stripLine) return;
-  const words = stripLine.querySelectorAll('.word');
-  console.log('[strip-debug] setup: words found =', words.length, 'gsap =', typeof window.gsap, 'reduceMotion =', reduceMotion);
+
+  // Re-query .word elements at animation time rather than capturing them
+  // once at setup. The language toggle can replace stripLine's children
+  // (e.g. on load, or when the visitor switches language) between this
+  // setup running and the observer actually firing on scroll; querying
+  // fresh here means we always animate whatever spans are on screen right
+  // now, instead of a stale, possibly-detached set.
+  function currentWords() {
+    return stripLine.querySelectorAll('.word');
+  }
 
   if (reduceMotion || !('IntersectionObserver' in window)) {
-    console.log('[strip-debug] took early-exit branch (reduceMotion or no IO support)');
-    words.forEach((w) => (w.style.opacity = 1));
+    currentWords().forEach((w) => (w.style.opacity = 1));
+    stripLine.dataset.revealed = '1';
     return;
   }
 
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        console.log('[strip-debug] observer fired, isIntersecting =', entry.isIntersecting, 'ratio =', entry.intersectionRatio);
         if (!entry.isIntersecting) return;
+        const words = currentWords();
         if (window.gsap) {
-          console.log('[strip-debug] taking GSAP branch, tweening', words.length, 'words');
           gsap.to(words, {
             opacity: 1,
             stagger: 0.08,
             ease: 'none',
             duration: 0.6,
-            onComplete: () => console.log('[strip-debug] gsap tween onComplete fired'),
           });
         } else {
-          console.log('[strip-debug] taking CSS-class branch');
           words.forEach((w, i) => { w.style.transitionDelay = `${i * 45}ms`; });
           stripLine.classList.add('in-view');
         }
+        stripLine.dataset.revealed = '1';
         io.disconnect();
       });
     },
     { threshold: 0.4 }
   );
   io.observe(stripLine);
-  console.log('[strip-debug] io.observe() called on stripLine');
 })();
 
 // --- Everything below is animation polish and needs GSAP.
