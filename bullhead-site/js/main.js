@@ -100,37 +100,15 @@ if (nav) {
   }
 }
 
-// --- Strip-line type reveal: plain IntersectionObserver, deliberately NOT
-//     wired to GSAP/ScrollTrigger/Lenis. A continuous scrub tween tied to
-//     scroll position can drift out of sync with Lenis's smoothed scroll
-//     value, which is what was leaving the words stuck dim. This just
-//     watches for the line actually entering view and fades it in once —
-//     runs on every page regardless of whether GSAP loaded. ---
-(function revealStripLine() {
+// --- Strip-line word wrap: always runs, so the markup is ready whether
+//     or not GSAP ends up loading. The actual reveal animation is chosen
+//     below depending on what's available. ---
+(function setupStripLine() {
   const stripLine = document.getElementById('stripLine');
-  if (!stripLine) return;
+  if (!stripLine || stripLine.dataset.wordsReady) return;
   const text = stripLine.textContent.trim();
   stripLine.innerHTML = text.split(' ').map((w) => `<span class="word">${w}</span>`).join(' ');
-  const words = stripLine.querySelectorAll('.word');
-
-  if (reduceMotion || !('IntersectionObserver' in window)) {
-    words.forEach((w) => (w.style.opacity = 1));
-    return;
-  }
-
-  words.forEach((w, i) => (w.style.transitionDelay = `${i * 45}ms`));
-  const io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          stripLine.classList.add('in-view');
-          io.disconnect();
-        }
-      });
-    },
-    { threshold: 0.4 }
-  );
-  io.observe(stripLine);
+  stripLine.dataset.wordsReady = '1';
 })();
 
 // --- Everything below is animation polish and needs GSAP.
@@ -168,6 +146,25 @@ if (window.gsap && window.ScrollTrigger) {
     });
   }
 
+  const stripLine = document.getElementById('stripLine');
+  if (stripLine) {
+    const words = stripLine.querySelectorAll('.word');
+    if (!reduceMotion) {
+      gsap.fromTo(
+        words,
+        { opacity: 0.18 },
+        {
+          opacity: 1,
+          stagger: 0.08,
+          ease: 'none',
+          scrollTrigger: { trigger: stripLine, start: 'top 80%', once: true },
+        }
+      );
+    } else {
+      words.forEach((w) => (w.style.opacity = 1));
+    }
+  }
+
   gsap.utils.toArray('.location-card, .kitchen-card, .explore-card').forEach((card) => {
     gsap.fromTo(
       card,
@@ -192,4 +189,27 @@ if (window.gsap && window.ScrollTrigger) {
   if (heroImg && !heroImg.complete) heroImg.addEventListener('load', refresh, { once: true });
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
+  // Fallback so the strip line still reveals if GSAP itself failed to load —
+  // this is the only place IntersectionObserver is used for it now.
+  const stripLine = document.getElementById('stripLine');
+  if (stripLine) {
+    const words = stripLine.querySelectorAll('.word');
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      words.forEach((w) => (w.style.opacity = 1));
+    } else {
+      words.forEach((w, i) => (w.style.transitionDelay = `${i * 45}ms`));
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              stripLine.classList.add('in-view');
+              io.disconnect();
+            }
+          });
+        },
+        { threshold: 0.4 }
+      );
+      io.observe(stripLine);
+    }
+  }
 }
