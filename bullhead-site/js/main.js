@@ -19,6 +19,26 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 window.addEventListener('load', () => window.scrollTo(0, 0));
 
+// --- Owner-posted live update bar: fetches /api/updates (a Cloudflare
+//     Pages Function backed by KV) and shows the most recent one if it's
+//     still live. Silently does nothing if the endpoint is missing/errors,
+//     so this degrades gracefully wherever it hasn't been deployed yet. ---
+(function loadLiveUpdate() {
+  const bar = document.getElementById('liveUpdateBar');
+  const textEl = document.getElementById('liveUpdateText');
+  if (!bar || !textEl) return;
+
+  fetch('/api/updates')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      const latest = data && data.updates && data.updates[0];
+      if (!latest || !latest.text) return;
+      textEl.textContent = latest.text;
+      bar.hidden = false;
+    })
+    .catch(() => {});
+})();
+
 // --- Table QR: capture ?table=N from the URL, remember it briefly.
 //     Printed QR at each table links to /menu?table=5 (or /contact?table=5).
 //     getActiveTable() is used by contact-page.js to tag the order. ---
