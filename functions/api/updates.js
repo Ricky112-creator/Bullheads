@@ -13,7 +13,8 @@
 //     a long random phrase; it's typed into /admin.html, never shown to
 //     site visitors)
 
-const MAX_UPDATES = 5;
+const MAX_UPDATES = 30; // history kept for Repost + stats
+const TYPES = ['special', 'stock', 'notice', 'closing'];
 const MAX_TEXT_LENGTH = 140;
 
 async function readUpdates(env) {
@@ -34,9 +35,20 @@ function isAuthorized(request, env) {
 }
 
 export async function onRequestGet(context) {
-  const updates = await readUpdates(context.env);
+  const { request, env } = context;
+  const updates = await readUpdates(env);
   const now = Date.now();
-  const live = updates.filter((u) => !u.expiresAt || new Date(u.expiresAt).getTime() > now);
+
+  // Owner view: everything (live + past) with tap counts, never cached.
+  if (new URL(request.url).searchParams.get('all') === '1') {
+    if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+    return json({ updates }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+
+  const live = updates
+    .filter((u) => !u.expiresAt || new Date(u.expiresAt).getTime() > now)
+    .slice(0, 5)
+    .map(({ taps, ...pub }) => pub); // keep stats private
 
   // Short cache so the bar still feels "live" without hitting KV on every
   // single page view.
@@ -45,13 +57,24 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const isTap = new URL(request.url).searchParams.get('tap');
+  if (!isTap && !isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body;
-  try {
+  let body = {};
+  if (!isTap) try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  // Public, tiny: a visitor tapped the WhatsApp button on an update.
+  // (Taps only, not views, to stay well inside KV's free write limits.)
+  const track = new URL(request.url).searchParams.get('tap');
+  if (track) {
+    const all = await readUpdates(env);
+    const hit = all.find((u) => u.id === track);
+    if (hit) { hit.taps = (hit.taps || 0) + 1; await env.UPDATES_KV.put('updates', JSON.stringify(all)); }
+    return json({ ok: true });
   }
 
   const text = String(body.text || '').trim().slice(0, MAX_TEXT_LENGTH);
@@ -61,6 +84,9 @@ export async function onRequestPost(context) {
   const entry = {
     id: crypto.randomUUID(),
     text,
+    type: TYPES.includes(body.type) ? body.type : 'notice',
+    cta: body.cta !== false, // show "Order on WhatsApp" button
+    taps: 0,
     postedAt: new Date().toISOString(),
     expiresAt: hours > 0 ? new Date(Date.now() + hours * 3600 * 1000).toISOString() : null,
   };
