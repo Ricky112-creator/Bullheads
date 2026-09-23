@@ -351,17 +351,29 @@ h1, h2, h3 {
 /* Owner-posted live update bar — hidden by default (see #liveUpdateBar[hidden]);
    main.js unhides it only when /api/updates returns something current. */
 .live-update-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px var(--edge);
-  background: #241712;
-  color: #f4ece4;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  animation: badgeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: fixed; z-index: 90;
+  left: 50%; bottom: 16px; transform: translateX(-50%);
+  width: min(420px, calc(100% - 24px));
+  padding: 14px 16px 14px;
+  background: rgba(28,19,14,0.96); color: #f4ece4;
+  border: 1px solid rgba(255,255,255,0.12); border-left: 4px solid #6FCF97;
+  border-radius: 14px; box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+  animation: luIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+@keyframes luIn { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.live-update-bar.type-special { border-left-color: #F2A33A; }
+.live-update-bar.type-stock { border-left-color: #6FCF97; }
+.live-update-bar.type-closing { border-left-color: #E5533D; }
+.live-update-bar.type-notice { border-left-color: #8FB8FF; }
+.lu-top { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #cdbfb2; }
+.lu-ago { margin-left: auto; text-transform: none; letter-spacing: 0; opacity: 0.7; }
+.lu-x { background: none; border: 0; color: #cdbfb2; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 2px; }
+.live-update-bar p { margin: 8px 0 0; font-size: 1rem; font-weight: 500; line-height: 1.4; }
+.lu-cta { display: inline-block; margin-top: 12px; padding: 9px 16px; border-radius: 999px; background: #25D366; color: #06210f; font-weight: 700; font-size: 0.85rem; text-decoration: none; }
+.lu-dots { display: flex; gap: 5px; margin-top: 10px; }
+.lu-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); }
+.lu-dots span.on { background: #fff; }
 .live-update-bar[hidden] { display: none; }
 .live-update-dot {
   width: 7px; height: 7px;
