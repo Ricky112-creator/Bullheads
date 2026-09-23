@@ -90,6 +90,39 @@ if (nav) {
   }
 }
 
+// --- Strip-line type reveal: plain IntersectionObserver, deliberately NOT
+//     wired to GSAP/ScrollTrigger/Lenis. A continuous scrub tween tied to
+//     scroll position can drift out of sync with Lenis's smoothed scroll
+//     value, which is what was leaving the words stuck dim. This just
+//     watches for the line actually entering view and fades it in once —
+//     runs on every page regardless of whether GSAP loaded. ---
+(function revealStripLine() {
+  const stripLine = document.getElementById('stripLine');
+  if (!stripLine) return;
+  const text = stripLine.textContent.trim();
+  stripLine.innerHTML = text.split(' ').map((w) => `<span class="word">${w}</span>`).join(' ');
+  const words = stripLine.querySelectorAll('.word');
+
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    words.forEach((w) => (w.style.opacity = 1));
+    return;
+  }
+
+  words.forEach((w, i) => (w.style.transitionDelay = `${i * 45}ms`));
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          stripLine.classList.add('in-view');
+          io.disconnect();
+        }
+      });
+    },
+    { threshold: 0.4 }
+  );
+  io.observe(stripLine);
+})();
+
 // --- Everything below is animation polish and needs GSAP.
 //     If it failed to load, skip it quietly — core site still works. ---
 if (window.gsap && window.ScrollTrigger) {
@@ -125,23 +158,6 @@ if (window.gsap && window.ScrollTrigger) {
     });
   }
 
-  const stripLine = document.getElementById('stripLine');
-  if (stripLine) {
-    const text = stripLine.textContent.trim();
-    stripLine.innerHTML = text.split(' ').map((w) => `<span class="word">${w}</span>`).join(' ');
-    const words = stripLine.querySelectorAll('.word');
-    if (!reduceMotion) {
-      gsap.to(words, {
-        opacity: 1,
-        stagger: 0.08,
-        ease: 'none',
-        scrollTrigger: { trigger: stripLine, start: 'top 75%', end: 'bottom 55%', scrub: 0.6 },
-      });
-    } else {
-      words.forEach((w) => (w.style.opacity = 1));
-    }
-  }
-
   gsap.utils.toArray('.location-card, .kitchen-card, .explore-card').forEach((card) => {
     gsap.fromTo(
       card,
@@ -159,13 +175,11 @@ if (window.gsap && window.ScrollTrigger) {
   // --- Trigger positions above are cached in pixels at setup time. The hero
   //     photo and web fonts finish loading after that, shifting real layout
   //     height — so a refresh once everything has actually settled keeps the
-  //     scrub animations synced to where content really sits on the page. ---
+  //     scrub/once animations synced to where content really sits on the page. ---
   const refresh = () => ScrollTrigger.refresh();
   window.addEventListener('load', refresh);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
   if (heroImg && !heroImg.complete) heroImg.addEventListener('load', refresh, { once: true });
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
-  const stripLine = document.getElementById('stripLine');
-  if (stripLine) stripLine.style.opacity = 1;
 }
