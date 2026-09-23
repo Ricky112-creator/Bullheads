@@ -366,11 +366,16 @@ h1, h2, h3 {
   font-size: 0.92rem;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0,0,0,0.3), 0 0 0 0 rgba(232,51,43,0.45);
-  animation: installIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both, installGlow 2.6s 0.6s ease-out infinite;
+  animation: installIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+             installGlow 2.6s 0.6s ease-out infinite,
+             installNudge 6s 2s ease-in-out infinite;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.install-btn svg { flex-shrink: 0; }
-.install-btn:hover { transform: translateY(-3px); }
+.install-btn svg {
+  flex-shrink: 0;
+  animation: iconBounce 1.6s 0.6s ease-in-out infinite;
+}
+.install-btn:hover { transform: translateY(-3px); animation-play-state: paused, paused, paused; }
 .install-btn:active { transform: translateY(-1px) scale(0.97); }
 @keyframes installIn {
   from { opacity: 0; transform: translateY(16px) scale(0.9); }
@@ -381,8 +386,18 @@ h1, h2, h3 {
   70% { box-shadow: 0 10px 24px rgba(0,0,0,0.3), 0 0 0 10px rgba(232,51,43,0); }
   100% { box-shadow: 0 10px 24px rgba(0,0,0,0.3), 0 0 0 0 rgba(232,51,43,0); }
 }
+@keyframes installNudge {
+  0%, 88%, 100% { transform: translateY(0) rotate(0); }
+  90% { transform: translateY(-3px) rotate(-3deg); }
+  93% { transform: translateY(0) rotate(3deg); }
+  96% { transform: translateY(-1px) rotate(0); }
+}
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .hero-preview-badge, .hero-open-badge, .install-btn { animation: none; }
+  .hero-preview-badge, .hero-open-badge, .install-btn, .install-btn svg { animation: none; }
   .dot { animation: none; }
 }
 
@@ -408,8 +423,9 @@ h1, h2, h3 {
 .strip-line .word {
   display: inline-block;
   opacity: 0.18;
+  transition: opacity 0.6s ease;
 }
-.strip-line .word.lit {
+.strip-line.in-view .word {
   opacity: 1;
 }
 
