@@ -24,6 +24,23 @@
   .update-row .when { display: block; color: #8a7a6c; font-size: 0.75rem; margin-top: 2px; }
   .update-row button { width: auto; margin: 0; padding: 6px 12px; font-size: 0.8rem; background: #3a2a20; }
   #charCount { text-align: right; font-size: 0.75rem; color: #8a7a6c; margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .chip { width: auto; margin: 0; padding: 8px 12px; font-size: 0.82rem; font-weight: 500; border-radius: 999px; background: #241712; border: 1px solid #4a3a2e; color: #f4ece4; }
+  .chip.on { background: #c0392b; border-color: #c0392b; }
+  .tpl { background: transparent; color: #cdbfb2; }
+  .check { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 0.9rem; color: #cdbfb2; }
+  .check input { width: auto; }
+  .preview { margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: #1c130e; border: 1px solid #35281f; border-left: 4px solid #F2A33A; }
+  .preview small { color: #8a7a6c; display: block; margin-bottom: 6px; }
+  .preview .cta { display: inline-block; margin-top: 8px; padding: 6px 12px; border-radius: 999px; background: #25D366; color: #06210f; font-weight: 700; font-size: 0.78rem; }
+  .stats { display: flex; gap: 10px; margin-top: 14px; }
+  .stat { flex: 1; background: #241712; border-radius: 10px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 1.3rem; }
+  .stat span { font-size: 0.72rem; color: #8a7a6c; }
+  .actions { display: flex; gap: 6px; flex-direction: column; }
+  .badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; background: #3a2a20; margin-right: 6px; }
+  .badge.live { background: #1f4a2a; color: #7fd68a; }
+  .share { background: #25D366; color: #06210f; }
 </style>
 </head>
 <body>
@@ -32,6 +49,12 @@
 
   <label for="token">Access code</label>
   <input id="token" type="password" placeholder="Access code" autocomplete="off">
+
+  <label>Quick start (tap one, then edit)</label>
+  <div class="chips" id="tpls"></div>
+
+  <label>What kind of update?</label>
+  <div class="chips" id="types"></div>
 
   <label for="text">Update</label>
   <textarea id="text" rows="3" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
@@ -46,121 +69,122 @@
     <option value="">Never (remove manually)</option>
   </select>
 
+  <label class="check"><input type="checkbox" id="cta" checked> Add an "Order on WhatsApp" button (turns readers into orders)</label>
+  <label class="check"><input type="checkbox" id="remember"> Remember my access code on this phone</label>
+
+  <div class="preview" id="preview"><small>How customers will see it</small><div id="pvText">Your update appears here…</div><span class="cta" id="pvCta">Order on WhatsApp</span></div>
+
   <button id="postBtn" type="button">Post update</button>
   <p id="status"></p>
 
+  <div class="stats"><div class="stat"><b id="sLive">0</b><span>live now</span></div><div class="stat"><b id="sTaps7">0</b><span>WhatsApp taps (7 days)</span></div><div class="stat"><b id="sTapsAll">0</b><span>taps, all time</span></div></div>
+
   <h2>Currently live</h2>
-  <div id="list">Loading…</div>
+  <div id="list">Enter your access code to see your updates.</div>
+  <h2>Past updates — tap Repost to reuse</h2>
+  <div id="past"></div>
 
 <script>
 (function () {
-  var tokenEl = document.getElementById('token');
-  var textEl = document.getElementById('text');
-  var expiresEl = document.getElementById('expires');
-  var postBtn = document.getElementById('postBtn');
-  var statusEl = document.getElementById('status');
-  var listEl = document.getElementById('list');
-  var charCountEl = document.getElementById('charCount');
+  var $ = function (id) { return document.getElementById(id); };
+  var tokenEl = $('token'), textEl = $('text'), expiresEl = $('expires'), postBtn = $('postBtn'), statusEl = $('status');
+  var KEY = 'bullheadAdminToken';
+  var TEMPLATES = [
+    ['🐟 Fresh in', 'Fresh tilapia in today — come get it while it lasts', 'stock'],
+    ['🔥 Special', "Today's special: ", 'special'],
+    ['🕒 Late hours', 'Open all night — hot food ready anytime', 'notice'],
+    ['🎉 Holiday', 'Happy holiday to all our esteemed customers — we are open 24 hours', 'notice'],
+    ['⚠️ Sold out', 'Sold out for now: ', 'closing']
+  ];
+  var TYPES = [['special', '🔥 Special'], ['stock', '🐟 Fresh stock'], ['notice', '📢 Notice'], ['closing', '⚠️ Heads up']];
+  var COLORS = { special: '#F2A33A', stock: '#6FCF97', notice: '#8FB8FF', closing: '#E5533D' };
+  var type = 'special';
 
-  var SAVED_TOKEN_KEY = 'bullheadAdminToken';
-  tokenEl.value = sessionStorage.getItem(SAVED_TOKEN_KEY) || '';
+  tokenEl.value = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
+  $('remember').checked = !!localStorage.getItem(KEY);
 
-  textEl.addEventListener('input', function () {
-    charCountEl.textContent = textEl.value.length + ' / 140';
-  });
+  function chips(el, list, onclick, cls) {
+    list.forEach(function (it) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip ' + (cls || '');
+      b.textContent = it[1] && it[2] ? it[0] : (it[1] || it[0]); b.dataset.k = it[0];
+      b.onclick = function () { onclick(it, b); }; el.appendChild(b);
+    });
+  }
+  chips($('tpls'), TEMPLATES, function (t) { textEl.value = t[1]; setType(t[2]); update(); textEl.focus(); }, 'tpl');
+  chips($('types'), TYPES, function (t) { setType(t[0]); });
+  function setType(t) {
+    type = t;
+    Array.prototype.forEach.call($('types').children, function (b) { b.classList.toggle('on', b.dataset.k === t); });
+    $('preview').style.borderLeftColor = COLORS[t]; update();
+  }
+  function update() {
+    $('charCount').textContent = textEl.value.length + ' / 140';
+    $('pvText').textContent = textEl.value.trim() || 'Your update appears here…';
+    $('pvCta').style.display = $('cta').checked ? 'inline-block' : 'none';
+  }
+  textEl.addEventListener('input', update); $('cta').addEventListener('change', update);
+  setType('special');
 
-  function authHeader() {
-    return 'Bearer ' + tokenEl.value.trim();
+  function auth() { return 'Bearer ' + tokenEl.value.trim(); }
+  function setStatus(m, k) { statusEl.textContent = m; statusEl.className = k || ''; }
+  function when(iso) { try { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+
+  function row(u, live) {
+    var r = document.createElement('div'); r.className = 'update-row';
+    var t = document.createElement('div'); t.className = 'txt';
+    var main = document.createElement('span'); main.textContent = u.text;
+    var w = document.createElement('span'); w.className = 'when';
+    var b = document.createElement('span'); b.className = 'badge' + (live ? ' live' : ''); b.textContent = live ? 'LIVE' : 'ended';
+    w.appendChild(b); w.appendChild(document.createTextNode('Posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
+    t.appendChild(main); t.appendChild(w); r.appendChild(t);
+    var a = document.createElement('div'); a.className = 'actions';
+    function btn(label, fn, cls) { var x = document.createElement('button'); x.type = 'button'; x.textContent = label; if (cls) x.className = cls; x.onclick = fn; a.appendChild(x); }
+    if (live) btn('Remove', function () { remove(u.id); });
+    btn('Repost', function () { textEl.value = u.text; setType(u.type || 'notice'); $('cta').checked = u.cta !== false; update(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    btn('Share', function () { window.open('https://wa.me/?text=' + encodeURIComponent(u.text + '\n— Bullhead, Emali · bullheadhotels.co.ke'), '_blank'); }, 'share');
+    r.appendChild(a); return r;
   }
 
-  function setStatus(msg, kind) {
-    statusEl.textContent = msg;
-    statusEl.className = kind || '';
-  }
-
-  function fmtWhen(iso) {
-    try {
-      return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      return '';
-    }
-  }
-
-  function loadUpdates() {
-    fetch('/api/updates')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var updates = data.updates || [];
-        if (!updates.length) { listEl.textContent = 'No live updates right now.'; return; }
-        listEl.innerHTML = '';
-        updates.forEach(function (u) {
-          var row = document.createElement('div');
-          row.className = 'update-row';
-
-          var txt = document.createElement('div');
-          txt.className = 'txt';
-          var main = document.createElement('span');
-          main.textContent = u.text;
-          var when = document.createElement('span');
-          when.className = 'when';
-          when.textContent = 'Posted ' + fmtWhen(u.postedAt) + (u.expiresAt ? ' · expires ' + fmtWhen(u.expiresAt) : '');
-          txt.appendChild(main);
-          txt.appendChild(when);
-
-          var del = document.createElement('button');
-          del.type = 'button';
-          del.textContent = 'Remove';
-          del.addEventListener('click', function () { removeUpdate(u.id); });
-
-          row.appendChild(txt);
-          row.appendChild(del);
-          listEl.appendChild(row);
-        });
-      })
-      .catch(function () { listEl.textContent = 'Could not load updates.'; });
-  }
-
-  function removeUpdate(id) {
-    if (!tokenEl.value.trim()) { setStatus('Enter the access code first.', 'err'); return; }
-    fetch('/api/updates?id=' + encodeURIComponent(id), {
-      method: 'DELETE',
-      headers: { Authorization: authHeader() },
-    })
+  function load() {
+    if (!tokenEl.value.trim()) return;
+    fetch('/api/updates?all=1', { headers: { Authorization: auth() } })
       .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
-      .then(function () { loadUpdates(); })
+      .then(function (d) {
+        var all = d.updates || [], now = Date.now(), week = now - 7 * 864e5, live = [], past = [], t7 = 0, tAll = 0;
+        all.forEach(function (u) {
+          var isLive = !u.expiresAt || new Date(u.expiresAt).getTime() > now;
+          (isLive ? live : past).push(u); tAll += u.taps || 0; if (new Date(u.postedAt).getTime() > week) t7 += u.taps || 0;
+        });
+        $('sLive').textContent = live.length; $('sTaps7').textContent = t7; $('sTapsAll').textContent = tAll;
+        $('list').innerHTML = live.length ? '' : 'Nothing live right now.'; live.forEach(function (u) { $('list').appendChild(row(u, true)); });
+        $('past').innerHTML = past.length ? '' : 'Past updates will show up here.'; past.forEach(function (u) { $('past').appendChild(row(u, false)); });
+      })
+      .catch(function () { $('list').textContent = 'Could not load — check the access code.'; });
+  }
+
+  function remove(id) {
+    fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
+      .then(function (r) { if (!r.ok) throw new Error(); load(); })
       .catch(function () { setStatus('Could not remove — check the access code.', 'err'); });
   }
 
   postBtn.addEventListener('click', function () {
-    var text = textEl.value.trim();
-    var token = tokenEl.value.trim();
-    if (!token) { setStatus('Enter the access code.', 'err'); return; }
-    if (!text) { setStatus('Write something first.', 'err'); return; }
-
-    postBtn.disabled = true;
-    setStatus('Posting…');
-
-    fetch('/api/updates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: authHeader() },
-      body: JSON.stringify({ text: text, expiresInHours: expiresEl.value || undefined }),
-    })
-      .then(function (r) {
-        if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Failed to post');
-        return r.json();
-      })
+    var text = textEl.value.trim(), token = tokenEl.value.trim();
+    if (!token) return setStatus('Enter the access code.', 'err');
+    if (!text) return setStatus('Write something first.', 'err');
+    postBtn.disabled = true; setStatus('Posting…');
+    fetch('/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() },
+      body: JSON.stringify({ text: text, type: type, cta: $('cta').checked, expiresInHours: expiresEl.value || undefined }) })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Failed to post'); return r.json(); })
       .then(function () {
-        sessionStorage.setItem(SAVED_TOKEN_KEY, token);
-        textEl.value = '';
-        charCountEl.textContent = '0 / 140';
-        setStatus('Posted ✓', 'ok');
-        loadUpdates();
+        sessionStorage.setItem(KEY, token);
+        if ($('remember').checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY);
+        textEl.value = ''; update(); setStatus('Live on your site ✓ — share it on WhatsApp too', 'ok'); load();
       })
       .catch(function (e) { setStatus(e.message || 'Something went wrong.', 'err'); })
       .finally(function () { postBtn.disabled = false; });
   });
-
-  loadUpdates();
+  tokenEl.addEventListener('change', load); load();
 })();
 </script>
 </body>
