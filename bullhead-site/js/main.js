@@ -155,6 +155,15 @@ if (window.gsap && window.ScrollTrigger) {
       }
     );
   });
+
+  // --- Trigger positions above are cached in pixels at setup time. The hero
+  //     photo and web fonts finish loading after that, shifting real layout
+  //     height — so a refresh once everything has actually settled keeps the
+  //     scrub animations synced to where content really sits on the page. ---
+  const refresh = () => ScrollTrigger.refresh();
+  window.addEventListener('load', refresh);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+  if (heroImg && !heroImg.complete) heroImg.addEventListener('load', refresh, { once: true });
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
   const stripLine = document.getElementById('stripLine');
