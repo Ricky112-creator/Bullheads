@@ -188,6 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
       clearCart();
       render();
     }
+
+    form.reset();
+    applyOrderType('dine-in');
+
+    const locationHint = document.getElementById('locationHint');
+    if (locationHint) locationHint.hidden = true;
+    const shareOrderHint = document.getElementById('shareOrderHint');
+    if (shareOrderHint) shareOrderHint.hidden = true;
   });
 
   render();
