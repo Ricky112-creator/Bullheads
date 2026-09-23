@@ -111,6 +111,43 @@ if (nav) {
   stripLine.dataset.wordsReady = '1';
 })();
 
+// --- Strip-line reveal: driven by IntersectionObserver rather than
+//     ScrollTrigger's pixel-position math, which is cached at setup time
+//     and can end up wrong on a cold first load — before the hero photo and
+//     web fonts finish loading and shift the real layout height, the "once"
+//     trigger's boundary is calculated against the wrong position, and the
+//     word-by-word fade can end up permanently stuck half-dim on that visit.
+//     IntersectionObserver just watches real visibility, so it isn't
+//     affected by that. Still uses GSAP's tween (when available) for the
+//     same eased stagger feel, just triggered by actual visibility. ---
+(function revealStripLine() {
+  const stripLine = document.getElementById('stripLine');
+  if (!stripLine) return;
+  const words = stripLine.querySelectorAll('.word');
+
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    words.forEach((w) => (w.style.opacity = 1));
+    return;
+  }
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        if (window.gsap) {
+          gsap.to(words, { opacity: 1, stagger: 0.08, ease: 'none', duration: 0.6 });
+        } else {
+          words.forEach((w, i) => { w.style.transitionDelay = `${i * 45}ms`; });
+          stripLine.classList.add('in-view');
+        }
+        io.disconnect();
+      });
+    },
+    { threshold: 0.4 }
+  );
+  io.observe(stripLine);
+})();
+
 // --- Everything below is animation polish and needs GSAP.
 //     If it failed to load, skip it quietly — core site still works. ---
 if (window.gsap && window.ScrollTrigger) {
@@ -146,25 +183,6 @@ if (window.gsap && window.ScrollTrigger) {
     });
   }
 
-  const stripLine = document.getElementById('stripLine');
-  if (stripLine) {
-    const words = stripLine.querySelectorAll('.word');
-    if (!reduceMotion) {
-      gsap.fromTo(
-        words,
-        { opacity: 0.18 },
-        {
-          opacity: 1,
-          stagger: 0.08,
-          ease: 'none',
-          scrollTrigger: { trigger: stripLine, start: 'top 80%', once: true },
-        }
-      );
-    } else {
-      words.forEach((w) => (w.style.opacity = 1));
-    }
-  }
-
   gsap.utils.toArray('.location-card, .kitchen-card, .explore-card').forEach((card) => {
     gsap.fromTo(
       card,
@@ -189,27 +207,4 @@ if (window.gsap && window.ScrollTrigger) {
   if (heroImg && !heroImg.complete) heroImg.addEventListener('load', refresh, { once: true });
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
-  // Fallback so the strip line still reveals if GSAP itself failed to load —
-  // this is the only place IntersectionObserver is used for it now.
-  const stripLine = document.getElementById('stripLine');
-  if (stripLine) {
-    const words = stripLine.querySelectorAll('.word');
-    if (reduceMotion || !('IntersectionObserver' in window)) {
-      words.forEach((w) => (w.style.opacity = 1));
-    } else {
-      words.forEach((w, i) => (w.style.transitionDelay = `${i * 45}ms`));
-      const io = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              stripLine.classList.add('in-view');
-              io.disconnect();
-            }
-          });
-        },
-        { threshold: 0.4 }
-      );
-      io.observe(stripLine);
-    }
-  }
 }
