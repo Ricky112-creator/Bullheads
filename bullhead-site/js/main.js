@@ -25,16 +25,55 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
 //     so this degrades gracefully wherever it hasn't been deployed yet. ---
 (function loadLiveUpdate() {
   const bar = document.getElementById('liveUpdateBar');
-  const textEl = document.getElementById('liveUpdateText');
-  if (!bar || !textEl) return;
+  if (!bar) return;
+  const WA = 'https://wa.me/254720707323?text=';
+  const LABEL = { special: "Today's special", stock: 'Fresh in', notice: 'Update', closing: 'Heads up' };
+  let items = [], i = 0, timer;
+
+  const ago = (iso) => {
+    const m = Math.round((Date.now() - new Date(iso)) / 60000);
+    return m < 2 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : 'yesterday';
+  };
+  const dismissed = () => { try { return JSON.parse(sessionStorage.getItem('bhDismissed') || '[]'); } catch (e) { return []; } };
+
+  function render() {
+    const u = items[i];
+    bar.className = 'live-update-bar type-' + u.type;
+    bar.innerHTML = '';
+    const top = document.createElement('div'); top.className = 'lu-top';
+    top.innerHTML = '<span class="live-update-dot"></span><b></b><span class="lu-ago"></span>';
+    top.querySelector('b').textContent = LABEL[u.type] || 'Update';
+    top.querySelector('.lu-ago').textContent = ago(u.postedAt);
+    const x = document.createElement('button'); x.className = 'lu-x'; x.setAttribute('aria-label', 'Dismiss'); x.textContent = '×';
+    x.onclick = () => {
+      try { sessionStorage.setItem('bhDismissed', JSON.stringify(dismissed().concat(items.map((n) => n.id)))); } catch (e) {}
+      bar.hidden = true; clearInterval(timer);
+    };
+    top.appendChild(x);
+    const p = document.createElement('p'); p.textContent = u.text;
+    bar.append(top, p);
+    if (u.cta !== false) {
+      const a = document.createElement('a'); a.className = 'lu-cta'; a.target = '_blank'; a.rel = 'noopener';
+      a.href = WA + encodeURIComponent('Hi Bullhead, I saw your update: "' + u.text + '"');
+      a.textContent = u.type === 'notice' || u.type === 'closing' ? 'Ask on WhatsApp' : 'Order on WhatsApp';
+      a.onclick = () => { try { navigator.sendBeacon('/api/updates?tap=' + u.id, '{}'); } catch (e) {} };
+      bar.appendChild(a);
+    }
+    if (items.length > 1) {
+      const d = document.createElement('div'); d.className = 'lu-dots';
+      items.forEach((_, k) => { const s = document.createElement('span'); if (k === i) s.className = 'on'; d.appendChild(s); });
+      bar.appendChild(d);
+    }
+  }
 
   fetch('/api/updates')
     .then((r) => (r.ok ? r.json() : null))
     .then((data) => {
-      const latest = data && data.updates && data.updates[0];
-      if (!latest || !latest.text) return;
-      textEl.textContent = latest.text;
-      bar.hidden = false;
+      const gone = dismissed();
+      items = ((data && data.updates) || []).filter((u) => u.text && !gone.includes(u.id));
+      if (!items.length) return;
+      render(); bar.hidden = false;
+      if (items.length > 1) timer = setInterval(() => { i = (i + 1) % items.length; render(); }, 7000);
     })
     .catch(() => {});
 })();
