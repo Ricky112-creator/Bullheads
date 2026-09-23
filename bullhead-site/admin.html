@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Bullhead — Post an Update</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px 60px; background: #17110d; color: #f4ece4; }
+  h1 { font-size: 1.25rem; margin-bottom: 4px; }
+  p.hint { color: #b9a99a; font-size: 0.85rem; margin-top: 0; }
+  label { display: block; font-size: 0.85rem; color: #cdbfb2; margin-top: 18px; margin-bottom: 4px; }
+  input, textarea, select { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #4a3a2e; background: #241712; color: #f4ece4; font-family: inherit; }
+  textarea { resize: vertical; }
+  button { margin-top: 20px; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; border: none; border-radius: 8px; background: #c0392b; color: #fff; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status { min-height: 1.4em; font-size: 0.9rem; margin-top: 10px; }
+  #status.ok { color: #7fd68a; }
+  #status.err { color: #e08585; }
+  h2 { font-size: 1rem; margin-top: 40px; border-top: 1px solid #35281f; padding-top: 20px; }
+  .update-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #2a1f18; font-size: 0.9rem; }
+  .update-row .txt { flex: 1; }
+  .update-row .when { display: block; color: #8a7a6c; font-size: 0.75rem; margin-top: 2px; }
+  .update-row button { width: auto; margin: 0; padding: 6px 12px; font-size: 0.8rem; background: #3a2a20; }
+  #charCount { text-align: right; font-size: 0.75rem; color: #8a7a6c; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <h1>Post an update to Bullhead</h1>
+  <p class="hint">Shows on the live site within about 30 seconds. Keep it short — customers will see it in passing.</p>
+
+  <label for="token">Access code</label>
+  <input id="token" type="password" placeholder="Access code" autocomplete="off">
+
+  <label for="text">Update</label>
+  <textarea id="text" rows="3" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
+  <div id="charCount">0 / 140</div>
+
+  <label for="expires">Auto-remove after</label>
+  <select id="expires">
+    <option value="4">4 hours</option>
+    <option value="12">12 hours</option>
+    <option value="24" selected>24 hours</option>
+    <option value="72">3 days</option>
+    <option value="">Never (remove manually)</option>
+  </select>
+
+  <button id="postBtn" type="button">Post update</button>
+  <p id="status"></p>
+
+  <h2>Currently live</h2>
+  <div id="list">Loading…</div>
+
+<script>
+(function () {
+  var tokenEl = document.getElementById('token');
+  var textEl = document.getElementById('text');
+  var expiresEl = document.getElementById('expires');
+  var postBtn = document.getElementById('postBtn');
+  var statusEl = document.getElementById('status');
+  var listEl = document.getElementById('list');
+  var charCountEl = document.getElementById('charCount');
+
+  var SAVED_TOKEN_KEY = 'bullheadAdminToken';
+  tokenEl.value = sessionStorage.getItem(SAVED_TOKEN_KEY) || '';
+
+  textEl.addEventListener('input', function () {
+    charCountEl.textContent = textEl.value.length + ' / 140';
+  });
+
+  function authHeader() {
+    return 'Bearer ' + tokenEl.value.trim();
+  }
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind || '';
+  }
+
+  function fmtWhen(iso) {
+    try {
+      return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function loadUpdates() {
+    fetch('/api/updates')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var updates = data.updates || [];
+        if (!updates.length) { listEl.textContent = 'No live updates right now.'; return; }
+        listEl.innerHTML = '';
+        updates.forEach(function (u) {
+          var row = document.createElement('div');
+          row.className = 'update-row';
+
+          var txt = document.createElement('div');
+          txt.className = 'txt';
+          var main = document.createElement('span');
+          main.textContent = u.text;
+          var when = document.createElement('span');
+          when.className = 'when';
+          when.textContent = 'Posted ' + fmtWhen(u.postedAt) + (u.expiresAt ? ' · expires ' + fmtWhen(u.expiresAt) : '');
+          txt.appendChild(main);
+          txt.appendChild(when);
+
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.textContent = 'Remove';
+          del.addEventListener('click', function () { removeUpdate(u.id); });
+
+          row.appendChild(txt);
+          row.appendChild(del);
+          listEl.appendChild(row);
+        });
+      })
+      .catch(function () { listEl.textContent = 'Could not load updates.'; });
+  }
+
+  function removeUpdate(id) {
+    if (!tokenEl.value.trim()) { setStatus('Enter the access code first.', 'err'); return; }
+    fetch('/api/updates?id=' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: { Authorization: authHeader() },
+    })
+      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function () { loadUpdates(); })
+      .catch(function () { setStatus('Could not remove — check the access code.', 'err'); });
+  }
+
+  postBtn.addEventListener('click', function () {
+    var text = textEl.value.trim();
+    var token = tokenEl.value.trim();
+    if (!token) { setStatus('Enter the access code.', 'err'); return; }
+    if (!text) { setStatus('Write something first.', 'err'); return; }
+
+    postBtn.disabled = true;
+    setStatus('Posting…');
+
+    fetch('/api/updates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: authHeader() },
+      body: JSON.stringify({ text: text, expiresInHours: expiresEl.value || undefined }),
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Failed to post');
+        return r.json();
+      })
+      .then(function () {
+        sessionStorage.setItem(SAVED_TOKEN_KEY, token);
+        textEl.value = '';
+        charCountEl.textContent = '0 / 140';
+        setStatus('Posted ✓', 'ok');
+        loadUpdates();
+      })
+      .catch(function (e) { setStatus(e.message || 'Something went wrong.', 'err'); })
+      .finally(function () { postBtn.disabled = false; });
+  });
+
+  loadUpdates();
+})();
+</script>
+</body>
+</html>
