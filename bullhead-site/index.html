@@ -148,8 +148,6 @@
 <script>
 (function () {
   var INSTALLED_KEY = 'bullheadInstalled';
-  var SNOOZE_KEY = 'bullheadInstallSnoozeUntil';
-  var SNOOZE_MS = 3 * 24 * 60 * 60 * 1000; // dismissed once — don't ask again for 3 days
 
   var deferredPrompt = null;
   var btn = document.getElementById('installBtn');
@@ -164,12 +162,6 @@
   function alreadyInstalled() {
     try { return localStorage.getItem(INSTALLED_KEY) === '1' || isStandalone(); } catch (e) { return isStandalone(); }
   }
-  function isSnoozed() {
-    try {
-      var until = Number(localStorage.getItem(SNOOZE_KEY));
-      return until && Date.now() < until;
-    } catch (e) { return false; }
-  }
 
   if (isStandalone()) {
     markInstalled(); // caught here even if 'appinstalled' never fired (e.g. manual Add to Home Screen)
@@ -179,7 +171,7 @@
 
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
-    if (alreadyInstalled() || isSnoozed()) return;
+    if (alreadyInstalled()) return;
     deferredPrompt = e;
     btn.hidden = false;
   });
@@ -188,15 +180,9 @@
     if (!deferredPrompt) return;
     btn.hidden = true;
     deferredPrompt.prompt();
-    deferredPrompt.userChoice
-      .then(function (choice) {
-        if (choice.outcome === 'dismissed') {
-          try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + SNOOZE_MS)); } catch (e) {}
-        }
-      })
-      .finally(function () {
-        deferredPrompt = null;
-      });
+    deferredPrompt.userChoice.finally(function () {
+      deferredPrompt = null;
+    });
   });
 
   window.addEventListener('appinstalled', function () {
