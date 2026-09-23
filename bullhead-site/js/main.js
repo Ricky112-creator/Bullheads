@@ -124,8 +124,10 @@ if (nav) {
   const stripLine = document.getElementById('stripLine');
   if (!stripLine) return;
   const words = stripLine.querySelectorAll('.word');
+  console.log('[strip-debug] setup: words found =', words.length, 'gsap =', typeof window.gsap, 'reduceMotion =', reduceMotion);
 
   if (reduceMotion || !('IntersectionObserver' in window)) {
+    console.log('[strip-debug] took early-exit branch (reduceMotion or no IO support)');
     words.forEach((w) => (w.style.opacity = 1));
     return;
   }
@@ -133,10 +135,19 @@ if (nav) {
   const io = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
+        console.log('[strip-debug] observer fired, isIntersecting =', entry.isIntersecting, 'ratio =', entry.intersectionRatio);
         if (!entry.isIntersecting) return;
         if (window.gsap) {
-          gsap.to(words, { opacity: 1, stagger: 0.08, ease: 'none', duration: 0.6 });
+          console.log('[strip-debug] taking GSAP branch, tweening', words.length, 'words');
+          gsap.to(words, {
+            opacity: 1,
+            stagger: 0.08,
+            ease: 'none',
+            duration: 0.6,
+            onComplete: () => console.log('[strip-debug] gsap tween onComplete fired'),
+          });
         } else {
+          console.log('[strip-debug] taking CSS-class branch');
           words.forEach((w, i) => { w.style.transitionDelay = `${i * 45}ms`; });
           stripLine.classList.add('in-view');
         }
@@ -146,6 +157,7 @@ if (nav) {
     { threshold: 0.4 }
   );
   io.observe(stripLine);
+  console.log('[strip-debug] io.observe() called on stripLine');
 })();
 
 // --- Everything below is animation polish and needs GSAP.
