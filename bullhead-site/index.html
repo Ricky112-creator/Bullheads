@@ -171,7 +171,11 @@
     } catch (e) { return false; }
   }
 
-  if (isStandalone()) markInstalled(); // caught here even if 'appinstalled' never fired (e.g. manual Add to Home Screen)
+  if (isStandalone()) {
+    markInstalled(); // caught here even if 'appinstalled' never fired (e.g. manual Add to Home Screen)
+    btn.hidden = true;
+    return; // running as the installed app itself — nothing to prompt, no listeners needed
+  }
 
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
