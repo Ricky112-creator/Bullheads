@@ -4,6 +4,16 @@
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// --- Register the service worker: needed for the site to be reliably
+//     "installable" (rather than beforeinstallprompt firing but prompt()
+//     resolving with nothing actually shown), and gives the installed app
+//     a basic offline fallback. ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 // --- Always land at the top of a freshly loaded page ---
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
