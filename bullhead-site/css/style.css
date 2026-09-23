@@ -348,6 +348,34 @@ h1, h2, h3 {
   100% { box-shadow: 0 0 0 0 rgba(111,207,151,0), 0 0 0 0 rgba(111,207,151,0); }
 }
 
+/* Owner-posted live update bar — hidden by default (see #liveUpdateBar[hidden]);
+   main.js unhides it only when /api/updates returns something current. */
+.live-update-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--edge);
+  background: #241712;
+  color: #f4ece4;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  animation: badgeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.live-update-bar[hidden] { display: none; }
+.live-update-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #6FCF97;
+  box-shadow: 0 0 0 0 rgba(111,207,151,0.6);
+  animation: pulse 2.4s infinite;
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-update-bar { animation: none; }
+  .live-update-dot { animation: none; }
+}
+
 .install-btn {
   position: fixed;
   bottom: 20px;
