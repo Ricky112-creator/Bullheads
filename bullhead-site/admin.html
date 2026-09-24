@@ -104,6 +104,15 @@
   .bar-row .b { height:8px; border-radius:99px; background:#3a2a20; overflow:hidden; }
   .bar-row .b i { display:block; height:100%; background:linear-gradient(90deg,var(--red),var(--cognac)); border-radius:99px; }
   @media (max-width:480px) { .mrow { grid-template-columns:1fr 78px 112px; } }
+  .modal { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.65); display:flex; align-items:flex-end; justify-content:center; }
+  .sheet { width:100%; max-width:640px; max-height:85vh; overflow:auto; background:#2a1b14; border:1px solid var(--line); border-radius:20px 20px 0 0; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .chg { padding:11px 0; border-top:1px solid var(--line); font-size:.9rem; }
+  .chg:first-of-type { border-top:0; }
+  .chg b { display:block; margin-bottom:3px; }
+  .chg .a { color:var(--mute); text-decoration:line-through; }
+  .chg .z { color:var(--green); font-weight:600; }
+  .btn.ghost { background:#3a2a20; }
+  .dirty-pill { display:inline-block; margin-left:8px; padding:2px 10px; border-radius:99px; background:#F2A33A; color:#2a1200; font-size:.72rem; font-weight:800; vertical-align:middle; }
 </style>
 </head>
 <body>
@@ -149,7 +158,7 @@
     <div data-tab="menu" hidden>
       <section class="card">
         <h2>Menu board</h2>
-        <p class="sub">Change anything here and the public menu updates within seconds. Tap ★ to make an item today's special.</p>
+        <p class="sub">Make your changes, then tap <b>Review &amp; save</b> at the bottom. Nothing goes live until you save. Tap ★ to make an item today's special.</p>
         <input type="text" id="mSearch" placeholder="Search the menu…">
         <div id="mList" style="margin-top:6px"></div>
       </section>
@@ -221,6 +230,8 @@
   </main>
 </div>
 
+<div class="bar" id="menuBar" hidden><div style="display:flex;gap:10px"><button class="btn ghost" id="mDiscard" type="button" style="flex:1">Discard</button><button class="btn" id="mReview" type="button" style="flex:2">Review &amp; save</button></div></div>
+<div class="modal" id="modal" hidden><div class="sheet"><h2>Review your changes</h2><p class="sub" id="mSub"></p><div id="mDiff"></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn ghost" id="mBack" type="button" style="flex:1">Keep editing</button><button class="btn" id="mSave" type="button" style="flex:2">Save &amp; publish</button></div></div></div>
 <div class="bar" id="postBar" hidden><div><button class="btn" id="postBtn" type="button">Post to website</button></div></div>
 <div id="toast" role="status"></div>
 
@@ -310,7 +321,7 @@
       .finally(function () { $('loginBtn').disabled = false; });
   }
   $('loginBtn').onclick = signIn; $('token').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
-  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; clearInterval(ordTimer); ordTimer = null; seen = null; };
+  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false; };
 
   function remove(id) {
     fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
@@ -346,8 +357,8 @@
     curTab = t;
     document.querySelectorAll('[data-tab]').forEach(function (s) { s.hidden = s.dataset.tab !== t; });
     document.querySelectorAll('#tabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
-    $('postBar').hidden = t !== 'updates' || $('app').hidden;
     if (t === 'menu') loadMenu();
+    if (typeof updateBars === 'function') updateBars(); else $('postBar').hidden = t !== 'updates' || $('app').hidden;
     window.scrollTo(0, 0);
   }
   $('tabs').addEventListener('click', function (e) { var t = e.target.closest('button'); if (t) showTab(t.dataset.t); });
@@ -411,8 +422,55 @@
 
   // ---------- Menu board ----------
   var menuState = {}, menuLoaded = false, saveT;
-  function loadMenu() { if (menuLoaded) return; fetch('/api/menu').then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuLoaded = true; drawMenu(); }).catch(function () { toast('Could not load the menu', true); }); }
-  function saveMenu() { clearTimeout(saveT); saveT = setTimeout(function () { fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState }) }).then(function (r) { if (!r.ok) throw 0; toast('Saved — live on the menu ✓'); }).catch(function () { toast('Could not save — check connection', true); }); }, 500); }
+  function loadMenu() { if (menuLoaded) return; fetch('/api/menu').then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
+  var menuSaved = {};
+  var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
+  var norm = function (e) { e = e || {}; return { price: typeof e.price === 'number' ? e.price : null, special: !!e.special, soldOut: !!e.soldOut, until: e.soldOut && e.until ? e.until : null }; };
+  var same = function (a, b) { a = norm(a); b = norm(b); return a.price === b.price && a.special === b.special && a.soldOut === b.soldOut && a.until === b.until; };
+  var clock = function (iso) { return new Date(iso).toLocaleTimeString('en-KE', { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit' }); };
+  function statusText(e) { e = norm(e); return !e.soldOut ? 'Available' : e.until ? 'Back at ' + clock(e.until) : 'Sold out'; }
+  function diffs() {
+    var out = [];
+    MENU_ITEMS.forEach(function (it) {
+      var a = norm(menuSaved[it.id]), b = norm(menuState[it.id]), lines = [];
+      var def = typeof it.price === 'number' ? 'KES ' + it.price : 'no price';
+      if (a.price !== b.price) lines.push(['Price', a.price !== null ? 'KES ' + a.price : def + ' (default)', b.price !== null ? 'KES ' + b.price : def + ' (default)']);
+      if (a.special !== b.special) lines.push(["Today's special", a.special ? '★ yes' : 'no', b.special ? '★ yes' : 'no']);
+      if (statusText(a) !== statusText(b) || a.until !== b.until) lines.push(['Availability', statusText(a), statusText(b)]);
+      if (lines.length) out.push({ name: it.name, lines: lines });
+    });
+    return out;
+  }
+  function updateBars() {
+    var n = diffs().length, on = curTab === 'menu' && n > 0 && !$('app').hidden;
+    $('menuBar').hidden = !on; $('mReview').textContent = 'Review & save (' + n + ')';
+    $('postBar').hidden = curTab !== 'updates' || $('app').hidden;
+    return n;
+  }
+  function saveMenu() { updateBars(); }   // staged only — nothing is sent until "Save & publish"
+  $('mReview').onclick = function () {
+    var d = diffs(); if (!d.length) return;
+    $('mSub').textContent = d.length + (d.length === 1 ? ' item' : ' items') + ' will change on the live menu.';
+    $('mDiff').innerHTML = '';
+    d.forEach(function (x) {
+      var c = mk('div', 'chg'); c.appendChild(mk('b', '', x.name));
+      x.lines.forEach(function (l) { var r = mk('div'); r.appendChild(document.createTextNode(l[0] + ': ')); r.appendChild(mk('span', 'a', l[1])); r.appendChild(document.createTextNode(' → ')); r.appendChild(mk('span', 'z', l[2])); c.appendChild(r); });
+      $('mDiff').appendChild(c);
+    });
+    $('modal').hidden = false;
+  };
+  $('mBack').onclick = function () { $('modal').hidden = true; };
+  $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) $('modal').hidden = true; });
+  $('mDiscard').onclick = function () { if (!confirm('Throw away your unsaved menu changes?')) return; menuState = clone(menuSaved); drawMenu(); updateBars(); toast('Changes discarded'); };
+  $('mSave').onclick = function () {
+    $('mSave').disabled = true; $('mSave').textContent = 'Saving…';
+    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState }) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); $('modal').hidden = true; drawMenu(); updateBars(); toast('Saved — live on the menu ✓'); })
+      .catch(function () { toast('Could not save — check your connection', true); })
+      .finally(function () { $('mSave').disabled = false; $('mSave').textContent = 'Save & publish'; });
+  };
+  window.addEventListener('beforeunload', function (e) { if (diffs().length) { e.preventDefault(); e.returnValue = ''; } });
   function tomorrow6() { var d = new Date(), t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 3); if (t <= Date.now() + 36e5) t += 864e5; return new Date(t).toISOString(); }
   function drawMenu() {
     var q = ($('mSearch').value || '').toLowerCase(), box = $('mList'); box.innerHTML = ''; var cat = '';
