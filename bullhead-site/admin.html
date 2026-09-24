@@ -159,7 +159,7 @@
       <section class="card">
         <h2>Menu board</h2>
         <p class="sub">Make your changes, then tap <b>Review &amp; save</b> at the bottom. Nothing goes live until you save. Tap ★ to make an item today's special.</p>
-        <input type="text" id="mSearch" placeholder="Search the menu…">
+        <div style="display:flex;gap:8px"><input type="text" id="mSearch" placeholder="Search the menu…"><button class="btn" id="addItemBtn" type="button" style="width:auto;padding:0 18px;white-space:nowrap;font-size:.9rem">＋ Add item</button></div>
         <div id="mList" style="margin-top:6px"></div>
       </section>
     </div>
@@ -231,6 +231,13 @@
 </div>
 
 <div class="bar" id="menuBar" hidden><div style="display:flex;gap:10px"><button class="btn ghost" id="mDiscard" type="button" style="flex:1">Discard</button><button class="btn" id="mReview" type="button" style="flex:2">Review &amp; save</button></div></div>
+<div class="modal" id="addModal" hidden><div class="sheet"><h2>Add a menu item</h2><p class="sub">It appears on the public menu after you review and save.</p>
+  <label class="l" for="aName">Item name</label><input type="text" id="aName" maxlength="60" placeholder="e.g. Fried tilapia">
+  <label class="l" for="aCat">Category</label><select id="aCat" style="width:100%;padding:12px 14px;font:inherit;color:var(--cream);background:#1a110d;border:1px solid var(--line);border-radius:12px"></select>
+  <input type="text" id="aNewCat" maxlength="40" placeholder="New category name" style="margin-top:8px" hidden>
+  <label class="l" for="aPrice">Price in KES <span style="font-weight:400;color:var(--mute)">(optional — empty shows "Ask staff")</span></label><input type="text" id="aPrice" inputmode="numeric" placeholder="e.g. 250">
+  <label class="l">Sold</label><div class="row" id="aUnit"></div>
+  <div style="display:flex;gap:10px;margin-top:18px"><button class="btn ghost" id="aCancel" type="button" style="flex:1">Cancel</button><button class="btn" id="aOk" type="button" style="flex:2">Add to menu</button></div></div></div>
 <div class="modal" id="modal" hidden><div class="sheet"><h2>Review your changes</h2><p class="sub" id="mSub"></p><div id="mDiff"></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn ghost" id="mBack" type="button" style="flex:1">Keep editing</button><button class="btn" id="mSave" type="button" style="flex:2">Save &amp; publish</button></div></div></div>
 <div class="bar" id="postBar" hidden><div><button class="btn" id="postBtn" type="button">Post to website</button></div></div>
 <div id="toast" role="status"></div>
@@ -421,8 +428,9 @@
   }
 
   // ---------- Menu board ----------
-  var menuState = {}, menuLoaded = false, saveT;
-  function loadMenu() { if (menuLoaded) return; fetch('/api/menu').then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
+  var menuState = {}, menuLoaded = false, customState = [], customSaved = [];
+  var allItems = function () { return MENU_ITEMS.concat(customState); };
+  function loadMenu() { if (menuLoaded) return; fetch('/api/menu').then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); customState = (d.custom || []).map(function (c) { c.custom = true; return c; }); customSaved = clone(customState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
   var menuSaved = {};
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var norm = function (e) { e = e || {}; return { price: typeof e.price === 'number' ? e.price : null, special: !!e.special, soldOut: !!e.soldOut, until: e.soldOut && e.until ? e.until : null }; };
@@ -430,11 +438,17 @@
   var clock = function (iso) { return new Date(iso).toLocaleTimeString('en-KE', { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit' }); };
   function statusText(e) { e = norm(e); return !e.soldOut ? 'Available' : e.until ? 'Back at ' + clock(e.until) : 'Sold out'; }
   function diffs() {
-    var out = [];
-    MENU_ITEMS.forEach(function (it) {
-      var a = norm(menuSaved[it.id]), b = norm(menuState[it.id]), lines = [];
-      var def = typeof it.price === 'number' ? 'KES ' + it.price : 'no price';
-      if (a.price !== b.price) lines.push(['Price', a.price !== null ? 'KES ' + a.price : def + ' (default)', b.price !== null ? 'KES ' + b.price : def + ' (default)']);
+    var out = [], was = {}, now = {};
+    customSaved.forEach(function (c) { was[c.id] = c; }); customState.forEach(function (c) { now[c.id] = c; });
+    var items = MENU_ITEMS.concat(customState); customSaved.forEach(function (c) { if (!now[c.id]) items.push(c); });
+    var kes = function (p) { return typeof p === 'number' ? 'KES ' + p : 'Ask staff'; };
+    items.forEach(function (it) {
+      var lines = [];
+      if (it.custom && !now[it.id]) { out.push({ name: it.name, lines: [['Menu', 'on the menu', 'removed']] }); return; }
+      var isNew = it.custom && !was[it.id], a = norm(menuSaved[it.id]), b = norm(menuState[it.id]);
+      if (isNew) lines.push(['New item', '', it.category + ' · ' + kes(it.price)]);
+      else if (it.custom) { if (was[it.id].price !== it.price) lines.push(['Price', kes(was[it.id].price), kes(it.price)]); }
+      else if (a.price !== b.price) lines.push(['Price', a.price !== null ? 'KES ' + a.price : kes(it.price) + ' (default)', b.price !== null ? 'KES ' + b.price : kes(it.price) + ' (default)']);
       if (a.special !== b.special) lines.push(["Today's special", a.special ? '★ yes' : 'no', b.special ? '★ yes' : 'no']);
       if (statusText(a) !== statusText(b) || a.until !== b.until) lines.push(['Availability', statusText(a), statusText(b)]);
       if (lines.length) out.push({ name: it.name, lines: lines });
@@ -454,19 +468,19 @@
     $('mDiff').innerHTML = '';
     d.forEach(function (x) {
       var c = mk('div', 'chg'); c.appendChild(mk('b', '', x.name));
-      x.lines.forEach(function (l) { var r = mk('div'); r.appendChild(document.createTextNode(l[0] + ': ')); r.appendChild(mk('span', 'a', l[1])); r.appendChild(document.createTextNode(' → ')); r.appendChild(mk('span', 'z', l[2])); c.appendChild(r); });
+      x.lines.forEach(function (l) { var r = mk('div'); r.appendChild(document.createTextNode(l[0] + ': ')); if (l[1] !== '') { r.appendChild(mk('span', 'a', l[1])); r.appendChild(document.createTextNode(' → ')); } r.appendChild(mk('span', 'z', l[2])); c.appendChild(r); });
       $('mDiff').appendChild(c);
     });
     $('modal').hidden = false;
   };
   $('mBack').onclick = function () { $('modal').hidden = true; };
   $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) $('modal').hidden = true; });
-  $('mDiscard').onclick = function () { if (!confirm('Throw away your unsaved menu changes?')) return; menuState = clone(menuSaved); drawMenu(); updateBars(); toast('Changes discarded'); };
+  $('mDiscard').onclick = function () { if (!confirm('Throw away your unsaved menu changes?')) return; menuState = clone(menuSaved); customState = clone(customSaved); drawMenu(); updateBars(); toast('Changes discarded'); };
   $('mSave').onclick = function () {
     $('mSave').disabled = true; $('mSave').textContent = 'Saving…';
-    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState }) })
+    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState }) })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); $('modal').hidden = true; drawMenu(); updateBars(); toast('Saved — live on the menu ✓'); })
+      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); customSaved = clone(customState); $('modal').hidden = true; drawMenu(); updateBars(); toast('Saved — live on the menu ✓'); })
       .catch(function () { toast('Could not save — check your connection', true); })
       .finally(function () { $('mSave').disabled = false; $('mSave').textContent = 'Save & publish'; });
   };
@@ -474,17 +488,22 @@
   function tomorrow6() { var d = new Date(), t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 3); if (t <= Date.now() + 36e5) t += 864e5; return new Date(t).toISOString(); }
   function drawMenu() {
     var q = ($('mSearch').value || '').toLowerCase(), box = $('mList'); box.innerHTML = ''; var cat = '';
-    MENU_ITEMS.forEach(function (it) {
+    var cats = []; allItems().forEach(function (i) { if (cats.indexOf(i.category) < 0) cats.push(i.category); });
+    var ordered = []; cats.forEach(function (c) { allItems().forEach(function (i) { if (i.category === c) ordered.push(i); }); });
+    ordered.forEach(function (it) {
       if (q && it.name.toLowerCase().indexOf(q) < 0) return;
       if (it.category !== cat) { cat = it.category; box.appendChild(mk('div', 'mcat', cat)); }
       var m = menuState[it.id] || {}, until = m.until ? new Date(m.until) : null, sold = m.soldOut && (!until || until > Date.now());
       var r = mk('div', 'mrow'), nm = mk('div', 'nm' + (sold ? ' sold' : ''));
       var st = mk('button', 'star' + (m.special ? ' on' : ''), '★'); st.type = 'button'; st.title = "Today's special";
       st.onclick = function () { var x = menuState[it.id] = menuState[it.id] || {}; if (x.special) delete x.special; else x.special = true; saveMenu(); drawMenu(); };
-      nm.appendChild(st); nm.appendChild(document.createTextNode(it.name + (it.unit === 'kg' ? ' /kg' : ''))); r.appendChild(nm);
-      var pr = mk('input'); pr.type = 'number'; pr.min = 0; pr.inputMode = 'numeric'; pr.placeholder = typeof it.price === 'number' ? it.price : 'Price'; pr.value = typeof m.price === 'number' ? m.price : '';
+      nm.appendChild(st); nm.appendChild(document.createTextNode(it.name + (it.unit === 'kg' ? ' /kg' : '')));
+      if (it.custom) { var nw = mk('span', 'dirty-pill', customSaved.some(function (c) { return c.id === it.id; }) ? 'ADDED' : 'NEW'); nw.style.background = 'var(--green)'; nw.style.color = '#06210f'; nm.appendChild(nw);
+        var rm = mk('button', 'star', '✕'); rm.type = 'button'; rm.title = 'Remove this item'; rm.style.marginLeft = '6px'; rm.onclick = function () { if (!confirm('Remove "' + it.name + '" from the menu?')) return; customState = customState.filter(function (c) { return c.id !== it.id; }); delete menuState[it.id]; drawMenu(); saveMenu(); }; nm.appendChild(rm); }
+      r.appendChild(nm);
+      var pr = mk('input'); pr.type = 'number'; pr.min = 0; pr.inputMode = 'numeric'; pr.placeholder = typeof it.price === 'number' ? it.price : 'Price'; pr.value = it.custom ? (typeof it.price === 'number' ? it.price : '') : (typeof m.price === 'number' ? m.price : '');
       pr.title = 'Price in KES (leave empty to use the default' + (typeof it.price === 'number' ? ': ' + it.price : '') + ')';
-      pr.onchange = function () { var x = menuState[it.id] = menuState[it.id] || {}; if (pr.value === '') delete x.price; else x.price = Number(pr.value); saveMenu(); };
+      pr.onchange = function () { if (it.custom) { it.price = pr.value === '' ? null : Number(pr.value); saveMenu(); return; } var x = menuState[it.id] = menuState[it.id] || {}; if (pr.value === '') delete x.price; else x.price = Number(pr.value); saveMenu(); };
       r.appendChild(pr);
       var sel = mk('select'), opts = [['ok', 'Available'], ['sold', 'Sold out'], ['60', 'Back in 1 hour'], ['120', 'Back in 2 hours'], ['tom', 'Back tomorrow']];
       if (sold && until) opts.unshift(['keep', 'Back at ' + until.toLocaleTimeString('en-KE', { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit' })]);
@@ -501,6 +520,27 @@
     if (!box.children.length) box.appendChild(mk('p', 'empty', 'No items match.'));
   }
   $('mSearch').addEventListener('input', drawMenu);
+
+  // ---------- Add an item ----------
+  var aUnit = '';
+  function drawUnit() { chipGroup($('aUnit'), [{ v: '', label: 'Each' }, { v: 'kg', label: 'Per kg' }], function (i) { return i.v === aUnit; }, function (i) { aUnit = i.v; }); }
+  function fillCats() {
+    var cats = []; allItems().forEach(function (i) { if (cats.indexOf(i.category) < 0) cats.push(i.category); });
+    $('aCat').innerHTML = ''; cats.concat(['＋ New category…']).forEach(function (c, k) { var o = mk('option', '', c); o.value = k < cats.length ? c : '__new'; $('aCat').appendChild(o); });
+  }
+  $('aCat').onchange = function () { $('aNewCat').hidden = $('aCat').value !== '__new'; if (!$('aNewCat').hidden) $('aNewCat').focus(); };
+  $('addItemBtn').onclick = function () { $('aName').value = ''; $('aPrice').value = ''; $('aNewCat').value = ''; $('aNewCat').hidden = true; aUnit = ''; fillCats(); drawUnit(); $('addModal').hidden = false; $('aName').focus(); };
+  $('aCancel').onclick = function () { $('addModal').hidden = true; };
+  $('addModal').addEventListener('click', function (e) { if (e.target === $('addModal')) $('addModal').hidden = true; });
+  $('aOk').onclick = function () {
+    var name = $('aName').value.trim(), cat = $('aCat').value === '__new' ? $('aNewCat').value.trim() : $('aCat').value, pr = $('aPrice').value.replace(/[^\d.]/g, '');
+    if (!name) return toast('Give the item a name', true);
+    if (!cat) return toast('Pick or name a category', true);
+    if (allItems().some(function (i) { return i.category === cat && i.name.toLowerCase() === name.toLowerCase(); })) return toast('That item is already in ' + cat, true);
+    var id = 'c-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 22) + '-' + Math.random().toString(36).slice(2, 6);
+    customState.push({ id: id, category: cat, name: name, price: pr === '' ? null : Number(pr), unit: aUnit, custom: true });
+    $('addModal').hidden = true; $('mSearch').value = ''; drawMenu(); saveMenu(); toast('Added — tap Review & save to publish');
+  };
 
   drawDurs(); refresh();
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
