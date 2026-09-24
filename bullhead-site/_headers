@@ -9,3 +9,13 @@
 
 /css/*
   Cache-Control: no-cache, must-revalidate
+
+# Private pages: keep them out of search results (a robots.txt Disallow would only advertise them).
+/admin*
+  X-Robots-Tag: noindex, nofollow
+/tools*
+  X-Robots-Tag: noindex, nofollow
+/qr*
+  X-Robots-Tag: noindex, nofollow
+/track*
+  X-Robots-Tag: noindex, nofollow

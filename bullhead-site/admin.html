@@ -94,6 +94,14 @@
   .order .foot b { font-family:'Fraunces',serif; }
   .order .go { padding:9px 16px; font-weight:700; font-size:.85rem; color:#fff; background:var(--red); border:0; border-radius:99px; }
   .order .go.ready { background:var(--green); color:#06210f; }
+  .order.unconfirmed { border-color:#e0a02a; box-shadow:0 0 0 1px #e0a02a inset; }
+  .order.unconfirmed .go { background:#e0a02a; color:#241712; }
+  .order.cancelled { opacity:.55; }
+  .order .tag.code { background:#241712; border:1px solid var(--line); letter-spacing:.1em; }
+  .order .tag.unc { background:#e0a02a; color:#241712; }
+  .order .stale { color:#e0a02a; font-size:.8rem; font-weight:600; margin-top:6px; }
+  .order .reach { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0; }
+  .order .reach a { text-decoration:none; }
   .mrow { display:grid; grid-template-columns:1fr 92px 128px; gap:8px; align-items:center; padding:9px 0; border-top:1px solid var(--line); }
   .mrow:first-of-type { border-top:0; }
   .mrow .nm { font-size:.9rem; line-height:1.3; }
@@ -171,7 +179,7 @@
     <div data-tab="insights" hidden>
       <div class="stats">
         <div class="stat"><b id="iOrders">0</b><span>orders · 7 days</span></div>
-        <div class="stat hot"><b id="iSales">0</b><span>KES sent through site</span></div>
+        <div class="stat hot"><b id="iSales">0</b><span>KES from completed orders</span></div>
         <div class="stat"><b id="iWay">0</b><span>"on my way"</span></div>
       </div>
       <section class="card">
@@ -247,6 +255,7 @@
 <div id="toast" role="status"></div>
 
 <script src="js/menu-data.js"></script>
+<script src="js/order-utils.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -392,33 +401,52 @@
     if (!o.etaAt) return ''; var m = Math.round((new Date(o.etaAt) - Date.now()) / 60000);
     return m > 1 ? '🚗 arrives in ~' + m + ' min' : '🚗 should be here now';
   }
+  var STATUS_LBL = { unconfirmed: 'Unconfirmed', cancelled: 'Cancelled' };
   function ordCard(o) {
+    var code = orderCode(o.id), unc = o.status === 'unconfirmed';
     var c = mk('div', 'order ' + o.status), top = mk('div', 'top'), l = mk('div');
     var tg = mk('span', 'tag' + (o.type === 'on-the-way' ? ' way' : ''), TYPE_LBL[o.type] || 'Order'); l.appendChild(tg);
+    if (code) l.appendChild(mk('span', 'tag code', '#' + code));
+    if (STATUS_LBL[o.status] && o.status !== 'cancelled') l.appendChild(mk('span', 'tag unc', STATUS_LBL[o.status]));
+    if (o.status === 'cancelled') l.appendChild(mk('span', 'tag', 'Cancelled'));
     l.appendChild(mk('span', 'who', o.name || 'Customer'));
     var sm = mk('div', '', ''); sm.style.cssText = 'font-size:.78rem;color:var(--mute);margin-top:4px';
     sm.textContent = ago(o.ts) + (o.table ? ' · Table ' + o.table : '') + (o.partySize ? ' · ' + o.partySize + ' people' : '') + (o.arriving ? ' · at ' + o.arriving : '') + (o.address ? ' · ' + o.address : '');
     l.appendChild(sm); top.appendChild(l);
     if (o.etaAt) { var e = mk('b', '', etaText(o)); e.style.cssText = 'color:var(--green);font-size:.85rem;text-align:right'; top.appendChild(e); }
     c.appendChild(top);
+    if (unc && (Date.now() - new Date(o.ts)) > 30 * 60000) c.appendChild(mk('div', 'stale', '⏳ No confirmation yet. Check WhatsApp for #' + code + ', or call them. Cancel it if it’s a ghost order.'));
     var ul = mk('ul'); o.items.forEach(function (i) { ul.appendChild(mk('li', '', (i.unit === 'kg' ? i.qty + ' kg ' : i.qty + '× ') + i.name)); });
     if (o.items.length) c.appendChild(ul);
     if (o.notes) c.appendChild(mk('div', 'note', '“' + o.notes + '”'));
+    // Reach the customer in one tap (the number was checked by the server, but check again before it goes into a link).
+    var reach = mk('div', 'reach'), ph = /^\d{9,15}$/.test(o.phone || '') ? o.phone : '';
+    function link(label, href, cls) { var a = mk('a', 'mini ' + (cls || ''), label); a.href = href; if (href.indexOf('http') === 0) { a.target = '_blank'; a.rel = 'noopener'; } reach.appendChild(a); }
+    if (ph) {
+      link('📞 Call ' + ph.replace(/^254/, '0'), 'tel:+' + ph);
+      var hi = 'Hi' + (o.name ? ' ' + o.name : '') + ', this is Bullhead confirming your order #' + code + '. ';
+      link('💬 WhatsApp', 'https://wa.me/' + ph + '?text=' + encodeURIComponent(hi), 'wa');
+    }
+    if (/^https:\/\/maps\.google\.com\/\?q=-?[\d.]+,-?[\d.]+$/.test(o.pin || '')) link('📍 Delivery pin', o.pin);
+    if (reach.childNodes.length) c.appendChild(reach);
     var f = mk('div', 'foot'); f.appendChild(mk('b', '', o.total ? 'KES ' + o.total.toLocaleString('en-KE') : ''));
-    var nx = { new: ['Start preparing', 'preparing'], preparing: ['Mark ready', 'ready'], ready: ['Done ✓', 'done'] }[o.status];
-    if (nx) { var b = mk('button', 'go ' + (o.status === 'preparing' ? 'ready' : ''), nx[0]); b.type = 'button'; b.onclick = function () { setStatus(o.id, nx[1]); }; f.appendChild(b); }
-    else { var d = mk('button', 'mini', 'Remove'); d.type = 'button'; d.onclick = function () { fetch('/api/orders?id=' + o.id, { method: 'DELETE', headers: { Authorization: auth() } }).then(loadOrders); }; f.appendChild(d); }
+    var nx = { unconfirmed: ['Confirm order', 'new'], new: ['Start preparing', 'preparing'], preparing: ['Mark ready', 'ready'], ready: ['Done ✓', 'done'] }[o.status];
+    var acts = mk('div'); acts.style.cssText = 'display:flex;gap:8px;align-items:center';
+    if (unc || o.status === 'new') { var x = mk('button', 'mini', 'Cancel'); x.type = 'button'; x.onclick = function () { if (confirm('Cancel order #' + code + '?')) setStatus(o.id, 'cancelled'); }; acts.appendChild(x); }
+    if (nx) { var b = mk('button', 'go ' + (o.status === 'preparing' ? 'ready' : ''), nx[0]); b.type = 'button'; b.onclick = function () { setStatus(o.id, nx[1]); }; acts.appendChild(b); }
+    else { var d = mk('button', 'mini', 'Remove'); d.type = 'button'; d.onclick = function () { fetch('/api/orders?id=' + o.id, { method: 'DELETE', headers: { Authorization: auth() } }).then(loadOrders); }; acts.appendChild(d); }
+    f.appendChild(acts);
     c.appendChild(f); return c;
   }
-  function setStatus(id, s) { fetch('/api/orders?id=' + id + '&status=' + s, { method: 'PATCH', headers: { Authorization: auth() } }).then(loadOrders).catch(function () { toast('Could not update — try again', true); }); }
+  function setStatus(id, s) { fetch('/api/orders?id=' + id + '&status=' + s, { method: 'PATCH', headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return loadOrders(); }).catch(function () { toast('Could not update — try again', true); }); }
   function loadOrders() {
     return fetch('/api/orders', { headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
       orders = d.orders || [];
-      var fresh = orders.filter(function (o) { return o.status === 'new'; });
+      var fresh = orders.filter(function (o) { return o.status === 'new' || o.status === 'unconfirmed'; });
       if (seen) { var add = fresh.filter(function (o) { return !seen[o.id]; }); if (add.length) { beep(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('🔔 New order' + (add[0].name ? ' from ' + add[0].name : '') + '!'); } }
       seen = {}; orders.forEach(function (o) { seen[o.id] = 1; });
       $('newN').hidden = !fresh.length; $('newN').textContent = fresh.length; document.title = (fresh.length ? '(' + fresh.length + ') ' : '') + 'Bullhead — Owner Dashboard';
-      var act = orders.filter(function (o) { return o.status !== 'done'; }).reverse(), done = orders.filter(function (o) { return o.status === 'done'; }).slice(0, 8);
+      var act = orders.filter(function (o) { return o.status !== 'done' && o.status !== 'cancelled'; }).reverse(), done = orders.filter(function (o) { return o.status === 'done' || o.status === 'cancelled'; }).slice(0, 8);
       $('ordActive').innerHTML = ''; if (!act.length) $('ordActive').appendChild(mk('p', 'empty', 'No orders waiting. You’ll hear a chime when one arrives 🔔')); act.forEach(function (o) { $('ordActive').appendChild(ordCard(o)); });
       $('ordDone').innerHTML = ''; if (!done.length) $('ordDone').appendChild(mk('p', 'empty', 'Finished orders appear here.')); done.forEach(function (o) { $('ordDone').appendChild(ordCard(o)); });
       drawInsights();
@@ -484,8 +512,8 @@
 
   // ---------- Insights ----------
   function drawInsights() {
-    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk; });
-    $('iOrders').textContent = o7.length; $('iSales').textContent = o7.reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
+    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk && o.status !== 'cancelled'; });
+    $('iOrders').textContent = o7.length; $('iSales').textContent = o7.filter(function (o) { return o.status === 'done'; }).reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
     $('iWay').textContent = o7.filter(function (o) { return o.type === 'on-the-way'; }).length;
     var cnt = {}; o7.forEach(function (o) { var seenN = {}; o.items.forEach(function (i) { if (!seenN[i.name]) { cnt[i.name] = (cnt[i.name] || 0) + 1; seenN[i.name] = 1; } }); });
     var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 6);

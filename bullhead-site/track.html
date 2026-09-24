@@ -83,6 +83,12 @@
     <div class="tk-total" id="totalRow" hidden><span>Total</span><span id="total"></span></div>
   </section>
 
+  <section class="tk-card" id="sendCard" hidden>
+    <h2>📲 Send it on WhatsApp <small style="font-weight:500;color:var(--ink-soft)">· Tuma kwa WhatsApp</small></h2>
+    <p class="tk-meta">Your order is saved. We confirm it when your WhatsApp message reaches us (or we’ll call you). Already sent it? Just wait here.</p>
+    <a class="tk-wa" id="sendBtn" href="#" target="_blank" rel="noopener">💬 Send on WhatsApp</a>
+  </section>
+
   <div id="pay"></div>
   <section class="tk-card" id="review" hidden></section>
   <a class="tk-wa" id="wa" href="https://wa.me/254720707323" target="_blank" rel="noopener">Questions? Message us on WhatsApp</a>
@@ -90,6 +96,7 @@
   <p class="tk-live" style="margin-top:6px">Tip: this link is also in your WhatsApp chat with us.</p>
 </main>
 
+<script src="/js/order-utils.js"></script>
 <script src="/js/mpesa.js"></script>
 <script>
 (function () {
@@ -97,7 +104,8 @@
   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var id = new URLSearchParams(location.search).get('o') || '';
   var TYPE = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
-  var STAGE = { new: 0, preparing: 1, ready: 2, done: 3 };
+  var STAGE = { unconfirmed: -1, cancelled: -1, new: 0, preparing: 1, ready: 2, done: 3 };
+  var WA = '254720707323';
   var READY_SUB = {
     'dine-in': 'Your food is ready and on its way to your table.',
     'drive-through': 'Your order is ready for pick-up at the counter.',
@@ -106,6 +114,8 @@
     reserve: 'Your table is ready for you.'
   };
   var COPY = {
+    unconfirmed: { e: '📲', h: 'Waiting for confirmation', sw: 'Tunasubiri kuthibitisha', s: 'Send your order on WhatsApp so we can confirm it. This page will update as soon as we do.' },
+    cancelled: { e: '✖️', h: 'This order was cancelled', sw: 'Oda hii imeghairiwa', s: 'If that’s a surprise, message us on WhatsApp and we’ll sort it out.' },
     new:       { e: '📝', h: 'We’ve got your order', sw: 'Tumepokea oda yako', s: 'The kitchen will start on it in a moment.' },
     preparing: { e: '🔥', h: 'Being prepared', sw: 'Inaandaliwa sasa', s: 'Your food is being cooked fresh right now.' },
     ready:     { e: '🍽', h: 'Your order is ready!', sw: 'Oda yako iko tayari!', s: '' },
@@ -141,7 +151,7 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
     Array.prototype.forEach.call($('steps').children, function (li, i) {
       li.className = i < cur ? 'done' : (i === cur ? 'now' + (i === 2 ? ' final' : '') : '');
     });
-    $('steps').hidden = false;
+    $('steps').hidden = cur < 0;
     document.title = c.h + ' | Bullhead';
   }
 
@@ -157,6 +167,15 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
     $('pay').innerHTML = ''; $('live').hidden = true; stop();
   }
 
+  // Short message for the recovery button: the code is what staff match against the dashboard.
+  function waText(o) {
+    var L = ['Hi Bullhead, confirming my order #' + orderCode(id) + ' (' + (TYPE[o.type] || 'order') + (o.table ? ', Table ' + o.table : '') + ')'];
+    o.items.forEach(function (i) { L.push('- ' + (i.unit === 'kg' ? i.qty + 'kg ' : i.qty + 'x ') + i.name); });
+    if (o.total) L.push('Total: KES ' + o.total.toLocaleString('en-KE'));
+    L.push('Track: ' + location.origin + '/track?o=' + id);
+    return L.join('\n');
+  }
+
   function render(o) {
     show(o.status, o);
     var eta = $('eta');
@@ -168,11 +187,14 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
       var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
       a.textContent = i.name; b.textContent = i.unit === 'kg' ? i.qty + ' kg' : '× ' + i.qty; li.appendChild(a); li.appendChild(b); ul.appendChild(li);
     });
-    $('meta').textContent = (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
+    $('meta').textContent = 'Order #' + orderCode(id) + ' · ' + (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
+    // Recovery button: if the customer never sent the WhatsApp message (pop-up blocked, tab closed), it is one tap away.
+    var sc = $('sendCard'); sc.hidden = o.status !== 'unconfirmed';
+    if (!sc.hidden) $('sendBtn').href = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(waText(o));
     $('total').textContent = 'KES ' + (o.total || 0).toLocaleString('en-KE'); $('totalRow').hidden = !o.total;
     $('orderCard').hidden = !(o.items.length || o.table || o.type);
     // Optional pay-ahead card, only while the order is still open.
-    var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && typeof mpesaCard === 'function';
+    var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && o.status !== 'cancelled' && o.status !== 'unconfirmed' && typeof mpesaCard === 'function';   // no paying for an order we haven’t confirmed
     if (!wantPay) pay.innerHTML = '';
     else if (!pay.firstChild) { var pc = mpesaCard(o.total); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
        showReview(o);
@@ -181,7 +203,7 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
   }
 
   function stop() { clearTimeout(timer); timer = null; }
-  function schedule(ms) { stop(); timer = setTimeout(poll, ms || (last === 'done' ? 60000 : 12000)); }
+  function schedule(ms) { stop(); timer = setTimeout(poll, ms || (last === 'done' || last === 'cancelled' ? 60000 : last === 'ready' ? 30000 : 15000)); }
 
   function poll() {
     if (document.hidden) return schedule();

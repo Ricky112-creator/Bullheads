@@ -1,6 +1,6 @@
 # Bullhead — prototype site
 
-Static site. No build step, no dependencies to install locally — GSAP and Lenis load from CDN in the browser.
+Static pages plus Cloudflare Pages Functions (`../functions`) for orders, tracking, the owner dashboard, gallery and push alerts. No build step and nothing to install: GSAP and Lenis load from CDN in the browser. **Everything runs on free tiers. See [SETUP.md](SETUP.md) for the bindings, secrets and limits.**
 
 ## Preview locally
 Run a local server from this folder (don't just double-click index.html — the order/cart flow needs a real origin to work correctly):
@@ -22,7 +22,7 @@ git push -u origin main
 ## Deploy on Cloudflare Pages
 1. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git
 2. Select this repo
-3. Build settings: **Framework preset: None**, **Build command: (leave empty)**, **Build output directory: /**
+3. Build settings: **Framework preset: None**, **Build command: (leave empty)**, **Build output directory: `bullhead-site`**, root directory blank (so `functions/` sits at the repo root). Then add the bindings and secrets in [SETUP.md](SETUP.md)
 4. Deploy — you'll get a `*.pages.dev` URL immediately, and can attach a custom domain after
 
 ## Pages
@@ -33,11 +33,13 @@ git push -u origin main
 
 Nav and footer are duplicated in each file (no build tool, no templating — plain static pages). If you add a page or change the nav links, update all four files.
 
-## The ordering flow (menu.html → contact.html)
-- Item data and prices live in `js/menu-data.js` — **prices are placeholders, confirm real ones with the client before this goes live**
-- Cart logic (`js/cart.js`) stores selections in the browser's localStorage under the key `bullheadCart` — no backend, no database, nothing server-side
-- On Contact, the form builds a plain-text order summary and opens `wa.me` with it pre-filled — the person still has to hit send in WhatsApp themselves, nothing is auto-submitted
-- This works fine on the live Cloudflare Pages URL — the file:// caveat above only applies to local preview
+## The ordering flow (menu.html → contact.html → track.html)
+- Item data and prices live in `js/menu-data.js`; the owner can override prices / sold-out / specials from the dashboard (`/api/menu`)
+- Cart logic (`js/cart.js`) keeps selections in the browser's localStorage under `bullheadCart`
+- On Contact, the form records the order (`POST /api/orders`, and waits for the answer), THEN opens `wa.me` with the same order plus a short order code (`#K7Q2M`) and a tracking link. The customer still has to press Send in WhatsApp
+- **The dashboard is the order; the WhatsApp message is the receipt.** Orders that only have the website's word for it start as `unconfirmed`; staff confirm them (they see the code in WhatsApp, or call/WhatsApp the customer from the card). Table-QR orders (`?table=N`, dine-in) start as `new`
+- The tracking page (`/track?o=<id>`) shows progress and keeps a "Send on WhatsApp" button while the order is unconfirmed, so a blocked pop-up or a closed tab loses nothing
+- A phone number is required (except for table-QR orders). It is wiped from the database 30 days after the order
 
 ## What's placeholder right now (swap once real assets/details land)
 - All images in `assets/img/` are your phone shots — every one gets replaced with final photography

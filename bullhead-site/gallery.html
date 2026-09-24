@@ -89,9 +89,10 @@
     if (!d.photos || !d.photos.length) { g.innerHTML = '<p class="gal-empty">Photos coming soon.</p>'; return; }
     d.photos.forEach(function (p) {
       var f = document.createElement('figure'), i = document.createElement('img');
-      i.loading = 'lazy'; i.alt = p.caption || 'Bullhead'; i.src = '/api/photos?img=' + p.id; f.appendChild(i);
+      var q = '/api/photos?img=' + p.id, v = '&v=' + (p.v || 0);
+      i.loading = 'lazy'; i.decoding = 'async'; i.alt = p.caption || 'Bullhead'; i.src = q + (p.t ? '&t=1' : '') + v; f.appendChild(i);
       if (p.caption) { var c = document.createElement('figcaption'); c.textContent = p.caption; f.appendChild(c); }
-      f.onclick = function () { document.getElementById('lbImg').src = i.src; document.getElementById('lbCap').textContent = p.caption || ''; lb.classList.add('on'); };
+      f.onclick = function () { document.getElementById('lbImg').src = q + v; document.getElementById('lbCap').textContent = p.caption || ''; lb.classList.add('on'); };
       g.appendChild(f);
     });
   }).catch(function () { g.innerHTML = '<p class="gal-empty">Could not load photos. Please try again.</p>'; });

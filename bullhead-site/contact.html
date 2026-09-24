@@ -142,6 +142,12 @@
         <label for="name" data-sw="Jina lako (hiari)">Your name (optional)</label>
         <input type="text" id="name" name="name" placeholder="e.g. James">
       </div>
+      <div class="form-field" id="field-phone">
+        <label for="phone" data-sw="Nambari yako ya simu">Your phone number</label>
+        <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="e.g. 0712 345 678" required>
+        <p id="phoneHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Ili tukupigie au tukutumie ujumbe kuhusu oda hii. Tunaifuta baada ya siku 30.">So we can reach you about this order. We delete it after 30 days.</p>
+        <p id="phoneErr" role="alert" style="color: #b3261e; font-weight: 600; font-size: 0.9em; margin: 6px 0 0;" hidden></p>
+      </div>
       <div class="form-field">
         <label for="location" data-sw="Kaunta gani?">Which counter?</label>
         <select id="location" name="location">
@@ -184,6 +190,7 @@
 <script src="js/menu-data.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/mpesa.js"></script>
+<script src="js/order-utils.js"></script>
 <script src="js/contact-page.js"></script>
 <script src="js/main.js?v=9"></script>
 <script>
