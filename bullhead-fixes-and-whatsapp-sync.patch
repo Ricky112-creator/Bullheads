@@ -1,0 +1,1453 @@
+From 774390e505428fd051d8a96c5210d7ae54550098 Mon Sep 17 00:00:00 2001
+From: Ricky112-creator <rickywhite254@gmail.com>
+Date: Thu, 24 Sep 2026 19:56:30 +0000
+Subject: [PATCH] Fix WhatsApp/dashboard sync, close auth gaps, stay inside
+ free-tier limits
+
+WhatsApp sync (no Cloud API): dashboard order is recorded first (awaited, retried,
+honest failure banner), WhatsApp carries the same short order code (#K7Q2M); phone
+required (except table-QR); new unconfirmed/cancelled statuses with staff Confirm/
+Cancel, one-tap Call/WhatsApp/pin on each card; recovery Send-on-WhatsApp button on
+/track; reservations without items now recorded; delivery pin sent to the server.
+
+Security: ?tap= no longer bypasses auth on /api/updates (tap counts moved from KV to
+D1, rate limited); shared constant-time auth with wrong-code lockout; escape custom
+menu names; staff codes unbiased 10 chars; phone/address/pin wiped after 30 days.
+
+Free-tier: _routes.json keeps static files out of Functions; gallery thumbnails +
+Cache API + revisioned URLs; calmer polling; sales count only done orders; global
+order flood cap; live orders never trimmed.
+
+Housekeeping: noindex headers instead of robots Disallow, SETUP.md, README fixes.
+---
+ README.md                        |   7 +-
+ bullhead-site/README.md          |  16 ++--
+ bullhead-site/SETUP.md           |  48 ++++++++++++
+ bullhead-site/_headers           |  10 +++
+ bullhead-site/_routes.json       |   5 ++
+ bullhead-site/admin.html         |  46 ++++++++---
+ bullhead-site/contact.html       |   7 ++
+ bullhead-site/gallery.html       |   5 +-
+ bullhead-site/js/contact-page.js | 128 +++++++++++++++++++++----------
+ bullhead-site/js/menu-page.js    |  17 ++--
+ bullhead-site/js/order-utils.js  |  24 ++++++
+ bullhead-site/robots.txt         |   4 -
+ bullhead-site/sitemap.xml        |   1 +
+ bullhead-site/tools.html         |  14 ++--
+ bullhead-site/track.html         |  32 ++++++--
+ functions/_lib/auth.js           |  88 +++++++++++++++++++++
+ functions/api/menu.js            |   6 +-
+ functions/api/orders.js          |  95 +++++++++++++++--------
+ functions/api/photos.js          |  70 +++++++++++------
+ functions/api/push.js            |   9 ++-
+ functions/api/staff.js           |  36 ++++-----
+ functions/api/summary.js         |  24 +++---
+ functions/api/updates.js         |  65 +++++++++++-----
+ 23 files changed, 567 insertions(+), 190 deletions(-)
+ create mode 100644 bullhead-site/SETUP.md
+ create mode 100644 bullhead-site/_routes.json
+ create mode 100644 bullhead-site/js/order-utils.js
+ create mode 100644 functions/_lib/auth.js
+
+diff --git a/README.md b/README.md
+index 0318ddd..b226d5c 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,7 @@
+ # Bullheads
+-3D
++
++Bullhead Hotel & Butchery — website, ordering, order tracking and owner dashboard (Emali, Kenya). Live at https://bullheadhotels.co.ke
++
++- Site code: `bullhead-site/` (Cloudflare Pages build output directory)
++- API: `functions/` (Cloudflare Pages Functions, D1 + KV)
++- Setup, bindings, secrets and free-tier limits: [`bullhead-site/SETUP.md`](bullhead-site/SETUP.md)
+diff --git a/bullhead-site/README.md b/bullhead-site/README.md
+index 9b2f033..9bb8c38 100644
+--- a/bullhead-site/README.md
++++ b/bullhead-site/README.md
+@@ -1,6 +1,6 @@
+ # Bullhead — prototype site
+ 
+-Static site. No build step, no dependencies to install locally — GSAP and Lenis load from CDN in the browser.
++Static pages plus Cloudflare Pages Functions (`../functions`) for orders, tracking, the owner dashboard, gallery and push alerts. No build step and nothing to install: GSAP and Lenis load from CDN in the browser. **Everything runs on free tiers. See [SETUP.md](SETUP.md) for the bindings, secrets and limits.**
+ 
+ ## Preview locally
+ Run a local server from this folder (don't just double-click index.html — the order/cart flow needs a real origin to work correctly):
+@@ -22,7 +22,7 @@ git push -u origin main
+ ## Deploy on Cloudflare Pages
+ 1. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git
+ 2. Select this repo
+-3. Build settings: **Framework preset: None**, **Build command: (leave empty)**, **Build output directory: /**
++3. Build settings: **Framework preset: None**, **Build command: (leave empty)**, **Build output directory: `bullhead-site`**, root directory blank (so `functions/` sits at the repo root). Then add the bindings and secrets in [SETUP.md](SETUP.md)
+ 4. Deploy — you'll get a `*.pages.dev` URL immediately, and can attach a custom domain after
+ 
+ ## Pages
+@@ -33,11 +33,13 @@ git push -u origin main
+ 
+ Nav and footer are duplicated in each file (no build tool, no templating — plain static pages). If you add a page or change the nav links, update all four files.
+ 
+-## The ordering flow (menu.html → contact.html)
+-- Item data and prices live in `js/menu-data.js` — **prices are placeholders, confirm real ones with the client before this goes live**
+-- Cart logic (`js/cart.js`) stores selections in the browser's localStorage under the key `bullheadCart` — no backend, no database, nothing server-side
+-- On Contact, the form builds a plain-text order summary and opens `wa.me` with it pre-filled — the person still has to hit send in WhatsApp themselves, nothing is auto-submitted
+-- This works fine on the live Cloudflare Pages URL — the file:// caveat above only applies to local preview
++## The ordering flow (menu.html → contact.html → track.html)
++- Item data and prices live in `js/menu-data.js`; the owner can override prices / sold-out / specials from the dashboard (`/api/menu`)
++- Cart logic (`js/cart.js`) keeps selections in the browser's localStorage under `bullheadCart`
++- On Contact, the form records the order (`POST /api/orders`, and waits for the answer), THEN opens `wa.me` with the same order plus a short order code (`#K7Q2M`) and a tracking link. The customer still has to press Send in WhatsApp
++- **The dashboard is the order; the WhatsApp message is the receipt.** Orders that only have the website's word for it start as `unconfirmed`; staff confirm them (they see the code in WhatsApp, or call/WhatsApp the customer from the card). Table-QR orders (`?table=N`, dine-in) start as `new`
++- The tracking page (`/track?o=<id>`) shows progress and keeps a "Send on WhatsApp" button while the order is unconfirmed, so a blocked pop-up or a closed tab loses nothing
++- A phone number is required (except for table-QR orders). It is wiped from the database 30 days after the order
+ 
+ ## What's placeholder right now (swap once real assets/details land)
+ - All images in `assets/img/` are your phone shots — every one gets replaced with final photography
+diff --git a/bullhead-site/SETUP.md b/bullhead-site/SETUP.md
+new file mode 100644
+index 0000000..910dff7
+--- /dev/null
++++ b/bullhead-site/SETUP.md
+@@ -0,0 +1,48 @@
++# Bullhead — setup, limits and upkeep (free tier only)
++
++Everything here runs on Cloudflare Pages + GitHub free plans. Nothing below needs a paid product.
++
++## Cloudflare Pages project
++- Connect the GitHub repo. Framework preset **None**, build command **empty**, build output directory **`bullhead-site`**, root directory **blank** (so `functions/` at the repo root is picked up).
++- `bullhead-site/_routes.json` keeps images, CSS and JS out of the Functions request count. Leave it.
++
++## Bindings (Pages → Settings → Functions)
++| Name | Type | Used for |
++|---|---|---|
++| `DB` | D1 database | orders, staff logins, photos, push subscriptions, tap counts, rate limits. Tables create themselves on first use |
++| `UPDATES_KV` | KV namespace | owner "updates" bar and the menu board overrides |
++| `AI` | Workers AI (optional) | the "Draft it for me" Swahili button. Without it the button says it isn't enabled |
++
++## Secrets (Pages → Settings → Variables and Secrets)
++| Name | What |
++|---|---|
++| `ADMIN_TOKEN` | the owner's access code. Make it long and random (20+ characters), not a phrase |
++| `VAPID_PUBLIC`, `VAPID_PRIVATE` | phone-alert keys. Generate once, free: `npx web-push generate-vapid-keys` |
++| `VAPID_SUBJECT` | optional `mailto:` or `https:` contact for the push service |
++
++Staff codes are made in `/tools` (owner only). Staff can see orders, confirm them and move them along. Nothing else.
++
++## How an order moves
++`unconfirmed → new → preparing → ready → done` (or `cancelled`)
++- The website records the order first, then opens WhatsApp. Both carry the same short code (`#K7Q2M`).
++- Staff confirm an unconfirmed order once its WhatsApp message arrives (match the code), or after calling / messaging the customer from the card.
++- Table-QR dine-in orders (`?table=N`) start as `new`.
++- An unconfirmed order nobody touched for 24 hours is cancelled automatically.
++- Daily summary and dashboard "sales" count only orders marked **done**.
++
++## Privacy housekeeping (automatic, runs when new orders arrive)
++- Phone, address and delivery pin are removed from an order 30 days after it was placed.
++- The address fingerprint used for rate limiting is removed after one day.
++
++## Free-tier ceilings to keep in mind
++- **Functions:** 100,000 requests a day. Every `/api/*` call counts. The tracking page polls every 15 s while a customer waits, and pages pause polling when hidden.
++- **KV:** 1,000 writes a day. Only the owner's menu and update saves write to KV. The public site never does.
++- **D1:** generous for this use. Public writes are rate limited (orders, taps, wrong codes).
++- **Builds:** Pages allows 500 builds a month on the free plan. Each push to `main` (and each preview branch push) is a build, so batch commits and push once.
++- **Photos** are stored in D1 (max 60, about 450 KB each) with a small thumbnail each, and served through the Cache API on the custom domain. If the gallery ever outgrows this, move images to Cloudflare R2 (needs a card on file, so only with the client's OK).
++
++## Optional, free: one Cloudflare rate-limiting rule
++Cloudflare dashboard → the domain → Security → WAF → Rate limiting rules. One rule is free. Suggested: URI path starts with `/api/`, more than 100 requests per 10 seconds per IP → block for 10 minutes. It protects the daily Functions quota from a single noisy client.
++
++## Keeping WhatsApp and the dashboard in step (no WhatsApp Cloud API)
++There is no way for a website to know whether a `wa.me` message was sent, edited or ignored, so the design avoids needing to know: the dashboard order is the source of truth, the phone number lets staff reach people who never pressed Send, and the code links any WhatsApp message back to its order. If the client ever wants automatic two-way sync, that is the WhatsApp Business Platform (Cloud API), which needs Meta business verification and a dedicated number.
+diff --git a/bullhead-site/_headers b/bullhead-site/_headers
+index 86330c0..64f338f 100644
+--- a/bullhead-site/_headers
++++ b/bullhead-site/_headers
+@@ -9,3 +9,13 @@
+ 
+ /css/*
+   Cache-Control: no-cache, must-revalidate
++
++# Private pages: keep them out of search results (a robots.txt Disallow would only advertise them).
++/admin*
++  X-Robots-Tag: noindex, nofollow
++/tools*
++  X-Robots-Tag: noindex, nofollow
++/qr*
++  X-Robots-Tag: noindex, nofollow
++/track*
++  X-Robots-Tag: noindex, nofollow
+diff --git a/bullhead-site/_routes.json b/bullhead-site/_routes.json
+new file mode 100644
+index 0000000..2ab4f69
+--- /dev/null
++++ b/bullhead-site/_routes.json
+@@ -0,0 +1,5 @@
++{
++  "version": 1,
++  "include": ["/*"],
++  "exclude": ["/assets/*", "/css/*", "/js/*"]
++}
+diff --git a/bullhead-site/admin.html b/bullhead-site/admin.html
+index 00650e5..09b93b3 100644
+--- a/bullhead-site/admin.html
++++ b/bullhead-site/admin.html
+@@ -94,6 +94,14 @@
+   .order .foot b { font-family:'Fraunces',serif; }
+   .order .go { padding:9px 16px; font-weight:700; font-size:.85rem; color:#fff; background:var(--red); border:0; border-radius:99px; }
+   .order .go.ready { background:var(--green); color:#06210f; }
++  .order.unconfirmed { border-color:#e0a02a; box-shadow:0 0 0 1px #e0a02a inset; }
++  .order.unconfirmed .go { background:#e0a02a; color:#241712; }
++  .order.cancelled { opacity:.55; }
++  .order .tag.code { background:#241712; border:1px solid var(--line); letter-spacing:.1em; }
++  .order .tag.unc { background:#e0a02a; color:#241712; }
++  .order .stale { color:#e0a02a; font-size:.8rem; font-weight:600; margin-top:6px; }
++  .order .reach { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0; }
++  .order .reach a { text-decoration:none; }
+   .mrow { display:grid; grid-template-columns:1fr 92px 128px; gap:8px; align-items:center; padding:9px 0; border-top:1px solid var(--line); }
+   .mrow:first-of-type { border-top:0; }
+   .mrow .nm { font-size:.9rem; line-height:1.3; }
+@@ -171,7 +179,7 @@
+     <div data-tab="insights" hidden>
+       <div class="stats">
+         <div class="stat"><b id="iOrders">0</b><span>orders · 7 days</span></div>
+-        <div class="stat hot"><b id="iSales">0</b><span>KES sent through site</span></div>
++        <div class="stat hot"><b id="iSales">0</b><span>KES from completed orders</span></div>
+         <div class="stat"><b id="iWay">0</b><span>"on my way"</span></div>
+       </div>
+       <section class="card">
+@@ -247,6 +255,7 @@
+ <div id="toast" role="status"></div>
+ 
+ <script src="js/menu-data.js"></script>
++<script src="js/order-utils.js"></script>
+ <script>
+ (function () {
+   var $ = function (id) { return document.getElementById(id); };
+@@ -392,33 +401,52 @@
+     if (!o.etaAt) return ''; var m = Math.round((new Date(o.etaAt) - Date.now()) / 60000);
+     return m > 1 ? '🚗 arrives in ~' + m + ' min' : '🚗 should be here now';
+   }
++  var STATUS_LBL = { unconfirmed: 'Unconfirmed', cancelled: 'Cancelled' };
+   function ordCard(o) {
++    var code = orderCode(o.id), unc = o.status === 'unconfirmed';
+     var c = mk('div', 'order ' + o.status), top = mk('div', 'top'), l = mk('div');
+     var tg = mk('span', 'tag' + (o.type === 'on-the-way' ? ' way' : ''), TYPE_LBL[o.type] || 'Order'); l.appendChild(tg);
++    if (code) l.appendChild(mk('span', 'tag code', '#' + code));
++    if (STATUS_LBL[o.status] && o.status !== 'cancelled') l.appendChild(mk('span', 'tag unc', STATUS_LBL[o.status]));
++    if (o.status === 'cancelled') l.appendChild(mk('span', 'tag', 'Cancelled'));
+     l.appendChild(mk('span', 'who', o.name || 'Customer'));
+     var sm = mk('div', '', ''); sm.style.cssText = 'font-size:.78rem;color:var(--mute);margin-top:4px';
+     sm.textContent = ago(o.ts) + (o.table ? ' · Table ' + o.table : '') + (o.partySize ? ' · ' + o.partySize + ' people' : '') + (o.arriving ? ' · at ' + o.arriving : '') + (o.address ? ' · ' + o.address : '');
+     l.appendChild(sm); top.appendChild(l);
+     if (o.etaAt) { var e = mk('b', '', etaText(o)); e.style.cssText = 'color:var(--green);font-size:.85rem;text-align:right'; top.appendChild(e); }
+     c.appendChild(top);
++    if (unc && (Date.now() - new Date(o.ts)) > 30 * 60000) c.appendChild(mk('div', 'stale', '⏳ No confirmation yet. Check WhatsApp for #' + code + ', or call them. Cancel it if it’s a ghost order.'));
+     var ul = mk('ul'); o.items.forEach(function (i) { ul.appendChild(mk('li', '', (i.unit === 'kg' ? i.qty + ' kg ' : i.qty + '× ') + i.name)); });
+     if (o.items.length) c.appendChild(ul);
+     if (o.notes) c.appendChild(mk('div', 'note', '“' + o.notes + '”'));
++    // Reach the customer in one tap (the number was checked by the server, but check again before it goes into a link).
++    var reach = mk('div', 'reach'), ph = /^\d{9,15}$/.test(o.phone || '') ? o.phone : '';
++    function link(label, href, cls) { var a = mk('a', 'mini ' + (cls || ''), label); a.href = href; if (href.indexOf('http') === 0) { a.target = '_blank'; a.rel = 'noopener'; } reach.appendChild(a); }
++    if (ph) {
++      link('📞 Call ' + ph.replace(/^254/, '0'), 'tel:+' + ph);
++      var hi = 'Hi' + (o.name ? ' ' + o.name : '') + ', this is Bullhead confirming your order #' + code + '. ';
++      link('💬 WhatsApp', 'https://wa.me/' + ph + '?text=' + encodeURIComponent(hi), 'wa');
++    }
++    if (/^https:\/\/maps\.google\.com\/\?q=-?[\d.]+,-?[\d.]+$/.test(o.pin || '')) link('📍 Delivery pin', o.pin);
++    if (reach.childNodes.length) c.appendChild(reach);
+     var f = mk('div', 'foot'); f.appendChild(mk('b', '', o.total ? 'KES ' + o.total.toLocaleString('en-KE') : ''));
+-    var nx = { new: ['Start preparing', 'preparing'], preparing: ['Mark ready', 'ready'], ready: ['Done ✓', 'done'] }[o.status];
+-    if (nx) { var b = mk('button', 'go ' + (o.status === 'preparing' ? 'ready' : ''), nx[0]); b.type = 'button'; b.onclick = function () { setStatus(o.id, nx[1]); }; f.appendChild(b); }
+-    else { var d = mk('button', 'mini', 'Remove'); d.type = 'button'; d.onclick = function () { fetch('/api/orders?id=' + o.id, { method: 'DELETE', headers: { Authorization: auth() } }).then(loadOrders); }; f.appendChild(d); }
++    var nx = { unconfirmed: ['Confirm order', 'new'], new: ['Start preparing', 'preparing'], preparing: ['Mark ready', 'ready'], ready: ['Done ✓', 'done'] }[o.status];
++    var acts = mk('div'); acts.style.cssText = 'display:flex;gap:8px;align-items:center';
++    if (unc || o.status === 'new') { var x = mk('button', 'mini', 'Cancel'); x.type = 'button'; x.onclick = function () { if (confirm('Cancel order #' + code + '?')) setStatus(o.id, 'cancelled'); }; acts.appendChild(x); }
++    if (nx) { var b = mk('button', 'go ' + (o.status === 'preparing' ? 'ready' : ''), nx[0]); b.type = 'button'; b.onclick = function () { setStatus(o.id, nx[1]); }; acts.appendChild(b); }
++    else { var d = mk('button', 'mini', 'Remove'); d.type = 'button'; d.onclick = function () { fetch('/api/orders?id=' + o.id, { method: 'DELETE', headers: { Authorization: auth() } }).then(loadOrders); }; acts.appendChild(d); }
++    f.appendChild(acts);
+     c.appendChild(f); return c;
+   }
+-  function setStatus(id, s) { fetch('/api/orders?id=' + id + '&status=' + s, { method: 'PATCH', headers: { Authorization: auth() } }).then(loadOrders).catch(function () { toast('Could not update — try again', true); }); }
++  function setStatus(id, s) { fetch('/api/orders?id=' + id + '&status=' + s, { method: 'PATCH', headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return loadOrders(); }).catch(function () { toast('Could not update — try again', true); }); }
+   function loadOrders() {
+     return fetch('/api/orders', { headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+       orders = d.orders || [];
+-      var fresh = orders.filter(function (o) { return o.status === 'new'; });
++      var fresh = orders.filter(function (o) { return o.status === 'new' || o.status === 'unconfirmed'; });
+       if (seen) { var add = fresh.filter(function (o) { return !seen[o.id]; }); if (add.length) { beep(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('🔔 New order' + (add[0].name ? ' from ' + add[0].name : '') + '!'); } }
+       seen = {}; orders.forEach(function (o) { seen[o.id] = 1; });
+       $('newN').hidden = !fresh.length; $('newN').textContent = fresh.length; document.title = (fresh.length ? '(' + fresh.length + ') ' : '') + 'Bullhead — Owner Dashboard';
+-      var act = orders.filter(function (o) { return o.status !== 'done'; }).reverse(), done = orders.filter(function (o) { return o.status === 'done'; }).slice(0, 8);
++      var act = orders.filter(function (o) { return o.status !== 'done' && o.status !== 'cancelled'; }).reverse(), done = orders.filter(function (o) { return o.status === 'done' || o.status === 'cancelled'; }).slice(0, 8);
+       $('ordActive').innerHTML = ''; if (!act.length) $('ordActive').appendChild(mk('p', 'empty', 'No orders waiting. You’ll hear a chime when one arrives 🔔')); act.forEach(function (o) { $('ordActive').appendChild(ordCard(o)); });
+       $('ordDone').innerHTML = ''; if (!done.length) $('ordDone').appendChild(mk('p', 'empty', 'Finished orders appear here.')); done.forEach(function (o) { $('ordDone').appendChild(ordCard(o)); });
+       drawInsights();
+@@ -484,8 +512,8 @@
+ 
+   // ---------- Insights ----------
+   function drawInsights() {
+-    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk; });
+-    $('iOrders').textContent = o7.length; $('iSales').textContent = o7.reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
++    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk && o.status !== 'cancelled'; });
++    $('iOrders').textContent = o7.length; $('iSales').textContent = o7.filter(function (o) { return o.status === 'done'; }).reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
+     $('iWay').textContent = o7.filter(function (o) { return o.type === 'on-the-way'; }).length;
+     var cnt = {}; o7.forEach(function (o) { var seenN = {}; o.items.forEach(function (i) { if (!seenN[i.name]) { cnt[i.name] = (cnt[i.name] || 0) + 1; seenN[i.name] = 1; } }); });
+     var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 6);
+diff --git a/bullhead-site/contact.html b/bullhead-site/contact.html
+index ab00fb8..d64fbbb 100644
+--- a/bullhead-site/contact.html
++++ b/bullhead-site/contact.html
+@@ -142,6 +142,12 @@
+         <label for="name" data-sw="Jina lako (hiari)">Your name (optional)</label>
+         <input type="text" id="name" name="name" placeholder="e.g. James">
+       </div>
++      <div class="form-field" id="field-phone">
++        <label for="phone" data-sw="Nambari yako ya simu">Your phone number</label>
++        <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="e.g. 0712 345 678" required>
++        <p id="phoneHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Ili tukupigie au tukutumie ujumbe kuhusu oda hii. Tunaifuta baada ya siku 30.">So we can reach you about this order. We delete it after 30 days.</p>
++        <p id="phoneErr" role="alert" style="color: #b3261e; font-weight: 600; font-size: 0.9em; margin: 6px 0 0;" hidden></p>
++      </div>
+       <div class="form-field">
+         <label for="location" data-sw="Kaunta gani?">Which counter?</label>
+         <select id="location" name="location">
+@@ -184,6 +190,7 @@
+ <script src="js/menu-data.js"></script>
+ <script src="js/cart.js"></script>
+ <script src="js/mpesa.js"></script>
++<script src="js/order-utils.js"></script>
+ <script src="js/contact-page.js"></script>
+ <script src="js/main.js?v=9"></script>
+ <script>
+diff --git a/bullhead-site/gallery.html b/bullhead-site/gallery.html
+index 948b902..1d7f425 100644
+--- a/bullhead-site/gallery.html
++++ b/bullhead-site/gallery.html
+@@ -89,9 +89,10 @@
+     if (!d.photos || !d.photos.length) { g.innerHTML = '<p class="gal-empty">Photos coming soon.</p>'; return; }
+     d.photos.forEach(function (p) {
+       var f = document.createElement('figure'), i = document.createElement('img');
+-      i.loading = 'lazy'; i.alt = p.caption || 'Bullhead'; i.src = '/api/photos?img=' + p.id; f.appendChild(i);
++      var q = '/api/photos?img=' + p.id, v = '&v=' + (p.v || 0);
++      i.loading = 'lazy'; i.decoding = 'async'; i.alt = p.caption || 'Bullhead'; i.src = q + (p.t ? '&t=1' : '') + v; f.appendChild(i);
+       if (p.caption) { var c = document.createElement('figcaption'); c.textContent = p.caption; f.appendChild(c); }
+-      f.onclick = function () { document.getElementById('lbImg').src = i.src; document.getElementById('lbCap').textContent = p.caption || ''; lb.classList.add('on'); };
++      f.onclick = function () { document.getElementById('lbImg').src = q + v; document.getElementById('lbCap').textContent = p.caption || ''; lb.classList.add('on'); };
+       g.appendChild(f);
+     });
+   }).catch(function () { g.innerHTML = '<p class="gal-empty">Could not load photos. Please try again.</p>'; });
+diff --git a/bullhead-site/js/contact-page.js b/bullhead-site/js/contact-page.js
+index 356cb5c..7d6c6f6 100644
+--- a/bullhead-site/js/contact-page.js
++++ b/bullhead-site/js/contact-page.js
+@@ -5,6 +5,9 @@
+ 
+ const ORDER_WHATSAPP_NUMBER = '254720707323';
+ 
++// Item names can be typed in by the owner (custom dishes), so escape them before they go into innerHTML.
++const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
++
+ // Random id for one order. Made here (not on the server) so the tracking link can be
+ // put into the WhatsApp message the instant the customer taps send.
+ function makeTrackId() {
+@@ -39,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
+   const fieldReserveDateTime = document.getElementById('field-reserveDateTime');
+   const fieldEta = document.getElementById('field-eta');
+   const reserveDateInput = document.getElementById('reserveDate');
++  const fieldPhone = document.getElementById('field-phone');
++  const phoneInput = document.getElementById('phone');
++  const phoneErr = document.getElementById('phoneErr');
+ 
+   const today = new Date().toISOString().split('T')[0];
+   if (reserveDateInput) reserveDateInput.min = today;
+@@ -66,6 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
+     document.getElementById('partySize').required = type === 'reserve';
+     document.getElementById('reserveDate').required = v.reserveDateTime;
+     document.getElementById('reserveTime').required = v.reserveDateTime;
++
++    // A phone number is needed for everything except an order from a table QR code (they're already in the room).
++    const needPhone = !(type === 'dine-in' && activeTable);
++    if (fieldPhone) fieldPhone.hidden = !needPhone;
++    if (phoneInput) phoneInput.required = needPhone;
++    if (phoneErr) phoneErr.hidden = true;
+   }
+ 
+   typeButtons.forEach((btn) => {
+@@ -93,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
+           ? `${l.qty.toFixed(1).replace(/\.0$/, '')} kg`
+           : `${l.qty} ×`;
+         return `
+-      <div class="order-line" data-id="${l.id}">
+-        <span class="order-line-name">${qtyText} ${l.name}</span>
++      <div class="order-line" data-id="${esc(l.id)}">
++        <span class="order-line-name">${qtyText} ${esc(l.name)}</span>
+         <span class="order-line-total">${formatKES(l.lineTotal)}</span>
+-        <button type="button" class="order-line-remove" aria-label="Remove ${l.name}">×</button>
++        <button type="button" class="order-line-remove" aria-label="Remove ${esc(l.name)}">×</button>
+       </div>`;
+       })
+       .join('');
+@@ -131,6 +143,20 @@ document.addEventListener('DOMContentLoaded', () => {
+     const reserveDate = form.reserveDate.value;
+     const reserveTime = form.reserveTime.value;
+ 
++    // Phone number: needed unless this is a table-QR dine-in order. Checked BEFORE anything else so the
++    // customer fixes it straight away, and staff always have a way to reach someone who never presses Send.
++    // (A message with no items, no note and no reservation is just a chat opener: nothing is recorded, so no number is needed.)
++    const willRecord = lines.length > 0 || notes || type === 'reserve';
++    const needPhone = willRecord && !(type === 'dine-in' && activeTable);
++    const phone = normPhoneKE(form.phone.value);
++    if (needPhone && !phone) {
++      if (phoneErr) { phoneErr.textContent = 'Please enter a valid Kenyan phone number, e.g. 0712 345 678 · Weka nambari sahihi ya simu.'; phoneErr.hidden = false; }
++      phoneInput.focus();
++      return;
++    }
++    if (phoneErr) phoneErr.hidden = true;
++    if (submitBtn) submitBtn.disabled = true;      // no double-taps while we work
++
+     const TYPE_LABELS = {
+       'dine-in': 'Dine In',
+       'delivery': 'Delivery',
+@@ -160,7 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
+       }
+     }
+ 
+-    let message = `Hi Bullhead, I'd like to place an order.\n`;
++    // The id is made here (not on the server) so the code and tracking link can go into the WhatsApp message.
++    // An order with no items still counts if it has a note, or if it's a table reservation.
++    const trackId = willRecord ? makeTrackId() : '';
++    const code = trackId ? orderCode(trackId) : '';
++
++    let message = `Hi Bullhead, I'd like to place an order.${code ? ` (Order #${code})` : ''}\n`;
+     message += `\nType: ${TYPE_LABELS[type]}`;
+     if (activeTable) message += `\nTable: ${activeTable}`;
+ 
+@@ -198,27 +229,46 @@ document.addEventListener('DOMContentLoaded', () => {
+     if (name) message += `\nName: ${name}`;
+     if (notes) message += `\nCustom instructions: ${notes}`;
+ 
+-    // Tracking link. (`location` above is the counter the customer picked, so use window.location.)
+-    // Mirrors the server: an order with no items still counts if it has a note.
+-    const trackId = lines.length > 0 || notes ? makeTrackId() : '';
++    // Tracking link.
+     if (trackId) message += `\n\nTrack your order live: ${window.location.origin}/track?o=${trackId}`;
++    const waUrl = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+ 
+-    // Also drop the order on the owner's dashboard (fire-and-forget; WhatsApp stays the source of truth).
+-    try {
+-      fetch('/api/orders', {
+-        method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+-        body: JSON.stringify({
+-          id: trackId || undefined, type, name, notes, table: activeTable || '', counter: location, partySize, address,
+-          arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
+-          items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
+-        }),
+-      }).catch(() => {});
+-    } catch (e) {}
+-
+-    const url = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+-    window.open(url, '_blank', 'noopener');
+-
++    // 1) Record the order on the dashboard FIRST and wait for the answer, so the customer is never told
++    //    "sent" when it wasn't. The dashboard is the order; the WhatsApp message is the receipt.
++    let recorded = false;
+     if (trackId) {
++      if (submitBtn) submitBtn.textContent = 'Sending…';
++      const payload = JSON.stringify({
++        id: trackId, type, name, phone, notes, table: activeTable || '', counter: location, partySize, address, pin: liveLocationUrl,
++        arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
++        items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
++      });
++      for (let attempt = 0; attempt < 2 && !recorded; attempt++) {
++        try {
++          const ctl = new AbortController();
++          const timer = setTimeout(() => ctl.abort(), 8000);
++          const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal: ctl.signal });
++          clearTimeout(timer);
++          if (res.ok || res.status === 409) { recorded = true; break; }        // 409: an earlier try had already saved it
++          const d = await res.json().catch(() => ({}));
++          if (res.status === 400) {                                            // something to fix: tell them, don't open WhatsApp
++            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
++            if (d.field === 'phone' && phoneErr) { phoneErr.textContent = d.error; phoneErr.hidden = false; phoneInput.focus(); }
++            else alert(d.error || 'Something is wrong with this order. Please check it and try again.');
++            return;
++          }
++          if (res.status < 500) break;                                         // 429 etc.: trying again won't help
++        } catch (err) { /* network hiccup: one more try */ }
++      }
++      if (submitBtn) submitBtn.textContent = originalBtnText;
++    }
++    if (submitBtn) submitBtn.disabled = false;
++
++    // 2) Open WhatsApp with the same order (+ code + tracking link).
++    const wa = window.open(waUrl, '_blank');
++    if (wa) { try { wa.opener = null; } catch (err) {} }
++
++    const banner = () => {
+       let tb = document.getElementById('trackBanner');
+       if (!tb) {
+         tb = document.createElement('a');
+@@ -226,24 +276,24 @@ document.addEventListener('DOMContentLoaded', () => {
+         tb.style.cssText = 'display:block;margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--green);color:#fff;text-align:center;font-weight:600;text-decoration:none;';
+         form.after(tb);
+       }
+-      tb.href = `/track?o=${trackId}`;
+-      tb.textContent = '✅ Order sent. Track it live · Fuatilia oda yako →';
+-
+-      // Optional pay-ahead card with the Till number and the exact amount.
+-      const oldPay = document.getElementById('mpesaCard');
+-      if (oldPay) oldPay.remove();
+-      const orderTotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+-      if (orderTotal > 0 && typeof mpesaCard === 'function') tb.after(mpesaCard(orderTotal));
+-
+-      // The tracking page IS the confirmation. WhatsApp opens in its own tab/app; this tab moves
+-      // on to the live status page, so wherever the customer returns to, their order is on screen.
+-      // (The banner above stays as a fallback. The order POST uses keepalive so it survives this.)
+-      setTimeout(() => { window.location.assign(`/track?o=${trackId}`); }, 1200);
+-    }
++      return tb;
++    };
+ 
+-    if (lines.length) {
+-      clearCart();
+-      render();
++    if (recorded) {
++      const tb = banner();
++      tb.style.background = 'var(--green)';
++      tb.href = `/track?o=${trackId}`;
++      tb.textContent = `✅ Order #${code} recorded. Press Send in WhatsApp so we can confirm it · Bonyeza Tuma kwenye WhatsApp →`;
++      // The tracking page has a "Send on WhatsApp" button too, so this works even if the browser blocked the pop-up.
++      setTimeout(() => { window.location.assign(`/track?o=${trackId}`); }, wa ? 1200 : 300);
++      if (lines.length) { clearCart(); render(); }
++    } else if (trackId) {
++      // Not saved: keep the cart and the form so nothing is lost, and be honest about what counts.
++      const tb = banner();
++      tb.style.background = '#b3261e';
++      tb.href = waUrl; tb.target = '_blank'; tb.rel = 'noopener';
++      tb.textContent = `⚠️ We couldn't save order #${code} on our screen. Your WhatsApp message is your order: please press Send there. Tap here to open WhatsApp again.`;
++      return;
+     }
+ 
+     form.reset();
+diff --git a/bullhead-site/js/menu-page.js b/bullhead-site/js/menu-page.js
+index b178b6a..e677ce3 100644
+--- a/bullhead-site/js/menu-page.js
++++ b/bullhead-site/js/menu-page.js
+@@ -3,6 +3,9 @@
+ // keep the floating order bar in sync
+ // ============================================
+ 
++// Item names/categories can be typed in by the owner (custom dishes), so escape them before they go into innerHTML.
++const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
++
+ document.addEventListener('DOMContentLoaded', () => {
+   const listEl = document.getElementById('menuList');
+   const barEl = document.getElementById('orderBar');
+@@ -34,25 +37,25 @@ document.addEventListener('DOMContentLoaded', () => {
+       const items = MENU_ITEMS.filter((i) => i.category === cat).sort((a, b) => (b.special ? 1 : 0) - (a.special ? 1 : 0));
+       return `
+         <div class="menu-category">
+-          <h3 class="menu-category-title">${cat}</h3>
++          <h3 class="menu-category-title">${esc(cat)}</h3>
+           <div class="menu-items">
+             ${items
+               .map((item) => {
+                 const unpriced = typeof item.price !== 'number';
+                 return `
+-              <div class="menu-item${item.soldOut ? ' is-sold' : ''}${item.special ? ' is-special' : ''}" data-id="${item.id}">
++              <div class="menu-item${item.soldOut ? ' is-sold' : ''}${item.special ? ' is-special' : ''}" data-id="${esc(item.id)}">
+                 <div class="menu-item-info">
+-                  <p class="menu-item-name">${item.name}${item.special ? ' <span class="tag-special">★ Today\'s special</span>' : ''}</p>
++                  <p class="menu-item-name">${esc(item.name)}${item.special ? ' <span class="tag-special">★ Today\'s special</span>' : ''}</p>
+                   <p class="menu-item-price${unpriced ? ' unpriced' : ''}">${priceLabel(item)}</p>
+                 </div>
+                 ${item.soldOut
+                   ? `<span class="menu-item-unavailable sold-tag">${soldLabel(item)}</span>`
+                   : unpriced
+                   ? `<span class="menu-item-unavailable">Not yet orderable — ask staff</span>`
+-                  : `<div class="qty-stepper" data-id="${item.id}" data-unit="${item.unit || ''}">
+-                      <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">−</button>
++                  : `<div class="qty-stepper" data-id="${esc(item.id)}" data-unit="${item.unit || ''}">
++                      <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${esc(item.name)}">−</button>
+                       <span class="qty-count">${item.unit === 'kg' ? '0 kg' : '0'}</span>
+-                      <button class="qty-btn qty-plus" aria-label="Add ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">+</button>
++                      <button class="qty-btn qty-plus" aria-label="Add ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${esc(item.name)}">+</button>
+                     </div>`
+                 }
+               </div>`;
+@@ -94,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
+   draw();
+   syncUI();
+   // Pull the owner's live menu board now, then every 30s while the page is open.
+-  const refreshBoard = () => applyMenuOverrides().then(() => { draw(); syncUI(); });
++  const refreshBoard = () => document.hidden ? Promise.resolve() : applyMenuOverrides().then(() => { draw(); syncUI(); });
+   refreshBoard();
+   setInterval(refreshBoard, 30000);
+ });
+diff --git a/bullhead-site/js/order-utils.js b/bullhead-site/js/order-utils.js
+new file mode 100644
+index 0000000..d1a6d2c
+--- /dev/null
++++ b/bullhead-site/js/order-utils.js
+@@ -0,0 +1,24 @@
++// ============================================
++// BULLHEAD — small helpers shared by the order form, the tracking page and the dashboard
++// ============================================
++
++// Short code for an order, worked out from its id: the same id always gives the same code, on every
++// page. It goes into the WhatsApp message, the tracking page and the dashboard card, so a message the
++// customer edited (or resent) can still be matched to the right order at a glance. 32^5 = 33 million codes.
++function orderCode(id) {
++  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';           // no I, O, 0, 1
++  let n = parseInt(String(id || '').replace(/-/g, '').slice(0, 10), 16);
++  if (!isFinite(n)) return '';
++  let s = '';
++  for (let i = 0; i < 5; i++) { s = A[n % 32] + s; n = Math.floor(n / 32); }
++  return s;
++}
++
++// A Kenyan mobile number in any usual spelling (0712 345 678, +254 712 345 678, 712345678...)
++// -> '254712345678', or '' if it doesn't look like one. Keep in step with normPhone() in functions/api/orders.js.
++function normPhoneKE(v) {
++  let d = String(v || '').replace(/\D/g, '');
++  if (d.indexOf('254') === 0) d = d.slice(3);
++  else if (d.indexOf('0') === 0) d = d.slice(1);
++  return /^[17]\d{8}$/.test(d) ? '254' + d : '';
++}
+diff --git a/bullhead-site/robots.txt b/bullhead-site/robots.txt
+index 98d5826..5f81a24 100644
+--- a/bullhead-site/robots.txt
++++ b/bullhead-site/robots.txt
+@@ -1,8 +1,4 @@
+ User-agent: *
+ Allow: /
+-Disallow: /admin
+-Disallow: /track
+-Disallow: /tools
+-Disallow: /qr
+ 
+ Sitemap: https://bullheadhotels.co.ke/sitemap.xml
+diff --git a/bullhead-site/sitemap.xml b/bullhead-site/sitemap.xml
+index ea5eb8e..8da5ac3 100644
+--- a/bullhead-site/sitemap.xml
++++ b/bullhead-site/sitemap.xml
+@@ -4,4 +4,5 @@
+   <url><loc>https://bullheadhotels.co.ke/menu</loc><lastmod>2026-09-21</lastmod></url>
+   <url><loc>https://bullheadhotels.co.ke/visit</loc><lastmod>2026-09-21</lastmod></url>
+   <url><loc>https://bullheadhotels.co.ke/contact</loc><lastmod>2026-09-21</lastmod></url>
++  <url><loc>https://bullheadhotels.co.ke/gallery</loc><lastmod>2026-09-24</lastmod></url>
+ </urlset>
+diff --git a/bullhead-site/tools.html b/bullhead-site/tools.html
+index 7c9a57d..cfa89ad 100644
+--- a/bullhead-site/tools.html
++++ b/bullhead-site/tools.html
+@@ -14,9 +14,9 @@ button.g{background:#3a2c24;border:1px solid #5a4236}pre{white-space:pre-wrap;ba
+ <section><h2>📊 Daily summary</h2><div class="row"><input type="date" id="day"><button id="sum">Load</button></div><pre id="sumText" hidden></pre>
+ <div class="row" id="sumBtns" hidden><button id="copy" class="g">Copy</button><a id="wa" target="_blank" rel="noopener"><button type="button">Send on WhatsApp</button></a></div></section>
+ <section><h2>👥 Staff logins</h2><div class="row"><input id="sname" placeholder="Staff name"><button id="sadd">Create login</button></div>
+-<p id="newCode" hidden></p><div id="slist"></div><small>Staff enter their code on the dashboard. They can see orders and mark them preparing, ready or done. Nothing else.</small></section>
++<p id="newCode" hidden></p><div id="slist"></div><small>Staff enter their code on the dashboard. They can see orders, confirm them, and mark them preparing, ready, done or cancelled. Nothing else.</small></section>
+ <section><h2>📷 Photos</h2><p><small>New photos are saved as <b>drafts</b>. Fix the caption, rotate if needed, then press Publish. Only published photos show on <a href="/gallery" target="_blank">/gallery</a>.</small></p>
+-<div class="row"><input id="cap" placeholder="Caption for new photos (optional)"><input type="file" id="file" accept="image/*" multiple></div><small id="pmsg"></small><div class="grid" id="plist"></div></section>
++<div class="row"><input id="cap" placeholder="Caption for new photos (optional)"><input type="file" id="file" accept="image/*" multiple></div><small id="pmsg"></small><div class="row"><button id="thbtn" class="g" hidden>Make small thumbnails for older photos (faster gallery)</button></div><div class="grid" id="plist"></div></section>
+ </div></main>
+ <script>
+ var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||'';
+@@ -30,14 +30,16 @@ function drawStaff(l){$('slist').innerHTML=l.map(function(s){return '<div class=
+ function loadStaff(){api('/api/staff').then(function(d){drawStaff(d.staff)})}
+ $('sadd').onclick=function(){api('/api/staff',{method:'POST',body:JSON.stringify({name:$('sname').value})}).then(function(d){$('newCode').hidden=false;$('newCode').innerHTML='Code for <b>'+esc(d.name)+'</b>: <b style="font-size:1.3rem">'+d.code+'</b><br><small>Shown once. Write it down or send it to them now.</small>';$('sname').value='';loadStaff()}).catch(function(e){alert(e.message)})};
+ $('slist').onclick=function(e){var id=e.target.dataset.id;if(id&&confirm('Remove this login?'))api('/api/staff?id='+id,{method:'DELETE'}).then(loadStaff)};
+-function blobUrl(id){return fetch('/api/photos?img='+id,{headers:{Authorization:'Bearer '+tok}}).then(function(r){return r.blob()}).then(function(b){return URL.createObjectURL(b)})}
+-function loadPhotos(){api('/api/photos?all=1').then(function(d){var L=$('plist');L.innerHTML='';if(!d.photos.length)L.innerHTML='<small>No photos yet.</small>';d.photos.forEach(function(p){var c=document.createElement('div');c.className='pc';c.dataset.id=p.id;c.innerHTML='<img alt=""><span class="tag '+(p.published?'live':'draft')+'">'+(p.published?'Live':'Draft')+'</span><input class="pcap" maxlength="80" placeholder="Caption" value="'+esc(p.caption||'').replace(/"/g,'&quot;')+'"><div class="row"><button class="g" data-a="l" title="Rotate left">⟲</button><button class="g" data-a="r" title="Rotate right">⟳</button><button class="g" data-a="s">Save caption</button></div><div class="row"><button data-a="p">'+(p.published?'Unpublish':'Publish')+'</button><button class="g" data-a="d">Delete</button></div>';L.appendChild(c);blobUrl(p.id).then(function(u){c.querySelector('img').src=u})})}).catch(function(e){$('pmsg').textContent=e.message})}
++function blobUrl(id,th){return fetch('/api/photos?img='+id+(th?'&t=1':''),{headers:{Authorization:'Bearer '+tok}}).then(function(r){return r.blob()}).then(function(b){return URL.createObjectURL(b)})}
++function loadPhotos(){api('/api/photos?all=1').then(function(d){var L=$('plist');L.innerHTML='';if(!d.photos.length)L.innerHTML='<small>No photos yet.</small>';d.photos.forEach(function(p){var c=document.createElement('div');c.className='pc';c.dataset.id=p.id;c.innerHTML='<img alt=""><span class="tag '+(p.published?'live':'draft')+'">'+(p.published?'Live':'Draft')+'</span><input class="pcap" maxlength="80" placeholder="Caption" value="'+esc(p.caption||'').replace(/"/g,'&quot;')+'"><div class="row"><button class="g" data-a="l" title="Rotate left">⟲</button><button class="g" data-a="r" title="Rotate right">⟳</button><button class="g" data-a="s">Save caption</button></div><div class="row"><button data-a="p">'+(p.published?'Unpublish':'Publish')+'</button><button class="g" data-a="d">Delete</button></div>';L.appendChild(c);blobUrl(p.id,true).then(function(u){c.querySelector('img').src=u})});$('thbtn').hidden=!d.photos.some(function(p){return !p.t});$('thbtn').dataset.ids=d.photos.filter(function(p){return !p.t}).map(function(p){return p.id}).join(',')}).catch(function(e){$('pmsg').textContent=e.message})}
+ function rotate(id,dir){return blobUrl(id).then(function(u){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var c=document.createElement('canvas');c.width=im.height;c.height=im.width;var x=c.getContext('2d');x.translate(c.width/2,c.height/2);x.rotate(dir*Math.PI/2);x.drawImage(im,-im.width/2,-im.height/2);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=u})})}
+ $('plist').onclick=function(e){var a=e.target.dataset.a,c=e.target.closest('.pc');if(!a||!c)return;var id=c.dataset.id,P='/api/photos?id='+id,live=e.target.textContent==='Unpublish';
+ if(a==='s')api(P,{method:'PATCH',body:JSON.stringify({caption:c.querySelector('.pcap').value})}).then(function(){e.target.textContent='Saved ✓'}).catch(function(x){alert(x.message)});
+ if(a==='p')api(P,{method:'PATCH',body:JSON.stringify({caption:c.querySelector('.pcap').value,published:!live})}).then(loadPhotos).catch(function(x){alert(x.message)});
+-if(a==='l'||a==='r')rotate(id,a==='r'?1:-1).then(function(d){return api(P,{method:'PATCH',body:JSON.stringify({data:d})})}).then(loadPhotos).catch(function(x){alert(x.message)});
++if(a==='l'||a==='r')rotate(id,a==='r'?1:-1).then(function(d){return thumbOf(d).then(function(t){return api(P,{method:'PATCH',body:JSON.stringify({data:d,thumb:t})})})}).then(loadPhotos).catch(function(x){alert(x.message)});
+ if(a==='d'&&confirm('Delete this photo?'))api(P,{method:'DELETE'}).then(loadPhotos)};
++function thumbOf(src){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var s=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.7))};im.onerror=rej;im.src=src})}
++$('thbtn').onclick=async function(){var ids=(this.dataset.ids||'').split(',').filter(Boolean),n=0;this.disabled=true;for(var id of ids){$('pmsg').textContent='Making thumbnail '+(++n)+' of '+ids.length+'…';try{var full=await blobUrl(id,false);await api('/api/photos?id='+id,{method:'PATCH',body:JSON.stringify({thumb:await thumbOf(full)})})}catch(e){alert(e.message);break}}this.disabled=false;$('pmsg').textContent='Thumbnails done.';loadPhotos()};
+ function shrink(f){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=URL.createObjectURL(f)})}
+-$('file').onchange=async function(){var fs=[].slice.call(this.files),n=0;for(var f of fs){$('pmsg').textContent='Uploading draft '+(++n)+' of '+fs.length+'…';try{await api('/api/photos',{method:'POST',body:JSON.stringify({caption:$('cap').value,data:await shrink(f)})})}catch(e){alert(e.message);break}}$('pmsg').textContent='Uploaded as drafts. Review them below, then Publish.';this.value='';loadPhotos()};
++$('file').onchange=async function(){var fs=[].slice.call(this.files),n=0;for(var f of fs){$('pmsg').textContent='Uploading draft '+(++n)+' of '+fs.length+'…';try{var big=await shrink(f);await api('/api/photos',{method:'POST',body:JSON.stringify({caption:$('cap').value,data:big,thumb:await thumbOf(big)})})}catch(e){alert(e.message);break}}$('pmsg').textContent='Uploaded as drafts. Review them below, then Publish.';this.value='';loadPhotos()};
+ </script></body></html>
+diff --git a/bullhead-site/track.html b/bullhead-site/track.html
+index 9fb3d9d..5e11164 100644
+--- a/bullhead-site/track.html
++++ b/bullhead-site/track.html
+@@ -83,6 +83,12 @@
+     <div class="tk-total" id="totalRow" hidden><span>Total</span><span id="total"></span></div>
+   </section>
+ 
++  <section class="tk-card" id="sendCard" hidden>
++    <h2>📲 Send it on WhatsApp <small style="font-weight:500;color:var(--ink-soft)">· Tuma kwa WhatsApp</small></h2>
++    <p class="tk-meta">Your order is saved. We confirm it when your WhatsApp message reaches us (or we’ll call you). Already sent it? Just wait here.</p>
++    <a class="tk-wa" id="sendBtn" href="#" target="_blank" rel="noopener">💬 Send on WhatsApp</a>
++  </section>
++
+   <div id="pay"></div>
+   <section class="tk-card" id="review" hidden></section>
+   <a class="tk-wa" id="wa" href="https://wa.me/254720707323" target="_blank" rel="noopener">Questions? Message us on WhatsApp</a>
+@@ -90,6 +96,7 @@
+   <p class="tk-live" style="margin-top:6px">Tip: this link is also in your WhatsApp chat with us.</p>
+ </main>
+ 
++<script src="/js/order-utils.js"></script>
+ <script src="/js/mpesa.js"></script>
+ <script>
+ (function () {
+@@ -97,7 +104,8 @@
+   var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+   var id = new URLSearchParams(location.search).get('o') || '';
+   var TYPE = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
+-  var STAGE = { new: 0, preparing: 1, ready: 2, done: 3 };
++  var STAGE = { unconfirmed: -1, cancelled: -1, new: 0, preparing: 1, ready: 2, done: 3 };
++  var WA = '254720707323';
+   var READY_SUB = {
+     'dine-in': 'Your food is ready and on its way to your table.',
+     'drive-through': 'Your order is ready for pick-up at the counter.',
+@@ -106,6 +114,8 @@
+     reserve: 'Your table is ready for you.'
+   };
+   var COPY = {
++    unconfirmed: { e: '📲', h: 'Waiting for confirmation', sw: 'Tunasubiri kuthibitisha', s: 'Send your order on WhatsApp so we can confirm it. This page will update as soon as we do.' },
++    cancelled: { e: '✖️', h: 'This order was cancelled', sw: 'Oda hii imeghairiwa', s: 'If that’s a surprise, message us on WhatsApp and we’ll sort it out.' },
+     new:       { e: '📝', h: 'We’ve got your order', sw: 'Tumepokea oda yako', s: 'The kitchen will start on it in a moment.' },
+     preparing: { e: '🔥', h: 'Being prepared', sw: 'Inaandaliwa sasa', s: 'Your food is being cooked fresh right now.' },
+     ready:     { e: '🍽', h: 'Your order is ready!', sw: 'Oda yako iko tayari!', s: '' },
+@@ -141,7 +151,7 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
+     Array.prototype.forEach.call($('steps').children, function (li, i) {
+       li.className = i < cur ? 'done' : (i === cur ? 'now' + (i === 2 ? ' final' : '') : '');
+     });
+-    $('steps').hidden = false;
++    $('steps').hidden = cur < 0;
+     document.title = c.h + ' | Bullhead';
+   }
+ 
+@@ -157,6 +167,15 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
+     $('pay').innerHTML = ''; $('live').hidden = true; stop();
+   }
+ 
++  // Short message for the recovery button: the code is what staff match against the dashboard.
++  function waText(o) {
++    var L = ['Hi Bullhead, confirming my order #' + orderCode(id) + ' (' + (TYPE[o.type] || 'order') + (o.table ? ', Table ' + o.table : '') + ')'];
++    o.items.forEach(function (i) { L.push('- ' + (i.unit === 'kg' ? i.qty + 'kg ' : i.qty + 'x ') + i.name); });
++    if (o.total) L.push('Total: KES ' + o.total.toLocaleString('en-KE'));
++    L.push('Track: ' + location.origin + '/track?o=' + id);
++    return L.join('\n');
++  }
++
+   function render(o) {
+     show(o.status, o);
+     var eta = $('eta');
+@@ -168,11 +187,14 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
+       var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
+       a.textContent = i.name; b.textContent = i.unit === 'kg' ? i.qty + ' kg' : '× ' + i.qty; li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+     });
+-    $('meta').textContent = (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
++    $('meta').textContent = 'Order #' + orderCode(id) + ' · ' + (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
++    // Recovery button: if the customer never sent the WhatsApp message (pop-up blocked, tab closed), it is one tap away.
++    var sc = $('sendCard'); sc.hidden = o.status !== 'unconfirmed';
++    if (!sc.hidden) $('sendBtn').href = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(waText(o));
+     $('total').textContent = 'KES ' + (o.total || 0).toLocaleString('en-KE'); $('totalRow').hidden = !o.total;
+     $('orderCard').hidden = !(o.items.length || o.table || o.type);
+     // Optional pay-ahead card, only while the order is still open.
+-    var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && typeof mpesaCard === 'function';
++    var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && o.status !== 'cancelled' && o.status !== 'unconfirmed' && typeof mpesaCard === 'function';   // no paying for an order we haven’t confirmed
+     if (!wantPay) pay.innerHTML = '';
+     else if (!pay.firstChild) { var pc = mpesaCard(o.total); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
+        showReview(o);
+@@ -181,7 +203,7 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
+   }
+ 
+   function stop() { clearTimeout(timer); timer = null; }
+-  function schedule(ms) { stop(); timer = setTimeout(poll, ms || (last === 'done' ? 60000 : 12000)); }
++  function schedule(ms) { stop(); timer = setTimeout(poll, ms || (last === 'done' || last === 'cancelled' ? 60000 : last === 'ready' ? 30000 : 15000)); }
+ 
+   function poll() {
+     if (document.hidden) return schedule();
+diff --git a/functions/_lib/auth.js b/functions/_lib/auth.js
+new file mode 100644
+index 0000000..e6406cb
+--- /dev/null
++++ b/functions/_lib/auth.js
+@@ -0,0 +1,88 @@
++// Shared helpers for every /api endpoint: JSON replies, who-is-calling (owner / staff),
++// and a small rate limiter. Lives in functions/_lib/ so it is NOT a public route
++// (only files that export onRequest* handlers become routes).
++//
++// Everything here uses the same D1 database (binding: DB) that orders already need,
++// so there is nothing new to set up and nothing new to pay for.
++
++export const json = (d, init) => new Response(JSON.stringify(d), {
++  ...init,
++  headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(init && init.headers) },
++});
++
++const enc = new TextEncoder();
++const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
++export const sha256 = async (s) => hex(await crypto.subtle.digest('SHA-256', enc.encode(s)));
++
++// A short, non-reversible-in-practice fingerprint of the caller's address (used for rate limits only).
++export async function ipHash(request) {
++  const ip = request.headers.get('CF-Connecting-IP') || '';
++  if (!ip) return '';
++  return (await sha256(ip)).slice(0, 16);
++}
++
++// Constant-time string comparison (compares fixed-length digests, so timing never leaks how much matched).
++async function safeEqual(a, b) {
++  const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a)), crypto.subtle.digest('SHA-256', enc.encode(b))]);
++  const p = new Uint8Array(x), q = new Uint8Array(y);
++  let d = 0;
++  for (let i = 0; i < p.length; i++) d |= p[i] ^ q[i];
++  return d === 0;
++}
++
++// ---------- tiny rate limiter (D1) ----------
++let rlReady = null;
++function rlEnsure(env) {
++  if (!env.DB) return Promise.reject(new Error('no DB'));
++  return (rlReady = rlReady || env.DB.batch([
++    env.DB.prepare('CREATE TABLE IF NOT EXISTS rl (k TEXT NOT NULL, ts TEXT NOT NULL)'),
++    env.DB.prepare('CREATE INDEX IF NOT EXISTS rl_k_ts ON rl (k, ts)'),
++  ]).catch((e) => { rlReady = null; throw e; }));
++}
++// How many hits for `key` in the last windowMs. Fails OPEN (returns 0) if the database is unavailable.
++export async function rlCount(env, key, windowMs) {
++  try {
++    await rlEnsure(env);
++    const r = await env.DB.prepare('SELECT COUNT(*) AS c FROM rl WHERE k = ? AND ts > ?').bind(key, new Date(Date.now() - windowMs).toISOString()).first();
++    return r ? r.c : 0;
++  } catch (e) { return 0; }
++}
++export async function rlHit(env, key) {
++  try {
++    await rlEnsure(env);
++    await env.DB.prepare('INSERT INTO rl (k, ts) VALUES (?, ?)').bind(key, new Date().toISOString()).run();
++    if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM rl WHERE ts < ?').bind(new Date(Date.now() - 3600e3).toISOString()).run();
++  } catch (e) { /* best effort */ }
++}
++
++// ---------- staff logins ----------
++let staffReady = null;
++export const ensureStaff = (env) => (staffReady = staffReady || env.DB.prepare('CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, ts TEXT NOT NULL)').run().catch((e) => { staffReady = null; throw e; }));
++async function isStaffToken(t, env) {
++  if (!env.DB) return false;
++  try { await ensureStaff(env); return !!(await env.DB.prepare('SELECT 1 AS x FROM staff WHERE hash = ?').bind(await sha256(t)).first()); } catch (e) { return false; }
++}
++
++// ---------- who is calling? ----------
++// 'owner' | 'staff' | 'none' (no code, or a wrong one) | 'locked' (too many wrong codes from this address).
++// The lock is checked BEFORE the code is compared, so guessing is throttled no matter how lucky a guess is.
++// A staff code on an owner-only page is not a "wrong code", so it never counts against anyone.
++const FAIL_MAX = 30, FAIL_WINDOW = 10 * 60000;
++export async function roleOf(request, env) {
++  const t = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
++  if (!t || t.length > 200) return 'none';
++  const key = 'auth:' + ((await ipHash(request)) || 'unknown');
++  if ((await rlCount(env, key, FAIL_WINDOW)) >= FAIL_MAX) return 'locked';
++  if (env.ADMIN_TOKEN && (await safeEqual(t, String(env.ADMIN_TOKEN)))) return 'owner';
++  if (await isStaffToken(t, env)) return 'staff';
++  await rlHit(env, key);
++  return 'none';
++}
++
++// Usage:  const g = await requireRole(request, env, ['owner']);  if (g.res) return g.res;
++export async function requireRole(request, env, allow) {
++  const role = await roleOf(request, env);
++  if (role === 'locked') return { res: json({ error: 'Too many wrong codes. Try again in a few minutes.' }, { status: 429 }) };
++  if (!(allow || ['owner']).includes(role)) return { res: json({ error: 'Unauthorized' }, { status: 401 }) };
++  return { role };
++}
+diff --git a/functions/api/menu.js b/functions/api/menu.js
+index ad17a91..c7070b6 100644
+--- a/functions/api/menu.js
++++ b/functions/api/menu.js
+@@ -1,8 +1,7 @@
+ // GET  /api/menu -> public: per-item overrides { [itemId]: { price?, special?, soldOut?, until? } }
+ // POST /api/menu -> owner only: replaces the overrides (body: { menu: {...} })
+ // Same KV namespace (UPDATES_KV) and ADMIN_TOKEN as /api/updates.
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', ...(init && init.headers) } });
+-const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
++import { json, requireRole } from '../_lib/auth.js';
+ 
+ export async function onRequestGet({ env }) {
+   const raw = await env.UPDATES_KV.get('menu');
+@@ -11,7 +10,8 @@ export async function onRequestGet({ env }) {
+ }
+ 
+ export async function onRequestPost({ request, env }) {
+-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
+   const clean = {};
+   for (const [id, m] of Object.entries(body.menu || {}).slice(0, 200)) {
+diff --git a/functions/api/orders.js b/functions/api/orders.js
+index 7170b57..da004a4 100644
+--- a/functions/api/orders.js
++++ b/functions/api/orders.js
+@@ -1,37 +1,46 @@
+-// POST   /api/orders            -> public: the site drops each WhatsApp order here so the owner sees it live
++// POST   /api/orders            -> public: the site records each order here BEFORE it opens WhatsApp
+ // GET    /api/orders            -> owner or staff: recent orders (newest first)
+ // GET    /api/orders?id=<uuid>  -> public: ONE order's progress, for the customer's tracking page
+-// PATCH  /api/orders?id=&status= -> owner or staff: new | preparing | ready | done
++// PATCH  /api/orders?id=&status= -> owner or staff: confirm / preparing / ready / done / cancelled
+ // DELETE /api/orders?id=        -> owner only
+ //
+-// Orders now live in a D1 database (binding: DB), one row per order, so two orders
+-// arriving at the same moment can never overwrite each other (the old single-array
+-// KV storage could). The tables are created automatically on first use.
+-// ADMIN_TOKEN is the same owner access code as /api/updates.
++// The dashboard is the order; the WhatsApp message is a receipt that carries the same short
++// order code (#K7Q2M, worked out from the id by js/order-utils.js).
++//
++// Statuses:  unconfirmed -> new -> preparing -> ready -> done   (or cancelled)
++//   * Anything that reaches us with only the website's word for it starts as "unconfirmed":
++//     staff confirm it (they see the WhatsApp message with the same code, or they call/WhatsApp
++//     the customer from the card) before the kitchen starts. That stops ghost orders where
++//     the customer never pressed Send in WhatsApp.
++//   * A dine-in order from a table QR code (?table=N) is already in the room, so it starts as "new".
++//
++// Orders live in a D1 database (binding: DB), one row per order. Tables are created automatically.
+ import { ensureSchema, notifyOwner } from './push.js';
+-import { isStaff } from './staff.js';
++import { json, ipHash, requireRole } from '../_lib/auth.js';
+ 
+-const MAX_KEEP = 1000;     // rows kept in the database
++const MAX_KEEP = 3000;     // finished / cancelled / unconfirmed rows kept (live orders are never trimmed)
+ const MAX_LIST = 150;      // rows the dashboard loads
+ const RATE_LIMIT = 20;     // orders per device address per 10 minutes (generous: mobile networks share addresses)
+-const STATUSES = ['new', 'preparing', 'ready', 'done'];
++const GLOBAL_LIMIT = 60;   // orders from everyone per 10 minutes: far above real life, stops floods from rotating addresses
++const STATUSES = ['unconfirmed', 'new', 'preparing', 'ready', 'done', 'cancelled'];
++const TYPES = ['dine-in', 'delivery', 'drive-through', 'reserve', 'on-the-way'];
+ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(init && init.headers) } });
+-const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
++const PIN_RE = /^https:\/\/maps\.google\.com\/\?q=-?\d{1,3}(\.\d+)?,-?\d{1,3}(\.\d+)?$/;
+ const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+ const fail = (e) => json({ error: String((e && e.message) || e) }, { status: 500 });
+ 
+-async function ipHash(request) {
+-  const ip = request.headers.get('CF-Connecting-IP') || '';
+-  if (!ip) return '';
+-  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip));
+-  return [...new Uint8Array(d)].slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
++// Kenyan mobile number in any usual spelling -> 2547XXXXXXXX / 2541XXXXXXXX, or '' if it isn't one.
++function normPhone(v) {
++  let d = String(v || '').replace(/\D/g, '');
++  if (d.startsWith('254')) d = d.slice(3);
++  else if (d.startsWith('0')) d = d.slice(1);
++  return /^[17]\d{8}$/.test(d) ? '254' + d : '';
+ }
+ 
+ export async function onRequestGet({ request, env }) {
+   // Customer tracking: the order id is a random UUID that only the customer (and the
+   // WhatsApp chat) has, so knowing it is the credential. Only progress details are
+-  // returned: never the name, address, notes or phone details.
++  // returned: never the name, phone, address, pin or notes.
+   const pub = new URL(request.url).searchParams.get('id');
+   if (pub !== null) {
+     if (!UUID_RE.test(pub)) return json({ error: 'Not found' }, { status: 404 });
+@@ -41,11 +50,13 @@ export async function onRequestGet({ request, env }) {
+       if (!r) return json({ error: 'Not found' }, { status: 404 });
+       const o = JSON.parse(r.body);
+       return json({ order: {
+-        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', counter: o.counter || '', total: o.total || 0,        items: (o.items || []).map((i) => ({ name: i.name, qty: i.qty, unit: i.unit })),
++        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', counter: o.counter || '', total: o.total || 0,
++        items: (o.items || []).map((i) => ({ name: i.name, qty: i.qty, unit: i.unit })),
+       } });
+     } catch (e) { return fail(e); }
+   }
+-  if (!authed(request, env) && !(await isStaff(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner', 'staff']);
++  if (g.res) return g.res;
+   try {
+     await ensureSchema(env);
+     const { results } = await env.DB.prepare('SELECT id, status, body FROM orders ORDER BY ts DESC LIMIT ?').bind(MAX_LIST).all();
+@@ -55,30 +66,51 @@ export async function onRequestGet({ request, env }) {
+ 
+ export async function onRequestPost({ request, env, waitUntil }) {
+   let b; try { b = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
++  const type = str(b.type, 20);
++  if (!TYPES.includes(type)) return json({ error: 'Bad order type' }, { status: 400 });
+   const items = (Array.isArray(b.items) ? b.items : []).slice(0, 30).map((i) => ({
+     id: str(i.id, 40), name: str(i.name, 60), qty: Math.min(Number(i.qty) || 0, 100), unit: i.unit === 'kg' ? 'kg' : '', lineTotal: Math.min(Number(i.lineTotal) || 0, 1e6),
+   })).filter((i) => i.name && i.qty > 0);
+-  if (!items.length && !str(b.notes, 10)) return json({ error: 'Empty order' }, { status: 400 });
++  // A table reservation is a real request even with no food and no note.
++  if (!items.length && !str(b.notes, 10) && type !== 'reserve') return json({ error: 'Empty order' }, { status: 400 });
++
++  const table = /^\d{1,3}$/.test(str(b.table, 10)) ? str(b.table, 10) : '';
++  const atTable = type === 'dine-in' && !!table;           // ordering from a table QR code: already in the room
++  const phone = normPhone(b.phone);
++  if (!atTable && !phone) return json({ error: 'Please add a valid phone number (e.g. 0712 345 678) so we can reach you about this order.', field: 'phone' }, { status: 400 });
++  const pin = type === 'delivery' && PIN_RE.test(str(b.pin, 100)) ? str(b.pin, 100) : '';
++
+   const eta = Number(b.etaMinutes) > 0 ? Math.min(Number(b.etaMinutes), 240) : null;
+   const order = {
+-    // The browser makes the id so the tracking link can go into the WhatsApp message instantly.
+-    id: UUID_RE.test(String(b.id || '')) ? String(b.id).toLowerCase() : crypto.randomUUID(), ts: new Date().toISOString(), status: 'new',
+-    type: str(b.type, 20), name: str(b.name, 40), notes: str(b.notes, 200), table: str(b.table, 10), counter: str(b.counter, 30),
+-    partySize: str(b.partySize, 4), arriving: str(b.arriving, 20), address: str(b.address, 120),
++    // The browser makes the id so the tracking link and order code can go into the WhatsApp message instantly.
++    id: UUID_RE.test(String(b.id || '')) ? String(b.id).toLowerCase() : crypto.randomUUID(), ts: new Date().toISOString(),
++    status: atTable ? 'new' : 'unconfirmed',
++    type, name: str(b.name, 40), phone, notes: str(b.notes, 200), table, counter: str(b.counter, 30),
++    partySize: str(b.partySize, 4), arriving: str(b.arriving, 20), address: str(b.address, 120), pin,
+     etaMinutes: eta, etaAt: eta ? new Date(Date.now() + eta * 60000).toISOString() : null,
+     items, total: items.reduce((s, i) => s + i.lineTotal, 0),
+   };
+   try {
+     await ensureSchema(env);
+     const ip = await ipHash(request);
++    const since = new Date(Date.now() - 10 * 60000).toISOString();
+     if (ip) {
+-      const since = new Date(Date.now() - 10 * 60000).toISOString();
+       const row = await env.DB.prepare('SELECT COUNT(*) AS c FROM orders WHERE ip = ? AND ts > ?').bind(ip, since).first();
+       if (row && row.c >= RATE_LIMIT) return json({ error: 'Too many orders — please try again in a few minutes' }, { status: 429 });
+     }
++    const all = await env.DB.prepare('SELECT COUNT(*) AS c FROM orders WHERE ts > ?').bind(since).first();
++    if (all && all.c >= GLOBAL_LIMIT) return json({ error: 'We are getting a lot of orders right now — please try again in a few minutes' }, { status: 429 });
++    const now = Date.now();
+     await env.DB.batch([
+       env.DB.prepare('INSERT INTO orders (id, ts, status, ip, body) VALUES (?, ?, ?, ?, ?)').bind(order.id, order.ts, order.status, ip, JSON.stringify(order)),
+-      env.DB.prepare('DELETE FROM orders WHERE id NOT IN (SELECT id FROM orders ORDER BY ts DESC LIMIT ?)').bind(MAX_KEEP),
++      // Housekeeping, done here so no scheduled job (or bill) is needed:
++      // an unconfirmed order nobody picked up for a day is dead: cancel it
++      env.DB.prepare("UPDATE orders SET status = 'cancelled' WHERE status = 'unconfirmed' AND ts < ?").bind(new Date(now - 24 * 3600e3).toISOString()),
++      // keep the newest MAX_KEEP finished rows; orders still being worked on are never trimmed
++      env.DB.prepare("DELETE FROM orders WHERE status IN ('done','cancelled','unconfirmed') AND id NOT IN (SELECT id FROM orders WHERE status IN ('done','cancelled','unconfirmed') ORDER BY ts DESC LIMIT ?)").bind(MAX_KEEP),
++      // privacy: phone, address and pin are wiped 30 days after the order; the address fingerprint used for rate limits after a day
++      env.DB.prepare("UPDATE orders SET body = json_remove(body, '$.phone', '$.address', '$.pin') WHERE ts < ? AND (body LIKE '%\"phone\":\"2%' OR body LIKE '%\"address\":\"_%' OR body LIKE '%\"pin\":\"h%')").bind(new Date(now - 30 * 24 * 3600e3).toISOString()),
++      env.DB.prepare('UPDATE orders SET ip = NULL WHERE ip IS NOT NULL AND ts < ?').bind(new Date(now - 24 * 3600e3).toISOString()),
+     ]);
+   } catch (e) {
+     if (/UNIQUE|constraint/i.test(String((e && e.message) || e))) return json({ error: 'Duplicate order' }, { status: 409 });
+@@ -88,22 +120,25 @@ export async function onRequestPost({ request, env, waitUntil }) {
+   // Buzz the owner's phone(s) after the response has gone back to the customer.
+   const push = notifyOwner(env).catch(() => {});
+   if (waitUntil) waitUntil(push);
+-  return json({ ok: true, id: order.id });
++  return json({ ok: true, id: order.id, status: order.status });
+ }
+ 
+ export async function onRequestPatch({ request, env }) {
+-  if (!authed(request, env) && !(await isStaff(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner', 'staff']);
++  if (g.res) return g.res;
+   const u = new URL(request.url), status = u.searchParams.get('status');
+   if (!STATUSES.includes(status)) return json({ error: 'Bad status' }, { status: 400 });
+   try {
+     await ensureSchema(env);
+-    await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, u.searchParams.get('id') || '').run();
++    const r = await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, u.searchParams.get('id') || '').run();
++    if (r && r.meta && r.meta.changes === 0) return json({ error: 'Order not found' }, { status: 404 });
+     return json({ ok: true });
+   } catch (e) { return fail(e); }
+ }
+ 
+ export async function onRequestDelete({ request, env }) {
+-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   try {
+     await ensureSchema(env);
+     await env.DB.prepare('DELETE FROM orders WHERE id = ?').bind(new URL(request.url).searchParams.get('id') || '').run();
+diff --git a/functions/api/photos.js b/functions/api/photos.js
+index 72fb063..ee1c0bc 100644
+--- a/functions/api/photos.js
++++ b/functions/api/photos.js
+@@ -1,64 +1,86 @@
+-// GET    /api/photos             -> public: published photos [{ id, caption }]
+-// GET    /api/photos?img=<id>    -> public: a published image (owner code: any image, incl. drafts)
+-// GET    /api/photos?all=1       -> owner only: every photo, with { published }
+-// POST   /api/photos {caption, data}       -> owner only: uploads as a DRAFT (not public yet)
+-// PATCH  /api/photos?id= {caption?, data?, published?} -> owner only: edit / rotate / publish / unpublish
+-// DELETE /api/photos?id=         -> owner only
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+-const owner = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
++// GET    /api/photos                       -> public: published photos [{ id, caption, v, t }]  (v = revision, t = has thumbnail)
++// GET    /api/photos?img=<id>&t=1&v=<rev>  -> public: a published image (t=1: the small thumbnail if there is one).
++//                                             Owner code: any image, including drafts.
++// GET    /api/photos?all=1                 -> owner only: every photo, with { published }
++// POST   /api/photos {caption, data, thumb?} -> owner only: uploads as a DRAFT (not public yet)
++// PATCH  /api/photos?id= {caption?, data?, thumb?, published?} -> owner only: edit / rotate / publish / unpublish
++// DELETE /api/photos?id=                   -> owner only
++//
++// Public images are cached at Cloudflare's edge (Cache API, free) and in the visitor's browser for a day.
++// The URL carries the photo's revision (v), which changes whenever the picture or its published state
++// changes, so an edit shows up immediately and a 60-photo gallery does not cost 60 Function runs per visitor.
++import { json, requireRole } from '../_lib/auth.js';
++
+ const PREFIX = 'data:image/jpeg;base64,';
+ const okData = (d) => typeof d === 'string' && d.startsWith(PREFIX) && d.length <= 600000;
++const okThumb = (d) => typeof d === 'string' && d.startsWith(PREFIX) && d.length <= 90000;
+ let ready = null;
+ const ensure = (env) => (ready = ready || (async () => {
+   await env.DB.prepare('CREATE TABLE IF NOT EXISTS photos (id TEXT PRIMARY KEY, ts TEXT NOT NULL, caption TEXT, data TEXT NOT NULL, published INTEGER NOT NULL DEFAULT 1)').run();
+-  // Older databases don't have "published" yet. Existing photos stay live (default 1).
+-  try { await env.DB.prepare('ALTER TABLE photos ADD COLUMN published INTEGER NOT NULL DEFAULT 1').run(); } catch (e) { /* already there */ }
++  // Older databases don't have these columns yet. Existing photos stay live (published = 1) at revision 0 with no thumbnail.
++  for (const col of ['published INTEGER NOT NULL DEFAULT 1', 'rev INTEGER NOT NULL DEFAULT 0', 'thumb TEXT']) {
++    try { await env.DB.prepare('ALTER TABLE photos ADD COLUMN ' + col).run(); } catch (e) { /* already there */ }
++  }
+ })().catch((e) => { ready = null; throw e; }));
+ 
+-export async function onRequestGet({ request, env }) {
++export async function onRequestGet({ request, env, waitUntil }) {
+   try {
+     await ensure(env);
+-    const u = new URL(request.url), me = owner(request, env), img = u.searchParams.get('img');
++    const u = new URL(request.url), img = u.searchParams.get('img');
++    const me = (await requireRole(request, env, ['owner'])).role === 'owner';   // no code sent -> false, and nothing is counted
+     if (img) {
+-      const r = await env.DB.prepare(`SELECT data FROM photos WHERE id = ?${me ? '' : ' AND published = 1'}`).bind(img).first();
++      const wantThumb = u.searchParams.get('t') === '1', v = String(parseInt(u.searchParams.get('v'), 10) || 0);
++      const cache = !me && typeof caches !== 'undefined' ? caches.default : null;
++      const key = new Request(`${u.origin}${u.pathname}?img=${encodeURIComponent(img)}${wantThumb ? '&t=1' : ''}&v=${v}`);
++      if (cache) { const hit = await cache.match(key); if (hit) return hit; }
++      const r = await env.DB.prepare(`SELECT data, thumb FROM photos WHERE id = ?${me ? '' : ' AND published = 1'}`).bind(img).first();
+       if (!r) return new Response('Not found', { status: 404 });
+-      const bin = atob(r.data.slice(PREFIX.length));
+-      return new Response(Uint8Array.from(bin, (c) => c.charCodeAt(0)), { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': me ? 'private, no-store' : 'public, max-age=300' } });
++      const src = wantThumb && r.thumb ? r.thumb : r.data;
++      const res = new Response(Uint8Array.from(atob(src.slice(PREFIX.length)), (c) => c.charCodeAt(0)), {
++        headers: { 'Content-Type': 'image/jpeg', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': me ? 'private, no-store' : 'public, max-age=86400' },
++      });
++      if (cache) { const p = cache.put(key, res.clone()); if (waitUntil) waitUntil(p); else await p; }
++      return res;
+     }
+     if (u.searchParams.get('all') && me) {
+-      const { results } = await env.DB.prepare('SELECT id, caption, published FROM photos ORDER BY ts DESC').all();
++      const { results } = await env.DB.prepare('SELECT id, caption, published, rev AS v, (thumb IS NOT NULL) AS t FROM photos ORDER BY ts DESC').all();
+       return json({ photos: results });
+     }
+-    const { results } = await env.DB.prepare('SELECT id, caption FROM photos WHERE published = 1 ORDER BY ts DESC LIMIT 60').all();
+-    return json({ photos: results });
++    const { results } = await env.DB.prepare('SELECT id, caption, rev AS v, (thumb IS NOT NULL) AS t FROM photos WHERE published = 1 ORDER BY ts DESC LIMIT 60').all();
++    return json({ photos: results }, { headers: { 'Cache-Control': 'public, max-age=30' } });
+   } catch (e) { return json({ error: String(e.message || e) }, { status: 500 }); }
+ }
+ export async function onRequestPost({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   let b; try { b = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
+   if (!okData(b.data)) return json({ error: 'Photo must be a JPEG under ~450 KB' }, { status: 400 });
++  if (b.thumb !== undefined && !okThumb(b.thumb)) return json({ error: 'Bad thumbnail' }, { status: 400 });
+   await ensure(env);
+   const n = await env.DB.prepare('SELECT COUNT(*) AS c FROM photos').first();
+   if (n.c >= 60) return json({ error: 'Photo limit (60) reached. Delete some first.' }, { status: 400 });
+   const id = crypto.randomUUID();
+-  await env.DB.prepare('INSERT INTO photos (id, ts, caption, data, published) VALUES (?, ?, ?, ?, 0)').bind(id, new Date().toISOString(), String(b.caption || '').slice(0, 80), b.data).run();
++  await env.DB.prepare('INSERT INTO photos (id, ts, caption, data, thumb, published) VALUES (?, ?, ?, ?, ?, 0)').bind(id, new Date().toISOString(), String(b.caption || '').slice(0, 80), b.data, b.thumb || null).run();
+   return json({ ok: true, id });
+ }
+ export async function onRequestPatch({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   const id = new URL(request.url).searchParams.get('id') || '';
+   let b; try { b = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
+   await ensure(env);
+   const jobs = [];
+   if (b.caption !== undefined) jobs.push(env.DB.prepare('UPDATE photos SET caption = ? WHERE id = ?').bind(String(b.caption).slice(0, 80), id));
+-  if (b.data !== undefined) { if (!okData(b.data)) return json({ error: 'Bad image' }, { status: 400 }); jobs.push(env.DB.prepare('UPDATE photos SET data = ? WHERE id = ?').bind(b.data, id)); }
+-  if (b.published !== undefined) jobs.push(env.DB.prepare('UPDATE photos SET published = ? WHERE id = ?').bind(b.published ? 1 : 0, id));
++  if (b.data !== undefined) { if (!okData(b.data)) return json({ error: 'Bad image' }, { status: 400 }); jobs.push(env.DB.prepare('UPDATE photos SET data = ?, rev = rev + 1 WHERE id = ?').bind(b.data, id)); }
++  if (b.thumb !== undefined) { if (!okThumb(b.thumb)) return json({ error: 'Bad thumbnail' }, { status: 400 }); jobs.push(env.DB.prepare('UPDATE photos SET thumb = ?, rev = rev + 1 WHERE id = ?').bind(b.thumb, id)); }
++  if (b.published !== undefined) jobs.push(env.DB.prepare('UPDATE photos SET published = ?, rev = rev + 1 WHERE id = ?').bind(b.published ? 1 : 0, id));
+   if (!jobs.length) return json({ error: 'Nothing to change' }, { status: 400 });
+   await env.DB.batch(jobs);
+   return json({ ok: true });
+ }
+ export async function onRequestDelete({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   await ensure(env);
+   await env.DB.prepare('DELETE FROM photos WHERE id = ?').bind(new URL(request.url).searchParams.get('id') || '').run();
+   return json({ ok: true });
+diff --git a/functions/api/push.js b/functions/api/push.js
+index 9778925..2805770 100644
+--- a/functions/api/push.js
++++ b/functions/api/push.js
+@@ -16,8 +16,7 @@
+ // service worker shows "New Bullhead order". That keeps this file small and means
+ // no order details ever pass through the browser vendors' push servers.
+ 
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(init && init.headers) } });
+-const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
++import { json, requireRole } from '../_lib/auth.js';
+ const MAX_SUBS = 10;
+ 
+ // ---------- database ----------
+@@ -87,7 +86,8 @@ export async function onRequestGet({ env }) {
+ }
+ 
+ export async function onRequestPost({ request, env }) {
+-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   try {
+     await ensureSchema(env);
+     const u = new URL(request.url);
+@@ -107,7 +107,8 @@ export async function onRequestPost({ request, env }) {
+ }
+ 
+ export async function onRequestDelete({ request, env }) {
+-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   try {
+     await ensureSchema(env);
+     let b = {}; try { b = await request.json(); } catch {}
+diff --git a/functions/api/staff.js b/functions/api/staff.js
+index 80cdfa6..e4cbe3f 100644
+--- a/functions/api/staff.js
++++ b/functions/api/staff.js
+@@ -3,40 +3,36 @@
+ // DELETE /api/staff?id=    -> owner only: remove a staff login
+ // Staff use their code exactly like the owner code (Authorization: Bearer <code>) but only
+ // get the Orders tab: see orders and change status. Delete, menu, updates stay owner-only.
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+-const owner = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
+-const sha = async (s) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+-let ready = null;
+-const ensure = (env) => (ready = ready || env.DB.prepare('CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, ts TEXT NOT NULL)').run().catch((e) => { ready = null; throw e; }));
+-
+-export async function isStaff(request, env) {
+-  const t = (request.headers.get('Authorization') || '').replace(/^Bearer /, '').trim();
+-  if (!t || !env.DB) return false;
+-  try { await ensure(env); return !!(await env.DB.prepare('SELECT 1 AS x FROM staff WHERE hash = ?').bind(await sha(t)).first()); } catch { return false; }
+-}
++// (How a code is checked, and the wrong-code throttle, live in ../_lib/auth.js.)
++import { json, sha256, requireRole, ensureStaff } from '../_lib/auth.js';
+ 
+ export async function onRequestGet({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+-  await ensure(env);
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
++  await ensureStaff(env);
+   const { results } = await env.DB.prepare('SELECT id, name, ts FROM staff ORDER BY ts').all();
+   return json({ staff: results });
+ }
+ export async function onRequestPost({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   let b; try { b = await request.json(); } catch { b = {}; }
+   const name = String(b.name || '').trim().slice(0, 30);
+   if (!name) return json({ error: 'Name needed' }, { status: 400 });
+-  await ensure(env);
++  await ensureStaff(env);
+   const n = await env.DB.prepare('SELECT COUNT(*) AS c FROM staff').first();
+   if (n.c >= 20) return json({ error: 'Too many staff logins' }, { status: 400 });
+-  const a = crypto.getRandomValues(new Uint8Array(8)), chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+-  const code = 'bh-' + [...a].map((x) => chars[x % chars.length]).join('');
+-  await env.DB.prepare('INSERT INTO staff (id, name, hash, ts) VALUES (?, ?, ?, ?)').bind(crypto.randomUUID(), name, await sha(code), new Date().toISOString()).run();
++  // 10 characters from a 31-symbol alphabet (about 50 bits). Bytes >= 248 are skipped so there is no modulo bias.
++  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
++  let code = 'bh-';
++  while (code.length < 13) for (const x of crypto.getRandomValues(new Uint8Array(16))) if (x < 248 && code.length < 13) code += chars[x % 31];
++  await env.DB.prepare('INSERT INTO staff (id, name, hash, ts) VALUES (?, ?, ?, ?)').bind(crypto.randomUUID(), name, await sha256(code), new Date().toISOString()).run();
+   return json({ ok: true, name, code });
+ }
+ export async function onRequestDelete({ request, env }) {
+-  if (!owner(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+-  await ensure(env);
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
++  await ensureStaff(env);
+   await env.DB.prepare('DELETE FROM staff WHERE id = ?').bind(new URL(request.url).searchParams.get('id') || '').run();
+   return json({ ok: true });
+ }
+diff --git a/functions/api/summary.js b/functions/api/summary.js
+index 3623b59..c6453fa 100644
+--- a/functions/api/summary.js
++++ b/functions/api/summary.js
+@@ -1,35 +1,41 @@
+ // GET /api/summary?date=YYYY-MM-DD -> owner only: the day's numbers (Nairobi time) + a WhatsApp-ready text
+ import { ensureSchema } from './push.js';
+-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
++import { json, requireRole } from '../_lib/auth.js';
+ const TZ = 3 * 3600e3, TYPE = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
+ 
+ export async function onRequestGet({ request, env }) {
+-  if (!env.ADMIN_TOKEN || request.headers.get('Authorization') !== `Bearer ${env.ADMIN_TOKEN}`) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+   let date = new URL(request.url).searchParams.get('date') || '';
+   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = new Date(Date.now() + TZ).toISOString().slice(0, 10);
+   const start = Date.parse(date + 'T00:00:00Z') - TZ;
+   try {
+     await ensureSchema(env);
+-    const { results } = await env.DB.prepare('SELECT body FROM orders WHERE ts >= ? AND ts < ?').bind(new Date(start).toISOString(), new Date(start + 864e5).toISOString()).all();
+-    const orders = results.map((r) => JSON.parse(r.body));
++    const { results } = await env.DB.prepare('SELECT status, body FROM orders WHERE ts >= ? AND ts < ?').bind(new Date(start).toISOString(), new Date(start + 864e5).toISOString()).all();
++    // Cancelled orders are ignored. Sales and top items count only orders staff marked DONE, because the
++    // totals come from the customer's browser: an order nobody served (or a fake one) must not inflate the day.
++    const rows = results.map((r) => ({ ...JSON.parse(r.body), status: r.status })).filter((o) => o.status !== 'cancelled');
++    const orders = rows, done = rows.filter((o) => o.status === 'done');
+     const types = {}, items = {}, hours = {};
+     let sales = 0;
+     orders.forEach((o) => {
+-      sales += o.total || 0;
+       types[o.type] = (types[o.type] || 0) + 1;
+       const h = new Date(Date.parse(o.ts) + TZ).getUTCHours(); hours[h] = (hours[h] || 0) + 1;
++    });
++    done.forEach((o) => {
++      sales += o.total || 0;
+       (o.items || []).forEach((i) => { items[i.name] = (items[i.name] || 0) + i.qty; });
+     });
+     const top = Object.entries(items).sort((a, b) => b[1] - a[1]).slice(0, 5);
+     const busy = Object.entries(hours).sort((a, b) => b[1] - a[1])[0];
+     const pad = (h) => String(h).padStart(2, '0') + ':00';
+-    let text = `📊 Bullhead summary, ${new Date(start + TZ).toUTCString().slice(0, 16)}\nOrders: ${orders.length}\nSales: KES ${sales.toLocaleString('en-KE')}`;
++    let text = `📊 Bullhead summary, ${new Date(start + TZ).toUTCString().slice(0, 16)}\nOrders: ${orders.length} (${done.length} completed)\nSales: KES ${sales.toLocaleString('en-KE')} (completed orders)`;
+     if (orders.length) {
+       text += '\n\nBy type:\n' + Object.entries(types).map(([t, n]) => `• ${TYPE[t] || t || 'Other'}: ${n}`).join('\n');
+-      if (top.length) text += '\n\nTop items:\n' + top.map(([n, q], i) => `${i + 1}. ${n} (${q})`).join('\n');
++      if (top.length) text += '\n\nTop items (completed orders):\n' + top.map(([n, q], i) => `${i + 1}. ${n} (${q})`).join('\n');
+       if (busy) text += `\n\nBusiest hour: ${pad(busy[0])} to ${pad(+busy[0] + 1)} (${busy[1]} orders)`;
+     } else text += '\n\nNo orders sent through the website this day.';
+-    text += '\n\n(Website orders only. Walk-in sales are not counted.)';
+-    return json({ date, orders: orders.length, sales, text });
++    text += '\n\n(Website orders only. Walk-in sales are not counted. Orders count as sales once marked Done.)';
++    return json({ date, orders: orders.length, completed: done.length, sales, text });
+   } catch (e) { return json({ error: String(e.message || e) }, { status: 500 }); }
+ }
+diff --git a/functions/api/updates.js b/functions/api/updates.js
+index a57f55a..6ee0564 100644
+--- a/functions/api/updates.js
++++ b/functions/api/updates.js
+@@ -1,5 +1,6 @@
+ // GET    /api/updates          -> public, returns currently-live updates
+ // POST   /api/updates          -> owner only, posts a new update
++// POST   /api/updates?tap=<id> -> public, counts one WhatsApp-button tap (D1, rate-limited)
+ // DELETE /api/updates?id=<id>  -> owner only, removes one early
+ //
+ // Storage: a single JSON array under the KV key "updates", newest first,
+@@ -13,6 +14,8 @@
+ //     a long random phrase; it's typed into /admin.html, never shown to
+ //     site visitors)
+ 
++import { requireRole, ipHash, rlCount, rlHit } from '../_lib/auth.js';
++
+ const MAX_UPDATES = 30; // history kept for Repost + stats
+ const TYPES = ['special', 'stock', 'notice', 'closing'];
+ const MAX_TEXT_LENGTH = 140;
+@@ -29,9 +32,31 @@ function json(data, init) {
+   });
+ }
+ 
+-function isAuthorized(request, env) {
+-  const auth = request.headers.get('Authorization') || '';
+-  return env.ADMIN_TOKEN && auth === `Bearer ${env.ADMIN_TOKEN}`;
++// "Tap" counts (visitors pressing the WhatsApp button on an update) live in D1, NOT in the KV
++// array: a public request must never trigger a KV write (the free tier allows only 1,000 a day,
++// and the same quota is what saves your menu and updates).
++let tapsReady = null;
++const ensureTaps = (env) => (tapsReady = tapsReady || env.DB.prepare('CREATE TABLE IF NOT EXISTS update_taps (id TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)').run().catch((e) => { tapsReady = null; throw e; }));
++async function tapCounts(env) {
++  if (!env.DB) return {};
++  try { await ensureTaps(env); const { results } = await env.DB.prepare('SELECT id, n FROM update_taps').all(); return Object.fromEntries(results.map((r) => [r.id, r.n])); } catch (e) { return {}; }
++}
++
++// Public and tiny: a visitor tapped the WhatsApp button on an update. Does nothing else, ever.
++async function handleTap(request, env, id) {
++  try {
++    if (env.DB && /^[0-9a-f-]{36}$/i.test(id)) {
++      const key = 'tap:' + ((await ipHash(request)) || 'unknown');
++      if ((await rlCount(env, key, 10 * 60000)) < 10) {
++        await rlHit(env, key);
++        if ((await readUpdates(env)).some((u) => u.id === id)) {         // only real updates can be counted (KV read, not write)
++          await ensureTaps(env);
++          await env.DB.prepare('INSERT INTO update_taps (id, n) VALUES (?, 1) ON CONFLICT(id) DO UPDATE SET n = n + 1').bind(id).run();
++        }
++      }
++    }
++  } catch (e) { /* counting taps must never break the page */ }
++  return json({ ok: true });
+ }
+ 
+ export async function onRequestGet(context) {
+@@ -41,8 +66,10 @@ export async function onRequestGet(context) {
+ 
+   // Owner view: everything (live + past) with tap counts, never cached.
+   if (new URL(request.url).searchParams.get('all') === '1') {
+-    if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+-    return json({ updates }, { headers: { 'Cache-Control': 'no-store' } });
++    const g = await requireRole(request, env, ['owner']);
++    if (g.res) return g.res;
++    const taps = await tapCounts(env);
++    return json({ updates: updates.map((u) => ({ ...u, taps: (u.taps || 0) + (taps[u.id] || 0) })) }, { headers: { 'Cache-Control': 'no-store' } });
+   }
+ 
+   const live = updates
+@@ -57,11 +84,18 @@ export async function onRequestGet(context) {
+ 
+ export async function onRequestPost(context) {
+   const { request, env } = context;
+-  const isTap = new URL(request.url).searchParams.get('tap');
+-  if (!isTap && !isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const url = new URL(request.url);
++
++  // Public "tap" counter: handled first and returns, so it can never reach anything below.
++  const tap = url.searchParams.get('tap');
++  if (tap) return handleTap(request, env, tap);
++
++  // Everything else is owner-only.
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+ 
+   let body = {};
+-  if (!isTap) try {
++  try {
+     body = await request.json();
+   } catch {
+     return json({ error: 'Invalid JSON' }, { status: 400 });
+@@ -69,7 +103,7 @@ export async function onRequestPost(context) {
+ 
+   // Owner-only helper: draft a Swahili version for the owner to review.
+   // Needs a Workers AI binding named AI (Pages -> Settings -> Bindings).
+-  if (new URL(request.url).searchParams.get('translate')) {
++  if (url.searchParams.get('translate')) {
+     if (!env.AI) return json({ error: 'Auto-translate is not enabled yet' }, { status: 501 });
+     try {
+       const out = await env.AI.run('@cf/meta/m2m100-1.2b', {
+@@ -81,16 +115,6 @@ export async function onRequestPost(context) {
+     }
+   }
+ 
+-  // Public, tiny: a visitor tapped the WhatsApp button on an update.
+-  // (Taps only, not views, to stay well inside KV's free write limits.)
+-  const track = new URL(request.url).searchParams.get('tap');
+-  if (track) {
+-    const all = await readUpdates(env);
+-    const hit = all.find((u) => u.id === track);
+-    if (hit) { hit.taps = (hit.taps || 0) + 1; await env.UPDATES_KV.put('updates', JSON.stringify(all)); }
+-    return json({ ok: true });
+-  }
+-
+   const text = String(body.text || '').trim().slice(0, MAX_TEXT_LENGTH);
+   if (!text) return json({ error: 'text is required' }, { status: 400 });
+ 
+@@ -116,7 +140,8 @@ export async function onRequestPost(context) {
+ 
+ export async function onRequestDelete(context) {
+   const { request, env } = context;
+-  if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
++  const g = await requireRole(request, env, ['owner']);
++  if (g.res) return g.res;
+ 
+   const id = new URL(request.url).searchParams.get('id');
+   const updates = await readUpdates(env);
+-- 
+2.43.0
+
