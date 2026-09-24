@@ -27,7 +27,13 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
   const bar = document.getElementById('liveUpdateBar');
   if (!bar) return;
   const WA = 'https://wa.me/254720707323?text=';
-  const LABEL = { special: "Today's special", stock: 'Fresh in', notice: 'Update', closing: 'Heads up' };
+  const LABEL = {
+    en: { special: "Today's special", stock: 'Fresh in', notice: 'Update', closing: 'Heads up' },
+    sw: { special: 'Maalum ya leo', stock: 'Mpya sasa', notice: 'Taarifa', closing: 'Tahadhari' },
+  };
+  const lang = () => (localStorage.getItem('bullheadLang') === 'sw' ? 'sw' : 'en');
+  const say = (u) => (lang() === 'sw' && u.textSw) || u.text; // falls back to English if no Swahili was written
+  let current = [];
   const nav = document.querySelector('.site-nav');
   const root = document.documentElement;
 
@@ -46,13 +52,13 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
     const pill = document.createElement('span');
     pill.className = 'lu-pill';
     pill.innerHTML = '<i class="lu-dot"></i>';
-    pill.append(LABEL[first.type] || 'Update');
+    pill.append(LABEL[lang()][first.type] || LABEL.en.notice);
 
     const ticker = document.createElement('div');
     ticker.className = 'lu-ticker';
     const track = document.createElement('div');
     track.className = 'lu-track';
-    const text = items.map((u) => u.text).join('   •   ');
+    const text = items.map(say).join('   •   ');
     for (let k = 0; k < 2; k++) {           // two copies = seamless loop
       const s = document.createElement('span');
       s.textContent = text;
@@ -67,14 +73,15 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
     if (cta) {
       const a = document.createElement('a');
       a.className = 'lu-cta'; a.target = '_blank'; a.rel = 'noopener';
-      a.href = WA + encodeURIComponent('Hi Bullhead, I saw your update: "' + cta.text + '"');
-      a.textContent = (cta.type === 'notice' || cta.type === 'closing') ? 'Ask on WhatsApp' : 'Order on WhatsApp';
+      const ask = cta.type === 'notice' || cta.type === 'closing';
+      a.href = WA + encodeURIComponent((lang() === 'sw' ? 'Habari Bullhead, nimeona tangazo lenu: "' : 'Hi Bullhead, I saw your update: "') + say(cta) + '"');
+      a.textContent = lang() === 'sw' ? (ask ? 'Uliza kwa WhatsApp' : 'Agiza kwa WhatsApp') : (ask ? 'Ask on WhatsApp' : 'Order on WhatsApp');
       a.onclick = () => { try { navigator.sendBeacon('/api/updates?tap=' + cta.id, '{}'); } catch (e) {} };
       bar.appendChild(a);
     }
 
     const x = document.createElement('button');
-    x.className = 'lu-x'; x.setAttribute('aria-label', 'Dismiss'); x.textContent = '×';
+    x.className = 'lu-x'; x.setAttribute('aria-label', lang() === 'sw' ? 'Funga' : 'Dismiss'); x.textContent = '×';
     x.onclick = () => {
       try { sessionStorage.setItem('bhDismissed', JSON.stringify(dismissed().concat(items.map((n) => n.id)))); } catch (e) {}
       bar.hidden = true;
@@ -90,11 +97,17 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
       const items = ((data && data.updates) || []).filter((u) => u.text && !gone.includes(u.id));
       if (!items.length) return;
       if (nav) root.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      current = items;
       build(items);
       bar.hidden = false;
       document.body.classList.add('has-live-update'); // pushes the hero badge down, see CSS
     })
     .catch(() => {});
+
+  // Re-render when the visitor flips the EN/SW toggle (each page's own toggle
+  // script updates localStorage first; the timeout lets it finish).
+  const tg = document.getElementById('langToggle');
+  if (tg) tg.addEventListener('click', () => setTimeout(() => { if (current.length && !bar.hidden) build(current); }, 0));
 })();
 
 // --- Live Emali clock in the "Open now" badge (Nairobi time, whatever the visitor's timezone) ---
