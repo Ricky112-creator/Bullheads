@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Owner tools | Bullhead</title>
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#241712;color:#f6efe6;padding:20px}main{max-width:640px;margin:0 auto}
+h1{font-size:1.4rem}h2{font-size:1.05rem;margin:0 0 10px}section{background:#33231b;border-radius:16px;padding:18px;margin:16px 0}
+input,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #5a4236;background:#241712;color:inherit}button{background:#e8332b;border:0;font-weight:600;cursor:pointer}
+button.g{background:#3a2c24;border:1px solid #5a4236}pre{white-space:pre-wrap;background:#241712;padding:12px;border-radius:10px;font:inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}small{opacity:.7}a{color:#f6efe6}
+</style></head><body><main>
+<h1>Bullhead owner tools</h1>
+<section id="login"><h2>Owner code</h2><div class="row"><input id="tok" type="password" placeholder="Owner access code"><button id="go">Unlock</button></div><small>Same code as the dashboard. Staff codes do not work here.</small></section>
+<div id="app" hidden>
+<section><h2>📊 Daily summary</h2><div class="row"><input type="date" id="day"><button id="sum">Load</button></div><pre id="sumText" hidden></pre>
+<div class="row" id="sumBtns" hidden><button id="copy" class="g">Copy</button><a id="wa" target="_blank" rel="noopener"><button type="button">Send on WhatsApp</button></a></div></section>
+<section><h2>👥 Staff logins</h2><div class="row"><input id="sname" placeholder="Staff name"><button id="sadd">Create login</button></div>
+<p id="newCode" hidden></p><div id="slist"></div><small>Staff enter their code on the dashboard. They can see orders and mark them preparing, ready or done. Nothing else.</small></section>
+<section><h2>📷 Photos</h2><div class="row"><input id="cap" placeholder="Caption (optional)"><input type="file" id="file" accept="image/*" multiple></div><small id="pmsg"></small><div class="grid" id="plist"></div>
+<p><small>Photos appear on <a href="/gallery" target="_blank">/gallery</a>.</small></p></section>
+</div></main>
+<script>
+var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||'';
+function api(p,o){o=o||{};o.headers=Object.assign({'Content-Type':'application/json',Authorization:'Bearer '+tok},o.headers);return fetch(p,o).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status);return d})})}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function unlock(){api('/api/staff').then(function(d){sessionStorage.bhTok=tok;$('login').hidden=true;$('app').hidden=false;$('day').value=new Date(Date.now()+108e5).toISOString().slice(0,10);drawStaff(d.staff);loadPhotos()}).catch(function(){alert('Wrong code, or the database is not connected.')})}
+$('go').onclick=function(){tok=$('tok').value.trim();unlock()};if(tok)unlock();
+$('sum').onclick=function(){api('/api/summary?date='+$('day').value).then(function(d){$('sumText').textContent=d.text;$('sumText').hidden=false;$('sumBtns').hidden=false;$('wa').href='https://wa.me/?text='+encodeURIComponent(d.text)}).catch(function(e){alert(e.message)})};
+$('copy').onclick=function(){navigator.clipboard.writeText($('sumText').textContent).then(function(){$('copy').textContent='Copied ✓'})};
+function drawStaff(l){$('slist').innerHTML=l.map(function(s){return '<div class="row">'+esc(s.name)+' <button class="g" data-id="'+s.id+'">Remove</button></div>'}).join('')||'<small>No staff logins yet.</small>'}
+function loadStaff(){api('/api/staff').then(function(d){drawStaff(d.staff)})}
+$('sadd').onclick=function(){api('/api/staff',{method:'POST',body:JSON.stringify({name:$('sname').value})}).then(function(d){$('newCode').hidden=false;$('newCode').innerHTML='Code for <b>'+esc(d.name)+'</b>: <b style="font-size:1.3rem">'+d.code+'</b><br><small>Shown once. Write it down or send it to them now.</small>';$('sname').value='';loadStaff()}).catch(function(e){alert(e.message)})};
+$('slist').onclick=function(e){var id=e.target.dataset.id;if(id&&confirm('Remove this login?'))api('/api/staff?id='+id,{method:'DELETE'}).then(loadStaff)};
+function loadPhotos(){fetch('/api/photos').then(function(r){return r.json()}).then(function(d){$('plist').innerHTML=d.photos.map(function(p){return '<div><img src="/api/photos?img='+p.id+'" alt=""><small>'+esc(p.caption||'')+'</small><br><button class="g" data-id="'+p.id+'">Delete</button></div>'}).join('')})}
+$('plist').onclick=function(e){var id=e.target.dataset.id;if(id&&confirm('Delete this photo?'))api('/api/photos?id='+id,{method:'DELETE'}).then(loadPhotos)};
+function shrink(f){return new Promise(function(res,rej){var im=new Image();im.onload=function(){var s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=URL.createObjectURL(f)})}
+$('file').onchange=async function(){var fs=[].slice.call(this.files),n=0;for(var f of fs){$('pmsg').textContent='Uploading '+(++n)+' of '+fs.length+'…';try{await api('/api/photos',{method:'POST',body:JSON.stringify({caption:$('cap').value,data:await shrink(f)})})}catch(e){alert(e.message);break}}$('pmsg').textContent='Done.';this.value='';loadPhotos()};
+</script></body></html>
