@@ -228,6 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       tb.href = `/track?o=${trackId}`;
       tb.textContent = '✅ Order sent. Track it live · Fuatilia oda yako →';
+
+      // Optional pay-ahead card with the Till number and the exact amount.
+      const oldPay = document.getElementById('mpesaCard');
+      if (oldPay) oldPay.remove();
+      const orderTotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+      if (orderTotal > 0 && typeof mpesaCard === 'function') tb.after(mpesaCard(orderTotal));
     }
 
     if (lines.length) {
