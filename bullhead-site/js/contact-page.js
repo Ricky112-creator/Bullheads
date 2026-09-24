@@ -5,6 +5,16 @@
 
 const ORDER_WHATSAPP_NUMBER = '254720707323';
 
+// Random id for one order. Made here (not on the server) so the tracking link can be
+// put into the WhatsApp message the instant the customer taps send.
+function makeTrackId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const summaryEl = document.getElementById('orderSummary');
   const emptyEl = document.getElementById('orderEmpty');
@@ -188,12 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (name) message += `\nName: ${name}`;
     if (notes) message += `\nCustom instructions: ${notes}`;
 
+    // Tracking link. (`location` above is the counter the customer picked, so use window.location.)
+    // Mirrors the server: an order with no items still counts if it has a note.
+    const trackId = lines.length > 0 || notes ? makeTrackId() : '';
+    if (trackId) message += `\n\nTrack your order live: ${window.location.origin}/track?o=${trackId}`;
+
     // Also drop the order on the owner's dashboard (fire-and-forget; WhatsApp stays the source of truth).
     try {
       fetch('/api/orders', {
         method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type, name, notes, table: activeTable || '', counter: location, partySize, address,
+          id: trackId || undefined, type, name, notes, table: activeTable || '', counter: location, partySize, address,
           arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
           items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
         }),
@@ -202,6 +217,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const url = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener');
+
+    if (trackId) {
+      let tb = document.getElementById('trackBanner');
+      if (!tb) {
+        tb = document.createElement('a');
+        tb.id = 'trackBanner';
+        tb.style.cssText = 'display:block;margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--green);color:#fff;text-align:center;font-weight:600;text-decoration:none;';
+        form.after(tb);
+      }
+      tb.href = `/track?o=${trackId}`;
+      tb.textContent = '✅ Order sent. Track it live · Fuatilia oda yako →';
+    }
 
     if (lines.length) {
       clearCart();
