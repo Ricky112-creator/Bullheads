@@ -6,7 +6,8 @@ const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization'
 
 export async function onRequestGet({ env }) {
   const raw = await env.UPDATES_KV.get('menu');
-  return json({ menu: raw ? JSON.parse(raw) : {} }, { headers: { 'Cache-Control': 'public, max-age=15' } });
+  const cust = await env.UPDATES_KV.get('menu-custom');
+  return json({ menu: raw ? JSON.parse(raw) : {}, custom: cust ? JSON.parse(cust) : [] }, { headers: { 'Cache-Control': 'public, max-age=15' } });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -23,5 +24,15 @@ export async function onRequestPost({ request, env }) {
     if (Object.keys(e).length) clean[id] = e;
   }
   await env.UPDATES_KV.put('menu', JSON.stringify(clean));
-  return json({ ok: true, menu: clean });
+
+  // Owner-added dishes (whole list replaced each save).
+  let custom;
+  if (Array.isArray(body.custom)) {
+    custom = body.custom.slice(0, 60).map((c) => ({
+      id: String(c.id || ''), category: String(c.category || '').trim().slice(0, 40), name: String(c.name || '').trim().slice(0, 60),
+      price: typeof c.price === 'number' && c.price >= 0 && c.price <= 100000 ? c.price : null, unit: c.unit === 'kg' ? 'kg' : '',
+    })).filter((c) => /^[a-z0-9-]{1,40}$/.test(c.id) && c.name && c.category);
+    await env.UPDATES_KV.put('menu-custom', JSON.stringify(custom));
+  }
+  return json({ ok: true, menu: clean, custom });
 }
