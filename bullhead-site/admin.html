@@ -309,11 +309,20 @@
     if (live) act('Remove', '', function () { if (confirm('Take this update off the website?')) remove(u.id); });
     r.appendChild(a); return r;
   }
-
+  // Staff codes can't open Updates/Menu/Insights, so if the owner check fails we try the code
+  // against Orders. If that works, show the Orders tab only.
+  function enterStaff() {
+    return fetch('/api/orders', { headers: { Authorization: auth() } }).then(function (r) {
+      if (!r.ok) throw new Error('auth');
+      $('tabs').style.display = 'none'; $('postBar').hidden = true; $('alertsBtn').hidden = true;
+      $('gate').hidden = true; $('app').hidden = false; showTab('orders'); startOrders();
+    });
+  }
   function load(first) {
     return fetch('/api/updates?all=1', { headers: { Authorization: auth() } })
-      .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'auth' : 'net'); return r.json(); })
+      .then(function (r) { if (r.status === 401) return { staff: true }; if (!r.ok) throw new Error('net'); return r.json(); })
       .then(function (d) {
+        if (d.staff) return enterStaff();
         var all = d.updates || [], now = Date.now(), wk = now - 7 * 864e5, live = [], past = [], t7 = 0, tAll = 0;
         all.forEach(function (u) { var lv = !u.expiresAt || new Date(u.expiresAt).getTime() > now; (lv ? live : past).push(u); tAll += u.taps || 0; if (new Date(u.postedAt).getTime() > wk) t7 += u.taps || 0; });
         $('sLive').textContent = live.length; $('sTaps7').textContent = t7; $('sTapsAll').textContent = tAll;
