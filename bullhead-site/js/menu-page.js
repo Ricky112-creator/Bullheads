@@ -12,6 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const categories = [...new Set(MENU_ITEMS.map((i) => i.category))];
 
+  function soldLabel(item) {
+    if (!item.backAt) return 'Sold out';
+    return 'Back at ' + new Date(item.backAt).toLocaleTimeString('en-KE', { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit' });
+  }
+
   function priceLabel(item) {
     if (typeof item.price !== 'number') return 'Ask staff';
     return item.unit === 'kg' ? `${formatKES(item.price)} / kg` : formatKES(item.price);
@@ -22,9 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(qty);
   }
 
+  function draw() {
   listEl.innerHTML = categories
     .map((cat) => {
-      const items = MENU_ITEMS.filter((i) => i.category === cat);
+      const items = MENU_ITEMS.filter((i) => i.category === cat).sort((a, b) => (b.special ? 1 : 0) - (a.special ? 1 : 0));
       return `
         <div class="menu-category">
           <h3 class="menu-category-title">${cat}</h3>
@@ -33,12 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
               .map((item) => {
                 const unpriced = typeof item.price !== 'number';
                 return `
-              <div class="menu-item" data-id="${item.id}">
+              <div class="menu-item${item.soldOut ? ' is-sold' : ''}${item.special ? ' is-special' : ''}" data-id="${item.id}">
                 <div class="menu-item-info">
-                  <p class="menu-item-name">${item.name}</p>
+                  <p class="menu-item-name">${item.name}${item.special ? ' <span class="tag-special">★ Today\'s special</span>' : ''}</p>
                   <p class="menu-item-price${unpriced ? ' unpriced' : ''}">${priceLabel(item)}</p>
                 </div>
-                ${unpriced
+                ${item.soldOut
+                  ? `<span class="menu-item-unavailable sold-tag">${soldLabel(item)}</span>`
+                  : unpriced
                   ? `<span class="menu-item-unavailable">Not yet orderable — ask staff</span>`
                   : `<div class="qty-stepper" data-id="${item.id}" data-unit="${item.unit || ''}">
                       <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">−</button>
@@ -53,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     })
     .join('');
+  }
 
   function syncUI() {
     const cart = getCart();
@@ -81,5 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
     syncUI();
   });
 
+  draw();
   syncUI();
+  // Pull the owner's live menu board now, then every 30s while the page is open.
+  const refreshBoard = () => applyMenuOverrides().then(() => { draw(); syncUI(); });
+  refreshBoard();
+  setInterval(refreshBoard, 30000);
 });
