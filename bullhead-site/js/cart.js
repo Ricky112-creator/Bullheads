@@ -62,6 +62,11 @@ function applyMenuOverrides() {
     .then((d) => {
       const o = (d && d.menu) || {};
       const now = Date.now();
+      // Dishes the owner added from the dashboard: re-sync them on every refresh.
+      for (let i = MENU_ITEMS.length - 1; i >= 0; i--) if (MENU_ITEMS[i].custom) MENU_ITEMS.splice(i, 1);
+      ((d && d.custom) || []).forEach((c) => {
+        if (!MENU_ITEMS.some((x) => x.id === c.id)) MENU_ITEMS.push({ id: c.id, category: c.category, name: c.name, price: c.price, unit: c.unit || undefined, custom: true });
+      });
       MENU_ITEMS.forEach((it) => {
         const m = o[it.id] || {};
         if (typeof m.price === 'number') it.price = m.price;
