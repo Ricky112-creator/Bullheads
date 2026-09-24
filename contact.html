@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — Bullhead</title>
+<meta name="description" content="Eat in, drive through, get it delivered, or reserve a table — send it straight to Bullhead on WhatsApp. No calls, no hold music, no waiting.">
+<link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="apple-touch-icon" href="assets/img/icon-180.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#241712">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bullheadhotels.co.ke/contact">
+<link rel="canonical" href="https://bullheadhotels.co.ke/contact">
+<meta property="og:title" content="Contact — Bullhead">
+<meta property="og:description" content="Eat in, drive through, get it delivered, or reserve a table — send it straight to Bullhead on WhatsApp. No calls, no hold music, no waiting.">
+<meta property="og:image" content="https://bullheadhotels.co.ke/assets/img/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Contact — Bullhead">
+<meta name="twitter:description" content="Eat in, drive through, get it delivered, or reserve a table — send it straight to Bullhead on WhatsApp. No calls, no hold music, no waiting.">
+<meta name="twitter:image" content="https://bullheadhotels.co.ke/assets/img/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=9">
+</head>
+<body>
+<a class="skip-link" href="#main-content" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
+
+<div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+
+<header class="site-nav" id="siteNav">
+  <a href="/" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
+  <nav class="nav-links">
+    <a href="/" data-sw="Nyumbani">Home</a>
+    <a href="/menu" data-sw="Menyu">Menu</a>
+    <a href="/visit" data-sw="Tembelea">Visit</a>
+    <a href="/contact" class="active" aria-current="page" data-sw="Wasiliana">Contact</a>
+  </nav>
+  <div style="display:flex; align-items:center;">
+    <button id="langToggle" type="button" style="margin-right:10px; background:none; border:1px solid currentColor; border-radius:999px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">SW</button>
+    <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/" data-sw="Nyumbani">Home</a>
+  <a href="/menu" data-sw="Menyu">Menu</a>
+  <a href="/visit" data-sw="Tembelea">Visit</a>
+  <a href="/contact" class="active" data-sw="Wasiliana">Contact</a>
+</div>
+
+<div class="live-update-bar" id="liveUpdateBar" hidden>
+  <span class="live-update-dot" aria-hidden="true"></span>
+  <span id="liveUpdateText"></span>
+</div>
+
+<main id="main-content">
+
+  <section class="page-hero">
+    <img src="assets/img/interior-fridge-02.jpg" alt="Entrance at Bullhead" width="1400" height="630">
+    <div class="page-hero-scrim"></div>
+    <div class="page-hero-content">
+      <p class="page-hero-kicker" data-sw="Wasiliana">Contact</p>
+      <h1 data-sw="Kula ndani, kuletewa, bila kushuka gari, au weka meza — chagua wewe.">Dine in, deliver, drive through, or reserve — your call.</h1>
+    </div>
+  </section>
+
+  <section class="contact-wrap">
+
+    <div id="tableBanner" class="table-banner" hidden></div>
+
+    <div id="orderEmpty" class="order-empty" data-sw='Hakuna bidhaa zilizochaguliwa bado. <a href="/menu">Nenda ujenge oda kwenye Menyu</a> — au tuma tu ujumbe hapa chini na tutakusaidia moja kwa moja.'>
+      No items selected yet. <a href="/menu">Go build an order on the Menu</a> — or just send a message below and we'll sort you out directly.
+    </div>
+
+    <div id="orderSummary" class="order-summary" hidden></div>
+    <div class="order-total-row" id="orderTotalRow">
+      <span data-sw="Jumla">Total</span>
+      <span id="orderTotal">KES 0</span>
+    </div>
+
+    <div style="margin: 8px 0 24px;">
+      <button type="button" id="shareOrderBtn" class="location-link" style="background:none; border:none; padding:0; cursor:pointer; text-decoration:underline;" data-sw="Shiriki oda hii">Share this order</button>
+      <p id="shareOrderHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" hidden></p>
+    </div>
+
+    <form id="orderForm" class="order-form">
+      <div class="form-field">
+        <label data-sw="Ungependa vipi?">How would you like this?</label>
+        <div class="order-type-group" role="radiogroup" aria-label="Order type">
+          <button type="button" class="order-type-btn active" data-type="dine-in" data-sw="Kula Ndani">Dine In</button>
+          <button type="button" class="order-type-btn" data-type="delivery" data-sw="Kuletewa">Delivery</button>
+          <button type="button" class="order-type-btn" data-type="drive-through" data-sw="Bila Kushuka Gari">Drive-Through</button>
+          <button type="button" class="order-type-btn" data-type="on-the-way" data-sw="Niko Njiani">🚗 On my way</button>
+          <button type="button" class="order-type-btn" data-type="reserve" data-sw="Weka Meza">Reserve a Table</button>
+        </div>
+        <input type="hidden" id="orderType" name="orderType" value="dine-in">
+      </div>
+
+      <div class="form-field" id="field-partySize">
+        <label for="partySize" data-sw="Watu wangapi?">How many people?</label>
+        <input type="number" id="partySize" name="partySize" min="1" max="40" placeholder="e.g. 4">
+        <p style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Bullhead One ina viti kama 70, Bullhead Two ina kama 24 — kama kikundi chako ni kikubwa zaidi ya hivyo, taja hilo kwenye maelezo hapa chini.">Bullhead One seats around 70, Bullhead Two around 24 — if your group's bigger than that, mention it in the notes below.</p>
+      </div>
+
+      <div class="form-field" id="field-address" hidden>
+        <label for="address" data-sw="Anwani ya kuletewa">Delivery address</label>
+        <textarea id="address" name="address" placeholder="e.g. Near Emali Police Station, blue gate, ask for James"></textarea>
+      </div>
+
+      <div class="form-field" id="field-eta" hidden>
+        <label data-sw="Utafika baada ya dakika ngapi?">How far away are you?</label>
+        <div class="eta-field">
+          <label><input type="radio" name="eta" value="10"><span>~10 min</span></label>
+          <label><input type="radio" name="eta" value="20" checked><span>~20 min</span></label>
+          <label><input type="radio" name="eta" value="30"><span>~30 min</span></label>
+          <label><input type="radio" name="eta" value="45"><span>~45 min</span></label>
+          <label><input type="radio" name="eta" value="60"><span>~1 hour</span></label>
+        </div>
+        <p class="hint" style="margin:8px 0 0;font-size:.85rem;opacity:.7" data-sw="Tutakuwa tumeandaa chakula chako ukifika.">We'll have your food hot when you pull in.</p>
+      </div>
+
+      <div class="form-field" id="field-pickupTime" hidden>
+        <label for="pickupTime" data-sw="Utafika saa ngapi? (hiari)">What time will you arrive? (optional)</label>
+        <input type="time" id="pickupTime" name="pickupTime">
+      </div>
+
+      <div class="form-field-row" id="field-reserveDateTime" hidden>
+        <div class="form-field">
+          <label for="reserveDate" data-sw="Tarehe">Date</label>
+          <input type="date" id="reserveDate" name="reserveDate">
+        </div>
+        <div class="form-field">
+          <label for="reserveTime" data-sw="Saa">Time</label>
+          <input type="time" id="reserveTime" name="reserveTime">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="name" data-sw="Jina lako (hiari)">Your name (optional)</label>
+        <input type="text" id="name" name="name" placeholder="e.g. James">
+      </div>
+      <div class="form-field" id="field-phone">
+        <label for="phone" data-sw="Nambari yako ya simu">Your phone number</label>
+        <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="e.g. 0712 345 678" required>
+        <p id="phoneHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Ili tukupigie au tukutumie ujumbe kuhusu oda hii. Tunaifuta baada ya siku 30.">So we can reach you about this order. We delete it after 30 days.</p>
+        <p id="phoneErr" role="alert" style="color: #b3261e; font-weight: 600; font-size: 0.9em; margin: 6px 0 0;" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="location" data-sw="Kaunta gani?">Which counter?</label>
+        <select id="location" name="location">
+          <option value="Bullhead One" data-sw="Bullhead One — kaunta ya awali">Bullhead One — the original counter</option>
+          <option value="Bullhead Two" data-sw="Bullhead Two — mita mia moja mbele">Bullhead Two — a hundred metres on</option>
+          <option value="Either / whichever is closer" data-sw="Yeyote — iliyo karibu zaidi">Either — whichever is closer</option>
+        </select>
+        <button type="button" id="useLocationBtn" class="location-link" style="margin-top:8px; background:none; border:none; padding:0; cursor:pointer; text-decoration:underline;" data-sw="Tumia mahali nilipo kuchagua iliyo karibu">Use my location to pick the closer one</button>
+        <p id="locationHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="notes" data-sw="Maelekezo maalum (hiari)">Custom instructions (optional)</label>
+        <textarea id="notes" name="notes" placeholder="e.g. no chili, extra ugali, birthday table..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary order-submit" data-sw="Tuma kwa WhatsApp">Send to WhatsApp</button>
+    </form>
+
+  </section>
+
+  <footer class="visit" style="padding-top:48px;">
+    <div class="visit-footer" style="border-top:none; padding-top:0;">
+      <span>Bullhead Butchery &amp; Hotel — Emali</span>
+      <div class="footer-links">
+        <a href="/" data-sw="Nyumbani">Home</a>
+        <a href="/menu" data-sw="Menyu">Menu</a>
+        <a href="/visit" data-sw="Tembelea">Visit</a>
+        <a href="/contact" data-sw="Wasiliana">Contact</a>
+        <a href="/gallery">Gallery</a>
+      </div>
+      <a href="https://wa.me/254789077483" target="_blank" rel="noopener">Site by Apex</a>
+    </div>
+    <p class="footer-legal">&copy; <span class="js-year">2026</span> <span data-sw="Bullhead Butchery &amp; Hotel. Haki zote zimehifadhiwa.">Bullhead Butchery &amp; Hotel. All rights reserved.</span></p>
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/menu-data.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/mpesa.js"></script>
+<script src="js/order-utils.js"></script>
+<script src="js/contact-page.js"></script>
+<script src="js/main.js?v=9"></script>
+<script>
+(function () {
+  var BRANCHES = [
+    { value: 'Bullhead One', label: 'Bullhead One', lat: -2.078670, lng: 37.469386 },
+    { value: 'Bullhead Two', label: 'Bullhead Two', lat: -2.079304, lng: 37.473449 }
+  ];
+
+  function distanceKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  var btn = document.getElementById('useLocationBtn');
+  var hint = document.getElementById('locationHint');
+  var select = document.getElementById('location');
+  if (!btn || !hint || !select) return;
+
+  btn.addEventListener('click', function () {
+    if (!('geolocation' in navigator)) {
+      hint.hidden = false;
+      hint.textContent = "Your browser doesn't support location — pick manually above.";
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Finding you…';
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      var withDist = BRANCHES.map(function (b) {
+        return { branch: b, km: distanceKm(lat, lng, b.lat, b.lng) };
+      }).sort(function (a, b) { return a.km - b.km; });
+      var closest = withDist[0];
+      select.value = closest.branch.value;
+      hint.hidden = false;
+      hint.textContent = closest.branch.label + ' is closer to you — about ' + closest.km.toFixed(1) + ' km away. Selected it above.';
+      btn.textContent = 'Use my location to pick the closer one';
+      btn.disabled = false;
+    }, function () {
+      hint.hidden = false;
+      hint.textContent = "Couldn't get your location — pick manually above.";
+      btn.textContent = 'Use my location to pick the closer one';
+      btn.disabled = false;
+    }, { timeout: 8000 });
+  });
+})();
+</script>
+<script>
+(function () {
+  var STORAGE_KEY = 'bullheadLang';
+  var els = document.querySelectorAll('[data-sw]');
+  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
+  var toggle = document.getElementById('langToggle');
+
+  function apply(lang) {
+    els.forEach(function (el) {
+      el.innerHTML = lang === 'sw' ? el.dataset.sw : el.dataset.en;
+    });
+    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
+  }
+
+  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
+  apply(saved);
+
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var current = localStorage.getItem(STORAGE_KEY) || 'en';
+      var next = current === 'en' ? 'sw' : 'en';
+      localStorage.setItem(STORAGE_KEY, next);
+      apply(next);
+    });
+  }
+})();
+</script>
+<script>
+(function () {
+  var btn = document.getElementById('shareOrderBtn');
+  var hint = document.getElementById('shareOrderHint');
+  if (!btn || !hint || typeof getCart !== 'function') return;
+
+  function encodeCart(cart) {
+    return Object.entries(cart).map(function (pair) {
+      return pair[0] + ':' + pair[1];
+    }).join(',');
+  }
+
+  btn.addEventListener('click', function () {
+    var cart = getCart();
+    if (!cart || Object.keys(cart).length === 0) {
+      hint.hidden = false;
+      hint.textContent = "Nothing to share yet — build an order on the Menu first.";
+      return;
+    }
+    var url = window.location.origin + '/menu?order=' + encodeURIComponent(encodeCart(cart));
+
+    if (navigator.share) {
+      navigator.share({ title: 'Bullhead order', url: url }).catch(function () {});
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        hint.hidden = false;
+        hint.textContent = 'Link copied — paste it to whoever\'s ordering: ' + url;
+      }).catch(function () {
+        hint.hidden = false;
+        hint.textContent = url;
+      });
+    } else {
+      hint.hidden = false;
+      hint.textContent = url;
+    }
+  });
+})();
+</script>
+</body>
+</html>

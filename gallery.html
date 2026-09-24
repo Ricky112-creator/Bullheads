@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gallery | Bullhead Hotel &amp; Butchery</title>
+<meta name="description" content="Photos from Bullhead Hotel &amp; Butchery, Emali. Open 24 hours on the Nairobi–Mombasa road.">
+<meta name="theme-color" content="#241712">
+<link rel="icon" type="image/png" href="/assets/img/logo-mark.png">
+<link rel="apple-touch-icon" href="/assets/img/icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=9">
+<style>
+  .gal { max-width: 1100px; margin: 0 auto; padding: 130px 20px 70px; }
+  .gal-kicker { color: var(--cognac); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; margin: 0 0 8px; }
+  .gal h1 { font-family: var(--font-display); font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.1; margin: 0 0 8px; }
+  .gal-sub { color: var(--ink-soft); margin: 0 0 30px; max-width: 46ch; }
+  .gal-grid { columns: 3 260px; column-gap: 14px; }
+  .gal-grid figure { margin: 0 0 14px; break-inside: avoid; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--cream-deep); box-shadow: 0 8px 24px rgba(36, 23, 18, .07); cursor: zoom-in; transition: transform .2s ease; }
+  .gal-grid figure:hover { transform: translateY(-3px); }
+  .gal-grid img { width: 100%; display: block; }
+  .gal-grid figcaption { padding: 10px 14px 12px; font-size: .9rem; color: var(--ink-soft); }
+  .gal-empty { color: var(--ink-soft); padding: 40px 0; }
+  .lb { position: fixed; inset: 0; background: rgba(20, 12, 9, .92); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200; cursor: zoom-out; flex-direction: column; gap: 12px; }
+  .lb.on { display: flex; }
+  .lb img { max-width: 100%; max-height: 82vh; border-radius: 12px; }
+  .lb p { color: #f6efe6; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .gal-grid figure { transition: none; } }
+  /* Sticky footer: page fills the screen, footer always sits at the very bottom */
+  html { height: 100%; }
+  body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+  .gal { flex: 1 0 auto; width: 100%; box-sizing: border-box; }
+  footer.visit { flex-shrink: 0; margin-top: auto; }
+</style>
+</head>
+<body>
+<header class="site-nav" id="siteNav">
+  <a href="/" class="nav-mark"><img src="/assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
+  <nav class="nav-links">
+    <a href="/">Home</a>
+    <a href="/menu">Menu</a>
+    <a href="/visit">Visit</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  <div style="display:flex; align-items:center;">
+    <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="/">Home</a>
+  <a href="/menu">Menu</a>
+  <a href="/visit">Visit</a>
+  <a href="/contact">Contact</a>
+</div>
+
+<main class="gal">
+  <p class="gal-kicker">Gallery</p>
+  <h1>Life at Bullhead</h1>
+  <p class="gal-sub">The counter, the grill and the road outside. We never close, so there's always something to see.</p>
+  <div class="gal-grid" id="gg"><p class="gal-empty">Loading…</p></div>
+</main>
+
+<div class="lb" id="lb" aria-hidden="true"><img alt="" id="lbImg"><p id="lbCap"></p></div>
+
+<footer class="visit" style="padding-top:48px;">
+  <div class="visit-footer" style="border-top:none; padding-top:0;">
+    <span>Bullhead Butchery &amp; Hotel — Emali</span>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/menu">Menu</a>
+      <a href="/visit">Visit</a>
+      <a href="/contact">Contact</a>
+      <a href="/gallery">Gallery</a>
+    </div>
+  </div>
+  <p class="footer-legal">&copy; <span class="js-year">2026</span> Bullhead Butchery &amp; Hotel. All rights reserved.</p>
+</footer>
+
+<script src="/js/main.js?v=9"></script>
+<script>
+(function () {
+  var g = document.getElementById('gg'), lb = document.getElementById('lb');
+  fetch('/api/photos').then(function (r) { return r.json(); }).then(function (d) {
+    g.innerHTML = '';
+    if (!d.photos || !d.photos.length) { g.innerHTML = '<p class="gal-empty">Photos coming soon.</p>'; return; }
+    d.photos.forEach(function (p) {
+      var f = document.createElement('figure'), i = document.createElement('img');
+      var q = '/api/photos?img=' + p.id, v = '&v=' + (p.v || 0);
+      i.loading = 'lazy'; i.decoding = 'async'; i.alt = p.caption || 'Bullhead'; i.src = q + (p.t ? '&t=1' : '') + v; f.appendChild(i);
+      if (p.caption) { var c = document.createElement('figcaption'); c.textContent = p.caption; f.appendChild(c); }
+      f.onclick = function () { document.getElementById('lbImg').src = q + v; document.getElementById('lbCap').textContent = p.caption || ''; lb.classList.add('on'); };
+      g.appendChild(f);
+    });
+  }).catch(function () { g.innerHTML = '<p class="gal-empty">Could not load photos. Please try again.</p>'; });
+  lb.onclick = function () { lb.classList.remove('on'); };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lb.classList.remove('on'); });
+})();
+</script>
+</body>
+</html>
