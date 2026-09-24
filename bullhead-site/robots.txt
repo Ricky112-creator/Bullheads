@@ -2,5 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /track
+Disallow: /tools
+Disallow: /qr
 
 Sitemap: https://bullheadhotels.co.ke/sitemap.xml
