@@ -20,6 +20,9 @@
   header h1 { font-family:'Fraunces',serif; font-size:1.35rem; margin:0; line-height:1.1; }
   header small { color:var(--mute); font-size:.78rem; }
   header a { margin-left:auto; color:var(--cream); font-size:.8rem; text-decoration:none; border:1px solid var(--line); padding:7px 12px; border-radius:999px; }
+  header .bell { flex:none; width:34px; height:34px; padding:0; font-size:1rem; line-height:1; color:var(--cream); background:transparent; border:1px solid var(--line); border-radius:999px; }
+  header .bell.on { background:var(--red); border-color:var(--red); }
+  header .bell:disabled { opacity:.5; }
   .card { background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:16px; }
   h2 { font-family:'Fraunces',serif; font-size:1.05rem; margin:0 0 4px; }
   .sub { color:var(--mute); font-size:.84rem; margin:0 0 14px; }
@@ -121,6 +124,7 @@
     <img src="assets/img/logo-mark.png" alt="Bullhead">
     <div><h1>Bullhead</h1><small>Owner dashboard</small></div>
     <a href="/" target="_blank" rel="noopener">View site ↗</a>
+    <button class="bell" id="alertsBtn" type="button" hidden title="Order alerts" aria-label="Order alerts">🔕</button>
   </header>
 
   <!-- Sign in -->
@@ -144,12 +148,6 @@
     </nav>
 
     <div data-tab="orders">
-      <section class="card" id="alertsCard">
-        <h2>Phone alerts</h2>
-        <p class="sub" id="alertsSub">Get a buzz on this phone when an order comes in, even when the app is closed.</p>
-        <button class="btn" id="alertsBtn" type="button">🔔 Turn on order alerts</button>
-        <button class="mini" id="alertsTest" type="button" hidden style="margin-top:12px">Send a test alert</button>
-      </section>
       <section class="card">
         <h2>Incoming orders</h2>
         <p class="sub">Orders customers send through the website show up here live — including drivers who are on their way.</p>
@@ -334,7 +332,7 @@
       .finally(function () { $('loginBtn').disabled = false; });
   }
   $('loginBtn').onclick = signIn; $('token').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
-  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false; };
+  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; $('alertsBtn').hidden = true; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false; };
 
   function remove(id) {
     fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
@@ -419,18 +417,18 @@
   }
   function startOrders() { if (ordTimer) return; loadOrders(); ordTimer = setInterval(loadOrders, 20000); }
 
-  // ---------- Phone alerts (Web Push) ----------
+  // ---------- Phone alerts (Web Push): the bell in the header ----------
   var pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window, alertsOn = false;
   function b64uToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); var b = atob(s + '='.repeat((4 - s.length % 4) % 4)), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function swReady() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
   function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(sub) }).then(function (r) { if (!r.ok) throw 0; }); }
   function alertsUI(on) {
-    alertsOn = on; $('alertsBtn').textContent = on ? '🔕 Turn off alerts on this phone' : '🔔 Turn on order alerts'; $('alertsBtn').className = 'btn' + (on ? ' ghost' : ''); $('alertsTest').hidden = !on;
-    $('alertsSub').textContent = on ? 'On. This phone will buzz for every new order, even when the app is closed.' : 'Get a buzz on this phone when an order comes in, even when the app is closed.';
+    alertsOn = on; var b = $('alertsBtn'), t = on ? 'Order alerts are on. Tap to turn off' : 'Turn on order alerts';
+    b.textContent = on ? '🔔' : '🔕'; b.className = 'bell' + (on ? ' on' : ''); b.title = t; b.setAttribute('aria-label', t);
   }
   function checkAlerts() {
-    if (!pushOK) { $('alertsBtn').hidden = true; $('alertsSub').textContent = 'Phone alerts are not supported in this browser. Try Chrome on Android.'; return; }
-    if (Notification.permission === 'denied') { $('alertsBtn').hidden = true; $('alertsSub').textContent = 'Notifications are blocked for this site. Allow them in your browser settings, then reload this page.'; return; }
+    if (!pushOK) return; $('alertsBtn').hidden = false;
+    if (Notification.permission === 'denied') return alertsUI(false);
     swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
       if (sub && Notification.permission === 'granted') { alertsUI(true); saveSub(sub).catch(function () {}); } else alertsUI(false);
     }).catch(function () { alertsUI(false); });
@@ -440,7 +438,10 @@
     return Notification.requestPermission().then(function (p) { if (p !== 'granted') throw new Error('perm'); return fetch('/api/push').then(function (r) { return r.json(); }); })
       .then(function (d) { if (!d.publicKey) throw new Error('nokey'); return swReady().then(function (r) { reg = r; return reg.pushManager.getSubscription(); }).then(function (old) { return old ? old.unsubscribe() : 0; }).then(function () { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToU8(d.publicKey) }); }); })
       .then(function (sub) { return saveSub(sub); })
-      .then(function () { alertsUI(true); toast('🔔 Alerts are on'); });
+      .then(function () {
+        alertsUI(true); toast('🔔 Alerts are on. Sending a test…');
+        fetch('/api/push?test=1', { method: 'POST', headers: { Authorization: auth() } }).catch(function () {});
+      });
   }
   function disableAlerts() {
     return swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
@@ -449,15 +450,12 @@
     }).then(function () { alertsUI(false); toast('Alerts are off'); });
   }
   $('alertsBtn').onclick = function () {
-    var b = $('alertsBtn'); b.disabled = true;
+    var b = $('alertsBtn');
+    if (!alertsOn && Notification.permission === 'denied') return toast('Notifications are blocked for this site. Allow them in your browser settings, then reload.', true);
+    b.disabled = true;
     (alertsOn ? disableAlerts() : enableAlerts()).catch(function (e) {
-      toast(e && e.message === 'perm' ? 'Alerts were not allowed' : e && e.message === 'nokey' ? 'Alerts are not set up on the server yet' : 'Could not change alerts — try again', true);
+      toast(e && e.message === 'perm' ? 'Alerts were not allowed' : e && e.message === 'nokey' ? 'Alerts are not set up on the server yet' : 'Could not change alerts. Try again', true);
     }).then(function () { b.disabled = false; });
-  };
-  $('alertsTest').onclick = function () {
-    fetch('/api/push?test=1', { method: 'POST', headers: { Authorization: auth() } }).then(function (r) { return r.json(); }).then(function (d) {
-      toast(d.sent ? '🔔 Test sent — check your notifications' : 'No phone reached. Turn alerts off and on again.', !d.sent);
-    }).catch(function () { toast('Could not send the test', true); });
   };
 
   // ---------- Insights ----------
