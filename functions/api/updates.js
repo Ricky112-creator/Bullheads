@@ -67,6 +67,20 @@ export async function onRequestPost(context) {
     return json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
+  // Owner-only helper: draft a Swahili version for the owner to review.
+  // Needs a Workers AI binding named AI (Pages -> Settings -> Bindings).
+  if (new URL(request.url).searchParams.get('translate')) {
+    if (!env.AI) return json({ error: 'Auto-translate is not enabled yet' }, { status: 501 });
+    try {
+      const out = await env.AI.run('@cf/meta/m2m100-1.2b', {
+        text: String(body.text || '').slice(0, MAX_TEXT_LENGTH), source_lang: 'english', target_lang: 'swahili',
+      });
+      return json({ text: out.translated_text || '' });
+    } catch (e) {
+      return json({ error: 'Translation failed' }, { status: 502 });
+    }
+  }
+
   // Public, tiny: a visitor tapped the WhatsApp button on an update.
   // (Taps only, not views, to stay well inside KV's free write limits.)
   const track = new URL(request.url).searchParams.get('tap');
@@ -84,6 +98,7 @@ export async function onRequestPost(context) {
   const entry = {
     id: crypto.randomUUID(),
     text,
+    textSw: String(body.textSw || '').trim().slice(0, MAX_TEXT_LENGTH) || undefined,
     type: TYPES.includes(body.type) ? body.type : 'notice',
     cta: body.cta !== false, // show "Order on WhatsApp" button
     taps: 0,
