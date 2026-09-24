@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery | Bullhead Hotel &amp; Butchery</title><link rel="icon" href="/assets/img/logo-mark.png">
+<link rel="stylesheet" href="/css/style.css?v=9">
+<style>.g{max-width:960px;margin:0 auto;padding:30px 18px 60px}.g h1{margin-bottom:18px}.gg{columns:2 220px;gap:12px}.gg figure{margin:0 0 12px;break-inside:avoid}.gg img{width:100%;border-radius:14px;display:block}.gg figcaption{font-size:.85rem;color:var(--ink-soft);margin-top:4px}</style></head>
+<body><main class="g"><p><a href="/">← Bullhead</a></p><h1>Gallery</h1><div class="gg" id="gg"><p>Loading…</p></div></main>
+<script>fetch('/api/photos').then(function(r){return r.json()}).then(function(d){var g=document.getElementById('gg');g.innerHTML='';if(!d.photos.length)g.textContent='Photos coming soon.';d.photos.forEach(function(p){var f=document.createElement('figure'),i=document.createElement('img');i.loading='lazy';i.alt=p.caption||'Bullhead';i.src='/api/photos?img='+p.id;f.appendChild(i);if(p.caption){var c=document.createElement('figcaption');c.textContent=p.caption;f.appendChild(c)}g.appendChild(f)})}).catch(function(){document.getElementById('gg').textContent='Could not load photos.'})</script></body></html>
