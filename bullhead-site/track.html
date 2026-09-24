@@ -25,6 +25,8 @@
   .tk-sw { color: var(--cognac); font-weight: 600; margin: 4px 0 0; }
   .tk-sub { color: var(--ink-soft); margin: 12px 0 0; }
   .tk-eta { display: inline-block; margin-top: 14px; padding: 7px 14px; border-radius: 999px; background: var(--cream); color: var(--green); font-weight: 600; font-size: .9rem; }
+  .tk-rv { display: block; text-align: center; padding: 14px; border-radius: 14px; background: var(--green); color: #fff; font-weight: 700; margin-top: 10px; }
+  .tk-card p.tk-rvs { color: var(--cognac); font-weight: 600; margin: 2px 0 12px; }
   .tk-eta[hidden] { display: none; }
 
   .steps { list-style: none; margin: 24px 0 0; padding: 0; display: flex; }
@@ -82,7 +84,7 @@
   </section>
 
   <div id="pay"></div>
-
+  <section class="tk-card" id="review" hidden></section>
   <a class="tk-wa" id="wa" href="https://wa.me/254720707323" target="_blank" rel="noopener">Questions? Message us on WhatsApp</a>
   <p class="tk-live" id="live">This page updates by itself. No need to refresh.</p>
   <p class="tk-live" style="margin-top:6px">Tip: this link is also in your WhatsApp chat with us.</p>
@@ -109,8 +111,28 @@
     ready:     { e: '🍽', h: 'Your order is ready!', sw: 'Oda yako iko tayari!', s: '' },
     done:      { e: '😋', h: 'Enjoy your meal', sw: 'Karibu tena!', s: 'Thank you for choosing Bullhead. We’re open 24 hours.' }
   };
+var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullhead Two': 'https://g.page/r/CYM5D_xsP-3oEBM/review' };
   var last = null, timer = null, failed = 0, misses = 0;
 
+  // Once the order is done, invite a Google review for the counter they used (both if unknown).
+  function showReview(o) {
+    var box = $('review');
+    if (o.status !== 'done') { box.hidden = true; return; }
+    var key = String(o.counter || '');
+    if (!box.hidden && box.dataset.for === key) return;
+    box.dataset.for = key; box.innerHTML = '';
+    var one = REVIEW[key] ? [key] : Object.keys(REVIEW);
+    var h = document.createElement('h2'); h.textContent = '⭐ Enjoyed it? Tell others'; box.appendChild(h);
+    var p = document.createElement('p'); p.className = 'tk-meta';
+    p.textContent = 'A quick Google review helps other travellers find us. ' + (one.length > 1 ? 'Which counter did you visit?' : 'Thank you!');
+    box.appendChild(p);
+    var sw = document.createElement('p'); sw.className = 'tk-rvs'; sw.textContent = 'Tupe maoni yako kwenye Google. Asante!'; box.appendChild(sw);
+    one.forEach(function (k) {
+      var a = document.createElement('a'); a.className = 'tk-rv'; a.href = REVIEW[k]; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = one.length > 1 ? 'Review ' + k : 'Leave a Google review'; box.appendChild(a);
+    });
+    box.hidden = false;
+  }
   function show(state, o) {
     var c = COPY[state];
     $('emoji').textContent = c.e; $('headline').textContent = c.h; $('headlineSw').textContent = c.sw;
@@ -153,6 +175,7 @@
     var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && typeof mpesaCard === 'function';
     if (!wantPay) pay.innerHTML = '';
     else if (!pay.firstChild) { var pc = mpesaCard(o.total); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
+       showReview(o);
     if (last && last !== 'ready' && o.status === 'ready' && navigator.vibrate) navigator.vibrate([250, 120, 250]);
     last = o.status;
   }
