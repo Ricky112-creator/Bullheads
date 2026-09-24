@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
 <a class="skip-link" href="#main-content" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
@@ -93,6 +93,7 @@
           <button type="button" class="order-type-btn active" data-type="dine-in" data-sw="Kula Ndani">Dine In</button>
           <button type="button" class="order-type-btn" data-type="delivery" data-sw="Kuletewa">Delivery</button>
           <button type="button" class="order-type-btn" data-type="drive-through" data-sw="Bila Kushuka Gari">Drive-Through</button>
+          <button type="button" class="order-type-btn" data-type="on-the-way" data-sw="Niko Njiani">🚗 On my way</button>
           <button type="button" class="order-type-btn" data-type="reserve" data-sw="Weka Meza">Reserve a Table</button>
         </div>
         <input type="hidden" id="orderType" name="orderType" value="dine-in">
@@ -107,6 +108,18 @@
       <div class="form-field" id="field-address" hidden>
         <label for="address" data-sw="Anwani ya kuletewa">Delivery address</label>
         <textarea id="address" name="address" placeholder="e.g. Near Emali Police Station, blue gate, ask for James"></textarea>
+      </div>
+
+      <div class="form-field" id="field-eta" hidden>
+        <label data-sw="Utafika baada ya dakika ngapi?">How far away are you?</label>
+        <div class="eta-field">
+          <label><input type="radio" name="eta" value="10"><span>~10 min</span></label>
+          <label><input type="radio" name="eta" value="20" checked><span>~20 min</span></label>
+          <label><input type="radio" name="eta" value="30"><span>~30 min</span></label>
+          <label><input type="radio" name="eta" value="45"><span>~45 min</span></label>
+          <label><input type="radio" name="eta" value="60"><span>~1 hour</span></label>
+        </div>
+        <p class="hint" style="margin:8px 0 0;font-size:.85rem;opacity:.7" data-sw="Tutakuwa tumeandaa chakula chako ukifika.">We'll have your food hot when you pull in.</p>
       </div>
 
       <div class="form-field" id="field-pickupTime" hidden>
@@ -170,7 +183,7 @@
 <script src="js/menu-data.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/contact-page.js"></script>
-<script src="js/main.js?v=8"></script>
+<script src="js/main.js?v=9"></script>
 <script>
 (function () {
   var BRANCHES = [
