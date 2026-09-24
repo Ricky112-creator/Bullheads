@@ -3,7 +3,7 @@
 // app a basic offline fallback. Deliberately not a full caching strategy —
 // menu/pricing changes shouldn't risk being served stale.
 
-const CACHE = 'bullhead-shell-v1';
+const CACHE = 'bullhead-shell-v2';
 const SHELL = ['/', '/menu', '/visit', '/contact'];
 
 self.addEventListener('install', (event) => {
