@@ -351,29 +351,65 @@ h1, h2, h3 {
 /* Owner-posted live update bar — hidden by default (see #liveUpdateBar[hidden]);
    main.js unhides it only when /api/updates returns something current. */
 .live-update-bar {
-  position: fixed; z-index: 90;
-  left: 50%; bottom: 16px; transform: translateX(-50%);
-  width: min(420px, calc(100% - 24px));
-  padding: 14px 16px 14px;
-  background: rgba(28,19,14,0.96); color: #f4ece4;
-  border: 1px solid rgba(255,255,255,0.12); border-left: 4px solid #6FCF97;
-  border-radius: 14px; box-shadow: 0 12px 36px rgba(0,0,0,0.45);
-  backdrop-filter: blur(8px);
-  animation: luIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --a: #b91c1c; --b: #ef4444;
+  position: fixed; z-index: 89;
+  top: var(--nav-h, 76px); left: 0; right: 0;
+  height: var(--strip-h, 38px);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 var(--edge);
+  color: #fff; overflow: hidden;
+  background: linear-gradient(90deg, var(--a), var(--b), var(--a));
+  background-size: 200% 100%;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+  animation: luDrop 0.7s cubic-bezier(0.22, 1, 0.36, 1) both, luFlow 6s linear infinite;
 }
-@keyframes luIn { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
-.live-update-bar.type-special { border-left-color: #F2A33A; }
-.live-update-bar.type-stock { border-left-color: #6FCF97; }
-.live-update-bar.type-closing { border-left-color: #E5533D; }
-.live-update-bar.type-notice { border-left-color: #8FB8FF; }
-.lu-top { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #cdbfb2; }
-.lu-ago { margin-left: auto; text-transform: none; letter-spacing: 0; opacity: 0.7; }
-.lu-x { background: none; border: 0; color: #cdbfb2; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 2px; }
-.live-update-bar p { margin: 8px 0 0; font-size: 1rem; font-weight: 500; line-height: 1.4; }
-.lu-cta { display: inline-block; margin-top: 12px; padding: 9px 16px; border-radius: 999px; background: #25D366; color: #06210f; font-weight: 700; font-size: 0.85rem; text-decoration: none; }
-.lu-dots { display: flex; gap: 5px; margin-top: 10px; }
-.lu-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); }
-.lu-dots span.on { background: #fff; }
+.live-update-bar.type-special { --a: #b45309; --b: #e08a1a; }
+.live-update-bar.type-stock   { --a: #15803d; --b: #2fae63; }
+.live-update-bar.type-notice  { --a: #1d4ed8; --b: #4f86f7; }
+.live-update-bar.type-closing { --a: #991b1b; --b: #e0392f; }
+/* light sweep that crosses the strip every few seconds */
+.live-update-bar::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 90px; left: -120px;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: skewX(-20deg); pointer-events: none;
+  animation: luSweep 4.5s ease-in-out 1.2s infinite;
+}
+.lu-pill {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px;
+  padding: 3px 11px; border-radius: 999px;
+  background: rgba(0,0,0,0.28); font-size: 0.68rem; font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.lu-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: luBlink 1.1s ease-in-out infinite; }
+.lu-ticker {
+  flex: 1; min-width: 0; overflow: hidden; font-size: 0.9rem; font-weight: 600;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.lu-track { display: inline-flex; white-space: nowrap; animation: luTick 20s linear infinite; will-change: transform; }
+.lu-track span { padding-right: 4rem; }
+.lu-ticker:hover .lu-track { animation-play-state: paused; }
+.lu-cta {
+  flex-shrink: 0; padding: 4px 13px; border-radius: 999px;
+  background: #fff; color: #14532d; font-size: 0.78rem; font-weight: 800; text-decoration: none;
+  animation: luRing 2.4s ease-out infinite;
+}
+.lu-x { flex-shrink: 0; background: none; border: 0; color: #fff; opacity: 0.8; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 0 2px; }
+body.has-live-update { --strip-h: 38px; }
+/* keep the "Open 24 hours" badge clear of the strip */
+body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
+@media (max-width: 600px) {
+  body.has-live-update { --strip-h: 34px; }
+  .lu-ticker { font-size: 0.8rem; }
+  .lu-pill { padding: 2px 8px; }
+  .lu-cta { font-size: 0.7rem; padding: 3px 10px; }
+}
+@keyframes luDrop  { from { transform: translateY(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes luFlow  { to { background-position: -200% 0; } }
+@keyframes luSweep { 0% { left: -120px; } 45%, 100% { left: 110%; } }
+@keyframes luTick  { to { transform: translateX(-50%); } }
+@keyframes luBlink { 50% { opacity: 0.25; } }
+@keyframes luRing  { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); } 70%, 100% { box-shadow: 0 0 0 9px rgba(255,255,255,0); } }
 .live-update-bar[hidden] { display: none; }
 .live-update-dot {
   width: 7px; height: 7px;
@@ -1067,4 +1103,10 @@ h1, h2, h3 {
   margin-bottom: 16px;
   font-weight: 600;
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-update-bar, .live-update-bar::after, .lu-track, .lu-dot, .lu-cta { animation: none !important; }
+  .lu-track span:nth-child(2) { display: none; }
+  .lu-ticker { text-overflow: ellipsis; }
 }
