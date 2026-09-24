@@ -81,10 +81,13 @@
     <div class="tk-total" id="totalRow" hidden><span>Total</span><span id="total"></span></div>
   </section>
 
+  <div id="pay"></div>
+
   <a class="tk-wa" id="wa" href="https://wa.me/254720707323" target="_blank" rel="noopener">Questions? Message us on WhatsApp</a>
   <p class="tk-live" id="live">This page updates by itself. No need to refresh.</p>
 </main>
 
+<script src="/js/mpesa.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -128,7 +131,7 @@
       $('emoji').textContent = '🤔'; $('headline').textContent = 'We can’t find this order'; $('headlineSw').textContent = 'Hatuipati oda hii';
       $('sub').textContent = 'The link may be incomplete. Open the exact link from your WhatsApp message, or message us and we’ll check.';
     }
-    $('live').hidden = true; stop();
+    $('pay').innerHTML = ''; $('live').hidden = true; stop();
   }
 
   function render(o) {
@@ -145,6 +148,10 @@
     $('meta').textContent = (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
     $('total').textContent = 'KES ' + (o.total || 0).toLocaleString('en-KE'); $('totalRow').hidden = !o.total;
     $('orderCard').hidden = !(o.items.length || o.table || o.type);
+    // Optional pay-ahead card, only while the order is still open.
+    var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && typeof mpesaCard === 'function';
+    if (!wantPay) pay.innerHTML = '';
+    else if (!pay.firstChild) { var pc = mpesaCard(o.total); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
     if (last && last !== 'ready' && o.status === 'ready' && navigator.vibrate) navigator.vibrate([250, 120, 250]);
     last = o.status;
   }
