@@ -41,8 +41,7 @@ export async function onRequestGet({ request, env }) {
       if (!r) return json({ error: 'Not found' }, { status: 404 });
       const o = JSON.parse(r.body);
       return json({ order: {
-        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', total: o.total || 0,
-        items: (o.items || []).map((i) => ({ name: i.name, qty: i.qty, unit: i.unit })),
+        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', counter: o.counter || '', total: o.total || 0,        items: (o.items || []).map((i) => ({ name: i.name, qty: i.qty, unit: i.unit })),
       } });
     } catch (e) { return fail(e); }
   }
