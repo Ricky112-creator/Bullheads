@@ -40,7 +40,7 @@ function cartLines(cart) {
   return Object.entries(cart)
     .map(([id, qty]) => {
       const item = MENU_ITEMS.find((i) => i.id === id);
-      if (!item || typeof item.price !== 'number') return null;
+      if (!item || typeof item.price !== 'number' || item.soldOut) return null;
       return { ...item, qty, lineTotal: item.price * qty };
     })
     .filter(Boolean);
@@ -52,4 +52,28 @@ function cartTotal(cart) {
 
 function formatKES(n) {
   return 'KES ' + n.toLocaleString('en-KE');
+}
+
+// Owner's live menu board (/api/menu): price changes, sold-out / back-at, today's special.
+// Applies the overrides onto MENU_ITEMS in place; resolves either way so pages never break.
+function applyMenuOverrides() {
+  return fetch('/api/menu')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => {
+      const o = (d && d.menu) || {};
+      const now = Date.now();
+      MENU_ITEMS.forEach((it) => {
+        const m = o[it.id] || {};
+        if (typeof m.price === 'number') it.price = m.price;
+        it.special = !!m.special;
+        const until = m.until ? new Date(m.until).getTime() : 0;
+        it.soldOut = !!m.soldOut && (!until || until > now);
+        it.backAt = it.soldOut && until ? m.until : null;
+      });
+      const cart = getCart();
+      let changed = false;
+      MENU_ITEMS.forEach((it) => { if (it.soldOut && cart[it.id]) { delete cart[it.id]; changed = true; } });
+      if (changed) setCart(cart);
+    })
+    .catch(() => {});
 }
