@@ -234,6 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (oldPay) oldPay.remove();
       const orderTotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
       if (orderTotal > 0 && typeof mpesaCard === 'function') tb.after(mpesaCard(orderTotal));
+
+      // The tracking page IS the confirmation. WhatsApp opens in its own tab/app; this tab moves
+      // on to the live status page, so wherever the customer returns to, their order is on screen.
+      // (The banner above stays as a fallback. The order POST uses keepalive so it survives this.)
+      setTimeout(() => { window.location.assign(`/track?o=${trackId}`); }, 1200);
     }
 
     if (lines.length) {
