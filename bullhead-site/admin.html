@@ -262,7 +262,7 @@
   var DURS = [['4 hours', 4], ['12 hours', 12], ['24 hours', 24], ['3 days', 72], ['Until I remove it', '']];
   var type = 'special', dur = 24, pvLang = 'en', token = '';
 
-  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, 3200); }
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, err ? 8000 : 3200); }
   function auth() { return 'Bearer ' + token; }
   function when(iso) { try { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
   function mk(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
@@ -421,7 +421,7 @@
   var pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window, alertsOn = false;
   function b64uToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); var b = atob(s + '='.repeat((4 - s.length % 4) % 4)), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function swReady() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
-  function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(sub) }).then(function (r) { if (!r.ok) throw 0; }); }
+  function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(sub) }).then(function (r) { if (r.ok) return; return r.json().catch(function () { return {}; }).then(function (d) { throw new Error('save:' + (d.error || r.status)); }); }); }
   function alertsUI(on) {
     alertsOn = on; var b = $('alertsBtn'), t = on ? 'Order alerts are on. Tap to turn off' : 'Turn on order alerts';
     b.textContent = on ? '🔔' : '🔕'; b.className = 'bell' + (on ? ' on' : ''); b.title = t; b.setAttribute('aria-label', t);
@@ -434,9 +434,17 @@
     }).catch(function () { alertsUI(false); });
   }
   function enableAlerts() {
-    var reg;
+    var reg, key;
     return Notification.requestPermission().then(function (p) { if (p !== 'granted') throw new Error('perm'); return fetch('/api/push').then(function (r) { return r.json(); }); })
-      .then(function (d) { if (!d.publicKey) throw new Error('nokey'); return swReady().then(function (r) { reg = r; return reg.pushManager.getSubscription(); }).then(function (old) { return old ? old.unsubscribe() : 0; }).then(function () { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToU8(d.publicKey) }); }); })
+      .then(function (d) {
+        if (!d.publicKey) throw new Error('nokey');
+        try { key = b64uToU8(d.publicKey); } catch (e) { key = []; }
+        if (key.length !== 65) throw new Error('badkey');
+        return swReady().then(function (r) { reg = r; return reg.pushManager.getSubscription(); })
+          .then(function (old) { return old ? old.unsubscribe() : 0; })
+          .then(function () { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }); })
+          .catch(function (e) { console.error('push subscribe failed', e); throw new Error('sub:' + ((e && e.name) || 'error')); });
+      })
       .then(function (sub) { return saveSub(sub); })
       .then(function () {
         alertsUI(true); toast('🔔 Alerts are on. Sending a test…');
@@ -449,13 +457,20 @@
       return sub.unsubscribe().then(function () { return fetch('/api/push', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ endpoint: ep }) }); });
     }).then(function () { alertsUI(false); toast('Alerts are off'); });
   }
+  function alertErr(e) {
+    var m = (e && e.message) || '';
+    if (m === 'perm') return 'Alerts were not allowed';
+    if (m === 'nokey') return 'The server has no alert keys yet. Add VAPID_PUBLIC and VAPID_PRIVATE, then redeploy';
+    if (m === 'badkey') return 'The VAPID_PUBLIC key on the server looks wrong. Re-copy the public key';
+    if (m.indexOf('sub:') === 0) return 'This browser could not register for alerts (' + m.slice(4) + ')';
+    if (m.indexOf('save:') === 0) return 'Server said: ' + m.slice(5);
+    return 'Could not change alerts. Try again';
+  }
   $('alertsBtn').onclick = function () {
     var b = $('alertsBtn');
     if (!alertsOn && Notification.permission === 'denied') return toast('Notifications are blocked for this site. Allow them in your browser settings, then reload.', true);
     b.disabled = true;
-    (alertsOn ? disableAlerts() : enableAlerts()).catch(function (e) {
-      toast(e && e.message === 'perm' ? 'Alerts were not allowed' : e && e.message === 'nokey' ? 'Alerts are not set up on the server yet' : 'Could not change alerts. Try again', true);
-    }).then(function () { b.disabled = false; });
+    (alertsOn ? disableAlerts() : enableAlerts()).catch(function (e) { console.error(e); toast(alertErr(e), true); }).then(function () { b.disabled = false; });
   };
 
   // ---------- Insights ----------
