@@ -325,3 +325,6 @@ if (window.gsap && window.ScrollTrigger) {
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
 }
+
+// Footer copyright year stays current on its own.
+document.querySelectorAll('.js-year').forEach((el) => { el.textContent = new Date().getFullYear(); });
