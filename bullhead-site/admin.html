@@ -144,6 +144,12 @@
     </nav>
 
     <div data-tab="orders">
+      <section class="card" id="alertsCard">
+        <h2>Phone alerts</h2>
+        <p class="sub" id="alertsSub">Get a buzz on this phone when an order comes in, even when the app is closed.</p>
+        <button class="btn" id="alertsBtn" type="button">🔔 Turn on order alerts</button>
+        <button class="mini" id="alertsTest" type="button" hidden style="margin-top:12px">Send a test alert</button>
+      </section>
       <section class="card">
         <h2>Incoming orders</h2>
         <p class="sub">Orders customers send through the website show up here live — including drivers who are on their way.</p>
@@ -315,7 +321,7 @@
         $('sLive').textContent = live.length; $('sTaps7').textContent = t7; $('sTapsAll').textContent = tAll;
         $('list').innerHTML = ''; if (!live.length) $('list').appendChild(mk('p', 'empty', 'Nothing live right now. Post one above 👆')); live.forEach(function (u) { $('list').appendChild(row(u, true)); });
         $('past').innerHTML = ''; if (!past.length) $('past').appendChild(mk('p', 'empty', 'Your past updates will show up here.')); past.forEach(function (u) { $('past').appendChild(row(u, false)); });
-        $('gate').hidden = true; $('app').hidden = false; showTab(curTab); startOrders();
+        $('gate').hidden = true; $('app').hidden = false; showTab(curTab); startOrders(); checkAlerts();
       });
   }
 
@@ -412,6 +418,47 @@
     }).catch(function () {});
   }
   function startOrders() { if (ordTimer) return; loadOrders(); ordTimer = setInterval(loadOrders, 20000); }
+
+  // ---------- Phone alerts (Web Push) ----------
+  var pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window, alertsOn = false;
+  function b64uToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); var b = atob(s + '='.repeat((4 - s.length % 4) % 4)), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function swReady() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
+  function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(sub) }).then(function (r) { if (!r.ok) throw 0; }); }
+  function alertsUI(on) {
+    alertsOn = on; $('alertsBtn').textContent = on ? '🔕 Turn off alerts on this phone' : '🔔 Turn on order alerts'; $('alertsBtn').className = 'btn' + (on ? ' ghost' : ''); $('alertsTest').hidden = !on;
+    $('alertsSub').textContent = on ? 'On. This phone will buzz for every new order, even when the app is closed.' : 'Get a buzz on this phone when an order comes in, even when the app is closed.';
+  }
+  function checkAlerts() {
+    if (!pushOK) { $('alertsBtn').hidden = true; $('alertsSub').textContent = 'Phone alerts are not supported in this browser. Try Chrome on Android.'; return; }
+    if (Notification.permission === 'denied') { $('alertsBtn').hidden = true; $('alertsSub').textContent = 'Notifications are blocked for this site. Allow them in your browser settings, then reload this page.'; return; }
+    swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (sub && Notification.permission === 'granted') { alertsUI(true); saveSub(sub).catch(function () {}); } else alertsUI(false);
+    }).catch(function () { alertsUI(false); });
+  }
+  function enableAlerts() {
+    var reg;
+    return Notification.requestPermission().then(function (p) { if (p !== 'granted') throw new Error('perm'); return fetch('/api/push').then(function (r) { return r.json(); }); })
+      .then(function (d) { if (!d.publicKey) throw new Error('nokey'); return swReady().then(function (r) { reg = r; return reg.pushManager.getSubscription(); }).then(function (old) { return old ? old.unsubscribe() : 0; }).then(function () { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToU8(d.publicKey) }); }); })
+      .then(function (sub) { return saveSub(sub); })
+      .then(function () { alertsUI(true); toast('🔔 Alerts are on'); });
+  }
+  function disableAlerts() {
+    return swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) return; var ep = sub.endpoint;
+      return sub.unsubscribe().then(function () { return fetch('/api/push', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ endpoint: ep }) }); });
+    }).then(function () { alertsUI(false); toast('Alerts are off'); });
+  }
+  $('alertsBtn').onclick = function () {
+    var b = $('alertsBtn'); b.disabled = true;
+    (alertsOn ? disableAlerts() : enableAlerts()).catch(function (e) {
+      toast(e && e.message === 'perm' ? 'Alerts were not allowed' : e && e.message === 'nokey' ? 'Alerts are not set up on the server yet' : 'Could not change alerts — try again', true);
+    }).then(function () { b.disabled = false; });
+  };
+  $('alertsTest').onclick = function () {
+    fetch('/api/push?test=1', { method: 'POST', headers: { Authorization: auth() } }).then(function (r) { return r.json(); }).then(function (d) {
+      toast(d.sent ? '🔔 Test sent — check your notifications' : 'No phone reached. Turn alerts off and on again.', !d.sent);
+    }).catch(function () { toast('Could not send the test', true); });
+  };
 
   // ---------- Insights ----------
   function drawInsights() {
