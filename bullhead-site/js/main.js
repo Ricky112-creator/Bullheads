@@ -28,52 +28,71 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
   if (!bar) return;
   const WA = 'https://wa.me/254720707323?text=';
   const LABEL = { special: "Today's special", stock: 'Fresh in', notice: 'Update', closing: 'Heads up' };
-  let items = [], i = 0, timer;
+  const nav = document.querySelector('.site-nav');
+  const root = document.documentElement;
 
-  const ago = (iso) => {
-    const m = Math.round((Date.now() - new Date(iso)) / 60000);
-    return m < 2 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : 'yesterday';
-  };
+  // Keep the strip glued to the bottom edge of the nav, even as the nav shrinks on scroll.
+  if (nav && 'ResizeObserver' in window) {
+    new ResizeObserver(() => root.style.setProperty('--nav-h', nav.offsetHeight + 'px')).observe(nav);
+  }
+
   const dismissed = () => { try { return JSON.parse(sessionStorage.getItem('bhDismissed') || '[]'); } catch (e) { return []; } };
 
-  function render() {
-    const u = items[i];
-    bar.className = 'live-update-bar type-' + u.type;
+  function build(items) {
+    const first = items[0];
+    bar.className = 'live-update-bar type-' + first.type;
     bar.innerHTML = '';
-    const top = document.createElement('div'); top.className = 'lu-top';
-    top.innerHTML = '<span class="live-update-dot"></span><b></b><span class="lu-ago"></span>';
-    top.querySelector('b').textContent = LABEL[u.type] || 'Update';
-    top.querySelector('.lu-ago').textContent = ago(u.postedAt);
-    const x = document.createElement('button'); x.className = 'lu-x'; x.setAttribute('aria-label', 'Dismiss'); x.textContent = '×';
-    x.onclick = () => {
-      try { sessionStorage.setItem('bhDismissed', JSON.stringify(dismissed().concat(items.map((n) => n.id)))); } catch (e) {}
-      bar.hidden = true; clearInterval(timer);
-    };
-    top.appendChild(x);
-    const p = document.createElement('p'); p.textContent = u.text;
-    bar.append(top, p);
-    if (u.cta !== false) {
-      const a = document.createElement('a'); a.className = 'lu-cta'; a.target = '_blank'; a.rel = 'noopener';
-      a.href = WA + encodeURIComponent('Hi Bullhead, I saw your update: "' + u.text + '"');
-      a.textContent = u.type === 'notice' || u.type === 'closing' ? 'Ask on WhatsApp' : 'Order on WhatsApp';
-      a.onclick = () => { try { navigator.sendBeacon('/api/updates?tap=' + u.id, '{}'); } catch (e) {} };
+
+    const pill = document.createElement('span');
+    pill.className = 'lu-pill';
+    pill.innerHTML = '<i class="lu-dot"></i>';
+    pill.append(LABEL[first.type] || 'Update');
+
+    const ticker = document.createElement('div');
+    ticker.className = 'lu-ticker';
+    const track = document.createElement('div');
+    track.className = 'lu-track';
+    const text = items.map((u) => u.text).join('   •   ');
+    for (let k = 0; k < 2; k++) {           // two copies = seamless loop
+      const s = document.createElement('span');
+      s.textContent = text;
+      if (k) s.setAttribute('aria-hidden', 'true');
+      track.appendChild(s);
+    }
+    track.style.animationDuration = Math.max(14, text.length * 0.22) + 's';
+    ticker.appendChild(track);
+    bar.append(pill, ticker);
+
+    const cta = items.find((u) => u.cta !== false);
+    if (cta) {
+      const a = document.createElement('a');
+      a.className = 'lu-cta'; a.target = '_blank'; a.rel = 'noopener';
+      a.href = WA + encodeURIComponent('Hi Bullhead, I saw your update: "' + cta.text + '"');
+      a.textContent = (cta.type === 'notice' || cta.type === 'closing') ? 'Ask on WhatsApp' : 'Order on WhatsApp';
+      a.onclick = () => { try { navigator.sendBeacon('/api/updates?tap=' + cta.id, '{}'); } catch (e) {} };
       bar.appendChild(a);
     }
-    if (items.length > 1) {
-      const d = document.createElement('div'); d.className = 'lu-dots';
-      items.forEach((_, k) => { const s = document.createElement('span'); if (k === i) s.className = 'on'; d.appendChild(s); });
-      bar.appendChild(d);
-    }
+
+    const x = document.createElement('button');
+    x.className = 'lu-x'; x.setAttribute('aria-label', 'Dismiss'); x.textContent = '×';
+    x.onclick = () => {
+      try { sessionStorage.setItem('bhDismissed', JSON.stringify(dismissed().concat(items.map((n) => n.id)))); } catch (e) {}
+      bar.hidden = true;
+      document.body.classList.remove('has-live-update');
+    };
+    bar.appendChild(x);
   }
 
   fetch('/api/updates')
     .then((r) => (r.ok ? r.json() : null))
     .then((data) => {
       const gone = dismissed();
-      items = ((data && data.updates) || []).filter((u) => u.text && !gone.includes(u.id));
+      const items = ((data && data.updates) || []).filter((u) => u.text && !gone.includes(u.id));
       if (!items.length) return;
-      render(); bar.hidden = false;
-      if (items.length > 1) timer = setInterval(() => { i = (i + 1) % items.length; render(); }, 7000);
+      if (nav) root.style.setProperty('--nav-h', nav.offsetHeight + 'px');
+      build(items);
+      bar.hidden = false;
+      document.body.classList.add('has-live-update'); // pushes the hero badge down, see CSS
     })
     .catch(() => {});
 })();
