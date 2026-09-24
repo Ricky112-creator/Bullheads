@@ -1,5 +1,6 @@
 // GET    /api/updates          -> public, returns currently-live updates
 // POST   /api/updates          -> owner only, posts a new update
+// POST   /api/updates?tap=<id> -> public, counts one WhatsApp-button tap (D1, rate-limited)
 // DELETE /api/updates?id=<id>  -> owner only, removes one early
 //
 // Storage: a single JSON array under the KV key "updates", newest first,
@@ -12,6 +13,8 @@
 //   - a secret ADMIN_TOKEN (the owner's access code — pick anything, e.g.
 //     a long random phrase; it's typed into /admin.html, never shown to
 //     site visitors)
+
+import { requireRole, ipHash, rlCount, rlHit } from '../_lib/auth.js';
 
 const MAX_UPDATES = 30; // history kept for Repost + stats
 const TYPES = ['special', 'stock', 'notice', 'closing'];
@@ -29,9 +32,31 @@ function json(data, init) {
   });
 }
 
-function isAuthorized(request, env) {
-  const auth = request.headers.get('Authorization') || '';
-  return env.ADMIN_TOKEN && auth === `Bearer ${env.ADMIN_TOKEN}`;
+// "Tap" counts (visitors pressing the WhatsApp button on an update) live in D1, NOT in the KV
+// array: a public request must never trigger a KV write (the free tier allows only 1,000 a day,
+// and the same quota is what saves your menu and updates).
+let tapsReady = null;
+const ensureTaps = (env) => (tapsReady = tapsReady || env.DB.prepare('CREATE TABLE IF NOT EXISTS update_taps (id TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0)').run().catch((e) => { tapsReady = null; throw e; }));
+async function tapCounts(env) {
+  if (!env.DB) return {};
+  try { await ensureTaps(env); const { results } = await env.DB.prepare('SELECT id, n FROM update_taps').all(); return Object.fromEntries(results.map((r) => [r.id, r.n])); } catch (e) { return {}; }
+}
+
+// Public and tiny: a visitor tapped the WhatsApp button on an update. Does nothing else, ever.
+async function handleTap(request, env, id) {
+  try {
+    if (env.DB && /^[0-9a-f-]{36}$/i.test(id)) {
+      const key = 'tap:' + ((await ipHash(request)) || 'unknown');
+      if ((await rlCount(env, key, 10 * 60000)) < 10) {
+        await rlHit(env, key);
+        if ((await readUpdates(env)).some((u) => u.id === id)) {         // only real updates can be counted (KV read, not write)
+          await ensureTaps(env);
+          await env.DB.prepare('INSERT INTO update_taps (id, n) VALUES (?, 1) ON CONFLICT(id) DO UPDATE SET n = n + 1').bind(id).run();
+        }
+      }
+    }
+  } catch (e) { /* counting taps must never break the page */ }
+  return json({ ok: true });
 }
 
 export async function onRequestGet(context) {
@@ -41,8 +66,10 @@ export async function onRequestGet(context) {
 
   // Owner view: everything (live + past) with tap counts, never cached.
   if (new URL(request.url).searchParams.get('all') === '1') {
-    if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
-    return json({ updates }, { headers: { 'Cache-Control': 'no-store' } });
+    const g = await requireRole(request, env, ['owner']);
+    if (g.res) return g.res;
+    const taps = await tapCounts(env);
+    return json({ updates: updates.map((u) => ({ ...u, taps: (u.taps || 0) + (taps[u.id] || 0) })) }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   const live = updates
@@ -57,11 +84,18 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const isTap = new URL(request.url).searchParams.get('tap');
-  if (!isTap && !isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const url = new URL(request.url);
+
+  // Public "tap" counter: handled first and returns, so it can never reach anything below.
+  const tap = url.searchParams.get('tap');
+  if (tap) return handleTap(request, env, tap);
+
+  // Everything else is owner-only.
+  const g = await requireRole(request, env, ['owner']);
+  if (g.res) return g.res;
 
   let body = {};
-  if (!isTap) try {
+  try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid JSON' }, { status: 400 });
@@ -69,7 +103,7 @@ export async function onRequestPost(context) {
 
   // Owner-only helper: draft a Swahili version for the owner to review.
   // Needs a Workers AI binding named AI (Pages -> Settings -> Bindings).
-  if (new URL(request.url).searchParams.get('translate')) {
+  if (url.searchParams.get('translate')) {
     if (!env.AI) return json({ error: 'Auto-translate is not enabled yet' }, { status: 501 });
     try {
       const out = await env.AI.run('@cf/meta/m2m100-1.2b', {
@@ -79,16 +113,6 @@ export async function onRequestPost(context) {
     } catch (e) {
       return json({ error: 'Translation failed' }, { status: 502 });
     }
-  }
-
-  // Public, tiny: a visitor tapped the WhatsApp button on an update.
-  // (Taps only, not views, to stay well inside KV's free write limits.)
-  const track = new URL(request.url).searchParams.get('tap');
-  if (track) {
-    const all = await readUpdates(env);
-    const hit = all.find((u) => u.id === track);
-    if (hit) { hit.taps = (hit.taps || 0) + 1; await env.UPDATES_KV.put('updates', JSON.stringify(all)); }
-    return json({ ok: true });
   }
 
   const text = String(body.text || '').trim().slice(0, MAX_TEXT_LENGTH);
@@ -116,7 +140,8 @@ export async function onRequestPost(context) {
 
 export async function onRequestDelete(context) {
   const { request, env } = context;
-  if (!isAuthorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const g = await requireRole(request, env, ['owner']);
+  if (g.res) return g.res;
 
   const id = new URL(request.url).searchParams.get('id');
   const updates = await readUpdates(env);

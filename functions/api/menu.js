@@ -1,8 +1,7 @@
 // GET  /api/menu -> public: per-item overrides { [itemId]: { price?, special?, soldOut?, until? } }
 // POST /api/menu -> owner only: replaces the overrides (body: { menu: {...} })
 // Same KV namespace (UPDATES_KV) and ADMIN_TOKEN as /api/updates.
-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', ...(init && init.headers) } });
-const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
+import { json, requireRole } from '../_lib/auth.js';
 
 export async function onRequestGet({ env }) {
   const raw = await env.UPDATES_KV.get('menu');
@@ -11,7 +10,8 @@ export async function onRequestGet({ env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const g = await requireRole(request, env, ['owner']);
+  if (g.res) return g.res;
   let body; try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
   const clean = {};
   for (const [id, m] of Object.entries(body.menu || {}).slice(0, 200)) {

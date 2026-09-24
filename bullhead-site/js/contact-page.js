@@ -5,6 +5,9 @@
 
 const ORDER_WHATSAPP_NUMBER = '254720707323';
 
+// Item names can be typed in by the owner (custom dishes), so escape them before they go into innerHTML.
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 // Random id for one order. Made here (not on the server) so the tracking link can be
 // put into the WhatsApp message the instant the customer taps send.
 function makeTrackId() {
@@ -39,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const fieldReserveDateTime = document.getElementById('field-reserveDateTime');
   const fieldEta = document.getElementById('field-eta');
   const reserveDateInput = document.getElementById('reserveDate');
+  const fieldPhone = document.getElementById('field-phone');
+  const phoneInput = document.getElementById('phone');
+  const phoneErr = document.getElementById('phoneErr');
 
   const today = new Date().toISOString().split('T')[0];
   if (reserveDateInput) reserveDateInput.min = today;
@@ -66,6 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('partySize').required = type === 'reserve';
     document.getElementById('reserveDate').required = v.reserveDateTime;
     document.getElementById('reserveTime').required = v.reserveDateTime;
+
+    // A phone number is needed for everything except an order from a table QR code (they're already in the room).
+    const needPhone = !(type === 'dine-in' && activeTable);
+    if (fieldPhone) fieldPhone.hidden = !needPhone;
+    if (phoneInput) phoneInput.required = needPhone;
+    if (phoneErr) phoneErr.hidden = true;
   }
 
   typeButtons.forEach((btn) => {
@@ -93,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `${l.qty.toFixed(1).replace(/\.0$/, '')} kg`
           : `${l.qty} ×`;
         return `
-      <div class="order-line" data-id="${l.id}">
-        <span class="order-line-name">${qtyText} ${l.name}</span>
+      <div class="order-line" data-id="${esc(l.id)}">
+        <span class="order-line-name">${qtyText} ${esc(l.name)}</span>
         <span class="order-line-total">${formatKES(l.lineTotal)}</span>
-        <button type="button" class="order-line-remove" aria-label="Remove ${l.name}">×</button>
+        <button type="button" class="order-line-remove" aria-label="Remove ${esc(l.name)}">×</button>
       </div>`;
       })
       .join('');
@@ -131,6 +143,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const reserveDate = form.reserveDate.value;
     const reserveTime = form.reserveTime.value;
 
+    // Phone number: needed unless this is a table-QR dine-in order. Checked BEFORE anything else so the
+    // customer fixes it straight away, and staff always have a way to reach someone who never presses Send.
+    // (A message with no items, no note and no reservation is just a chat opener: nothing is recorded, so no number is needed.)
+    const willRecord = lines.length > 0 || notes || type === 'reserve';
+    const needPhone = willRecord && !(type === 'dine-in' && activeTable);
+    const phone = normPhoneKE(form.phone.value);
+    if (needPhone && !phone) {
+      if (phoneErr) { phoneErr.textContent = 'Please enter a valid Kenyan phone number, e.g. 0712 345 678 · Weka nambari sahihi ya simu.'; phoneErr.hidden = false; }
+      phoneInput.focus();
+      return;
+    }
+    if (phoneErr) phoneErr.hidden = true;
+    if (submitBtn) submitBtn.disabled = true;      // no double-taps while we work
+
     const TYPE_LABELS = {
       'dine-in': 'Dine In',
       'delivery': 'Delivery',
@@ -160,7 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    let message = `Hi Bullhead, I'd like to place an order.\n`;
+    // The id is made here (not on the server) so the code and tracking link can go into the WhatsApp message.
+    // An order with no items still counts if it has a note, or if it's a table reservation.
+    const trackId = willRecord ? makeTrackId() : '';
+    const code = trackId ? orderCode(trackId) : '';
+
+    let message = `Hi Bullhead, I'd like to place an order.${code ? ` (Order #${code})` : ''}\n`;
     message += `\nType: ${TYPE_LABELS[type]}`;
     if (activeTable) message += `\nTable: ${activeTable}`;
 
@@ -198,27 +229,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (name) message += `\nName: ${name}`;
     if (notes) message += `\nCustom instructions: ${notes}`;
 
-    // Tracking link. (`location` above is the counter the customer picked, so use window.location.)
-    // Mirrors the server: an order with no items still counts if it has a note.
-    const trackId = lines.length > 0 || notes ? makeTrackId() : '';
+    // Tracking link.
     if (trackId) message += `\n\nTrack your order live: ${window.location.origin}/track?o=${trackId}`;
+    const waUrl = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    // Also drop the order on the owner's dashboard (fire-and-forget; WhatsApp stays the source of truth).
-    try {
-      fetch('/api/orders', {
-        method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: trackId || undefined, type, name, notes, table: activeTable || '', counter: location, partySize, address,
-          arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
-          items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
-        }),
-      }).catch(() => {});
-    } catch (e) {}
-
-    const url = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener');
-
+    // 1) Record the order on the dashboard FIRST and wait for the answer, so the customer is never told
+    //    "sent" when it wasn't. The dashboard is the order; the WhatsApp message is the receipt.
+    let recorded = false;
     if (trackId) {
+      if (submitBtn) submitBtn.textContent = 'Sending…';
+      const payload = JSON.stringify({
+        id: trackId, type, name, phone, notes, table: activeTable || '', counter: location, partySize, address, pin: liveLocationUrl,
+        arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
+        items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
+      });
+      for (let attempt = 0; attempt < 2 && !recorded; attempt++) {
+        try {
+          const ctl = new AbortController();
+          const timer = setTimeout(() => ctl.abort(), 8000);
+          const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal: ctl.signal });
+          clearTimeout(timer);
+          if (res.ok || res.status === 409) { recorded = true; break; }        // 409: an earlier try had already saved it
+          const d = await res.json().catch(() => ({}));
+          if (res.status === 400) {                                            // something to fix: tell them, don't open WhatsApp
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
+            if (d.field === 'phone' && phoneErr) { phoneErr.textContent = d.error; phoneErr.hidden = false; phoneInput.focus(); }
+            else alert(d.error || 'Something is wrong with this order. Please check it and try again.');
+            return;
+          }
+          if (res.status < 500) break;                                         // 429 etc.: trying again won't help
+        } catch (err) { /* network hiccup: one more try */ }
+      }
+      if (submitBtn) submitBtn.textContent = originalBtnText;
+    }
+    if (submitBtn) submitBtn.disabled = false;
+
+    // 2) Open WhatsApp with the same order (+ code + tracking link).
+    const wa = window.open(waUrl, '_blank');
+    if (wa) { try { wa.opener = null; } catch (err) {} }
+
+    const banner = () => {
       let tb = document.getElementById('trackBanner');
       if (!tb) {
         tb = document.createElement('a');
@@ -226,24 +276,24 @@ document.addEventListener('DOMContentLoaded', () => {
         tb.style.cssText = 'display:block;margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--green);color:#fff;text-align:center;font-weight:600;text-decoration:none;';
         form.after(tb);
       }
+      return tb;
+    };
+
+    if (recorded) {
+      const tb = banner();
+      tb.style.background = 'var(--green)';
       tb.href = `/track?o=${trackId}`;
-      tb.textContent = '✅ Order sent. Track it live · Fuatilia oda yako →';
-
-      // Optional pay-ahead card with the Till number and the exact amount.
-      const oldPay = document.getElementById('mpesaCard');
-      if (oldPay) oldPay.remove();
-      const orderTotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-      if (orderTotal > 0 && typeof mpesaCard === 'function') tb.after(mpesaCard(orderTotal));
-
-      // The tracking page IS the confirmation. WhatsApp opens in its own tab/app; this tab moves
-      // on to the live status page, so wherever the customer returns to, their order is on screen.
-      // (The banner above stays as a fallback. The order POST uses keepalive so it survives this.)
-      setTimeout(() => { window.location.assign(`/track?o=${trackId}`); }, 1200);
-    }
-
-    if (lines.length) {
-      clearCart();
-      render();
+      tb.textContent = `✅ Order #${code} recorded. Press Send in WhatsApp so we can confirm it · Bonyeza Tuma kwenye WhatsApp →`;
+      // The tracking page has a "Send on WhatsApp" button too, so this works even if the browser blocked the pop-up.
+      setTimeout(() => { window.location.assign(`/track?o=${trackId}`); }, wa ? 1200 : 300);
+      if (lines.length) { clearCart(); render(); }
+    } else if (trackId) {
+      // Not saved: keep the cart and the form so nothing is lost, and be honest about what counts.
+      const tb = banner();
+      tb.style.background = '#b3261e';
+      tb.href = waUrl; tb.target = '_blank'; tb.rel = 'noopener';
+      tb.textContent = `⚠️ We couldn't save order #${code} on our screen. Your WhatsApp message is your order: please press Send there. Tap here to open WhatsApp again.`;
+      return;
     }
 
     form.reset();

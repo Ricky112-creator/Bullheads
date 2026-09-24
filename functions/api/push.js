@@ -16,8 +16,7 @@
 // service worker shows "New Bullhead order". That keeps this file small and means
 // no order details ever pass through the browser vendors' push servers.
 
-const json = (d, init) => new Response(JSON.stringify(d), { ...init, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(init && init.headers) } });
-const authed = (req, env) => env.ADMIN_TOKEN && (req.headers.get('Authorization') || '') === `Bearer ${env.ADMIN_TOKEN}`;
+import { json, requireRole } from '../_lib/auth.js';
 const MAX_SUBS = 10;
 
 // ---------- database ----------
@@ -87,7 +86,8 @@ export async function onRequestGet({ env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const g = await requireRole(request, env, ['owner']);
+  if (g.res) return g.res;
   try {
     await ensureSchema(env);
     const u = new URL(request.url);
@@ -107,7 +107,8 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  const g = await requireRole(request, env, ['owner']);
+  if (g.res) return g.res;
   try {
     await ensureSchema(env);
     let b = {}; try { b = await request.json(); } catch {}

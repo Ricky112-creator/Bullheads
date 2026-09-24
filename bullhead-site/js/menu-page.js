@@ -3,6 +3,9 @@
 // keep the floating order bar in sync
 // ============================================
 
+// Item names/categories can be typed in by the owner (custom dishes), so escape them before they go into innerHTML.
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 document.addEventListener('DOMContentLoaded', () => {
   const listEl = document.getElementById('menuList');
   const barEl = document.getElementById('orderBar');
@@ -34,25 +37,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const items = MENU_ITEMS.filter((i) => i.category === cat).sort((a, b) => (b.special ? 1 : 0) - (a.special ? 1 : 0));
       return `
         <div class="menu-category">
-          <h3 class="menu-category-title">${cat}</h3>
+          <h3 class="menu-category-title">${esc(cat)}</h3>
           <div class="menu-items">
             ${items
               .map((item) => {
                 const unpriced = typeof item.price !== 'number';
                 return `
-              <div class="menu-item${item.soldOut ? ' is-sold' : ''}${item.special ? ' is-special' : ''}" data-id="${item.id}">
+              <div class="menu-item${item.soldOut ? ' is-sold' : ''}${item.special ? ' is-special' : ''}" data-id="${esc(item.id)}">
                 <div class="menu-item-info">
-                  <p class="menu-item-name">${item.name}${item.special ? ' <span class="tag-special">★ Today\'s special</span>' : ''}</p>
+                  <p class="menu-item-name">${esc(item.name)}${item.special ? ' <span class="tag-special">★ Today\'s special</span>' : ''}</p>
                   <p class="menu-item-price${unpriced ? ' unpriced' : ''}">${priceLabel(item)}</p>
                 </div>
                 ${item.soldOut
                   ? `<span class="menu-item-unavailable sold-tag">${soldLabel(item)}</span>`
                   : unpriced
                   ? `<span class="menu-item-unavailable">Not yet orderable — ask staff</span>`
-                  : `<div class="qty-stepper" data-id="${item.id}" data-unit="${item.unit || ''}">
-                      <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">−</button>
+                  : `<div class="qty-stepper" data-id="${esc(item.id)}" data-unit="${item.unit || ''}">
+                      <button class="qty-btn qty-minus" aria-label="Remove ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${esc(item.name)}">−</button>
                       <span class="qty-count">${item.unit === 'kg' ? '0 kg' : '0'}</span>
-                      <button class="qty-btn qty-plus" aria-label="Add ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${item.name}">+</button>
+                      <button class="qty-btn qty-plus" aria-label="Add ${item.unit === 'kg' ? 'half a kg of' : 'one'} ${esc(item.name)}">+</button>
                     </div>`
                 }
               </div>`;
@@ -94,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   draw();
   syncUI();
   // Pull the owner's live menu board now, then every 30s while the page is open.
-  const refreshBoard = () => applyMenuOverrides().then(() => { draw(); syncUI(); });
+  const refreshBoard = () => document.hidden ? Promise.resolve() : applyMenuOverrides().then(() => { draw(); syncUI(); });
   refreshBoard();
   setInterval(refreshBoard, 30000);
 });
