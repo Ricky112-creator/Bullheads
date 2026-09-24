@@ -4,94 +4,152 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Bullhead — Post an Update</title>
+<meta name="theme-color" content="#241712">
+<title>Bullhead — Owner Dashboard</title>
+<link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: dark; }
-  body { font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 20px 60px; background: #17110d; color: #f4ece4; }
-  h1 { font-size: 1.25rem; margin-bottom: 4px; }
-  p.hint { color: #b9a99a; font-size: 0.85rem; margin-top: 0; }
-  label { display: block; font-size: 0.85rem; color: #cdbfb2; margin-top: 18px; margin-bottom: 4px; }
-  input, textarea, select { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 1rem; border-radius: 8px; border: 1px solid #4a3a2e; background: #241712; color: #f4ece4; font-family: inherit; }
-  textarea { resize: vertical; }
-  button { margin-top: 20px; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; border: none; border-radius: 8px; background: #c0392b; color: #fff; cursor: pointer; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  #status { min-height: 1.4em; font-size: 0.9rem; margin-top: 10px; }
-  #status.ok { color: #7fd68a; }
-  #status.err { color: #e08585; }
-  h2 { font-size: 1rem; margin-top: 40px; border-top: 1px solid #35281f; padding-top: 20px; }
-  .update-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #2a1f18; font-size: 0.9rem; }
-  .update-row .txt { flex: 1; }
-  .update-row .when { display: block; color: #8a7a6c; font-size: 0.75rem; margin-top: 2px; }
-  .update-row button { width: auto; margin: 0; padding: 6px 12px; font-size: 0.8rem; background: #3a2a20; }
-  #charCount { text-align: right; font-size: 0.75rem; color: #8a7a6c; margin-top: 4px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
-  .chip { width: auto; margin: 0; padding: 8px 12px; font-size: 0.82rem; font-weight: 500; border-radius: 999px; background: #241712; border: 1px solid #4a3a2e; color: #f4ece4; }
-  .chip.on { background: #c0392b; border-color: #c0392b; }
-  .tpl { background: transparent; color: #cdbfb2; }
-  .check { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 0.9rem; color: #cdbfb2; }
-  .check input { width: auto; }
-  .preview { margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: #1c130e; border: 1px solid #35281f; border-left: 4px solid #F2A33A; }
-  .preview small { color: #8a7a6c; display: block; margin-bottom: 6px; }
-  .preview .cta { display: inline-block; margin-top: 8px; padding: 6px 12px; border-radius: 999px; background: #25D366; color: #06210f; font-weight: 700; font-size: 0.78rem; }
-  .stats { display: flex; gap: 10px; margin-top: 14px; }
-  .stat { flex: 1; background: #241712; border-radius: 10px; padding: 10px; text-align: center; }
-  .stat b { display: block; font-size: 1.3rem; }
-  .stat span { font-size: 0.72rem; color: #8a7a6c; }
-  .actions { display: flex; gap: 6px; flex-direction: column; }
-  .badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; background: #3a2a20; margin-right: 6px; }
-  .badge.live { background: #1f4a2a; color: #7fd68a; }
-  .share { background: #25D366; color: #06210f; }
+  :root { color-scheme: dark; --cream:#F7EFE6; --ink:#241712; --ink-2:#2f1f18; --line:rgba(247,239,230,.12); --mute:#b9a99a; --red:#E8332B; --cognac:#C77E3F; --green:#6FCF97; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Inter',system-ui,sans-serif; background:var(--ink) radial-gradient(900px 400px at 50% -120px, rgba(232,51,43,.18), transparent 70%) no-repeat; color:var(--cream); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 18px 120px; }
+  header { display:flex; align-items:center; gap:12px; padding:22px 0 18px; }
+  header img { width:42px; height:auto; }
+  header h1 { font-family:'Fraunces',serif; font-size:1.35rem; margin:0; line-height:1.1; }
+  header small { color:var(--mute); font-size:.78rem; }
+  header a { margin-left:auto; color:var(--cream); font-size:.8rem; text-decoration:none; border:1px solid var(--line); padding:7px 12px; border-radius:999px; }
+  .card { background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:16px; }
+  h2 { font-family:'Fraunces',serif; font-size:1.05rem; margin:0 0 4px; }
+  .sub { color:var(--mute); font-size:.84rem; margin:0 0 14px; }
+  label.l { display:block; font-size:.78rem; font-weight:600; color:#cdbfb2; margin:16px 0 6px; letter-spacing:.02em; }
+  input[type=password], input[type=text], textarea { width:100%; padding:12px 14px; font:inherit; font-size:1rem; color:var(--cream); background:#1a110d; border:1px solid var(--line); border-radius:12px; }
+  textarea { resize:vertical; min-height:74px; }
+  input:focus, textarea:focus, button:focus-visible { outline:2px solid var(--red); outline-offset:1px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { font:inherit; cursor:pointer; }
+  .chip { padding:8px 13px; font-size:.84rem; font-weight:500; color:var(--cream); background:transparent; border:1px solid var(--line); border-radius:999px; }
+  .chip:hover { border-color:rgba(247,239,230,.35); }
+  .chip.on { background:var(--red); border-color:var(--red); font-weight:600; }
+  .btn { width:100%; padding:14px; font-size:1rem; font-weight:700; color:#fff; background:var(--red); border:0; border-radius:14px; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .link { background:none; border:0; color:var(--cognac); font-size:.8rem; font-weight:600; padding:0; }
+  .meta { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:.75rem; color:var(--mute); }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  .stat { background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:16px; padding:14px 8px; text-align:center; }
+  .stat b { display:block; font-family:'Fraunces',serif; font-size:1.7rem; line-height:1; }
+  .stat span { display:block; margin-top:6px; font-size:.7rem; color:var(--mute); }
+  .stat.hot b { color:var(--green); }
+  .switch { display:flex; align-items:center; gap:12px; margin-top:16px; font-size:.88rem; cursor:pointer; }
+  .switch input { appearance:none; width:44px; height:26px; border-radius:99px; background:#4a3a2e; position:relative; flex-shrink:0; transition:.2s; }
+  .switch input::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:.2s; }
+  .switch input:checked { background:var(--green); }
+  .switch input:checked::after { left:21px; }
+  .switch small { display:block; color:var(--mute); font-size:.75rem; }
+  /* preview mirrors the real strip */
+  .pv { --a:#b45309; --b:#e08a1a; border-radius:12px; padding:10px 12px; display:flex; align-items:center; gap:10px; background:linear-gradient(90deg,var(--a),var(--b)); font-size:.85rem; font-weight:600; overflow:hidden; }
+  .pv .pill { flex-shrink:0; font-size:.62rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:rgba(0,0,0,.28); padding:3px 9px; border-radius:99px; }
+  .pv .t { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pv .c { flex-shrink:0; background:#fff; color:#14532d; font-size:.72rem; font-weight:800; padding:4px 11px; border-radius:99px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:99px; overflow:hidden; }
+  .seg button { background:none; border:0; color:var(--mute); padding:4px 12px; font-size:.75rem; font-weight:700; }
+  .seg button.on { background:var(--cream); color:var(--ink); }
+  .item { display:flex; gap:12px; padding:14px 0; border-top:1px solid var(--line); }
+  .item:first-of-type { border-top:0; padding-top:4px; }
+  .item .dot { width:10px; height:10px; border-radius:50%; margin-top:6px; flex-shrink:0; }
+  .item .body { flex:1; min-width:0; }
+  .item p { margin:0 0 4px; font-size:.95rem; line-height:1.4; }
+  .item small { color:var(--mute); font-size:.75rem; }
+  .item .acts { display:flex; flex-direction:column; gap:6px; }
+  .mini { padding:6px 12px; font-size:.75rem; font-weight:600; color:var(--cream); background:transparent; border:1px solid var(--line); border-radius:99px; }
+  .mini.wa { background:#25D366; border-color:#25D366; color:#06210f; }
+  .empty { color:var(--mute); font-size:.88rem; padding:6px 0; }
+  .signed { display:flex; align-items:center; gap:8px; font-size:.8rem; color:var(--mute); margin-bottom:14px; }
+  .signed i { width:8px; height:8px; border-radius:50%; background:var(--green); }
+  .signed .link { margin-left:auto; }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:12px 18px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--ink) 40%); }
+  .bar > div { max-width:640px; margin:0 auto; }
+  #toast { position:fixed; left:50%; bottom:88px; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:var(--cream); color:var(--ink); font-weight:600; font-size:.88rem; padding:11px 18px; border-radius:99px; box-shadow:0 10px 30px rgba(0,0,0,.5); transition:.3s; max-width:90%; text-align:center; }
+  #toast.show { opacity:1; transform:translate(-50%,0); }
+  #toast.err { background:#ffdad6; color:#7a1810; }
+  [hidden] { display:none !important; }
 </style>
 </head>
 <body>
-  <h1>Post an update to Bullhead</h1>
-  <p class="hint">Shows on the live site within about 30 seconds. Keep it short — customers will see it in passing.</p>
+<div class="wrap">
+  <header>
+    <img src="assets/img/logo-mark.png" alt="Bullhead">
+    <div><h1>Bullhead</h1><small>Owner dashboard</small></div>
+    <a href="/" target="_blank" rel="noopener">View site ↗</a>
+  </header>
 
-  <label for="token">Access code</label>
-  <input id="token" type="password" placeholder="Access code" autocomplete="off">
+  <!-- Sign in -->
+  <section class="card" id="gate">
+    <h2>Welcome back 👋</h2>
+    <p class="sub">Enter your access code to post updates to the website.</p>
+    <input id="token" type="password" placeholder="Access code" autocomplete="current-password">
+    <label class="switch"><input type="checkbox" id="remember" checked><span>Keep me signed in on this phone</span></label>
+    <button class="btn" id="loginBtn" style="margin-top:16px">Sign in</button>
+  </section>
 
-  <label>Quick start (tap one, then edit)</label>
-  <div class="chips" id="tpls"></div>
+  <!-- Dashboard -->
+  <main id="app" hidden>
+    <div class="signed"><i></i> Signed in <button class="link" id="logout">Sign out</button></div>
 
-  <label>What kind of update?</label>
-  <div class="chips" id="types"></div>
+    <div class="stats">
+      <div class="stat"><b id="sLive">0</b><span>live now</span></div>
+      <div class="stat hot"><b id="sTaps7">0</b><span>WhatsApp taps · 7 days</span></div>
+      <div class="stat"><b id="sTapsAll">0</b><span>taps · all time</span></div>
+    </div>
 
-  <label for="text">Update</label>
-  <textarea id="text" rows="3" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
-  <div id="charCount">0 / 140</div>
+    <section class="card">
+      <h2>New update</h2>
+      <p class="sub">Appears on every page of the site within about 30 seconds.</p>
 
-  <label for="textSw">Swahili version <span style="color:#8a7a6c">(shown when a visitor taps SW)</span></label>
-  <textarea id="textSw" rows="2" maxlength="140" placeholder="Toleo la Kiswahili…"></textarea>
-  <button type="button" class="chip" id="trBtn" style="margin-top:8px">🌍 Auto-translate to Swahili</button>
+      <label class="l">1 · Start from a template <span style="font-weight:400;color:var(--mute)">(optional)</span></label>
+      <div class="row" id="tpls"></div>
 
-  <label for="expires">Auto-remove after</label>
-  <select id="expires">
-    <option value="4">4 hours</option>
-    <option value="12">12 hours</option>
-    <option value="24" selected>24 hours</option>
-    <option value="72">3 days</option>
-    <option value="">Never (remove manually)</option>
-  </select>
+      <label class="l" for="text">2 · Your message</label>
+      <textarea id="text" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
+      <div class="meta"><span>Short and clear works best</span><span id="charCount">0 / 140</span></div>
 
-  <label class="check"><input type="checkbox" id="cta" checked> Add an "Order on WhatsApp" button (turns readers into orders)</label>
-  <label class="check"><input type="checkbox" id="remember"> Remember my access code on this phone</label>
+      <label class="l" for="textSw">Swahili version <span style="font-weight:400;color:var(--mute)">· shown when a visitor taps SW</span></label>
+      <textarea id="textSw" maxlength="140" placeholder="Toleo la Kiswahili…"></textarea>
+      <div class="meta"><button class="link" id="trBtn" type="button">🌍 Draft it for me</button><span id="charSw">0 / 140</span></div>
 
-  <div class="preview" id="preview"><small>How customers will see it</small><div id="pvText">Your update appears here…</div><span class="cta" id="pvCta">Order on WhatsApp</span></div>
+      <label class="l">3 · Type</label>
+      <div class="row" id="types"></div>
 
-  <button id="postBtn" type="button">Post update</button>
-  <p id="status"></p>
+      <label class="l">4 · Stay live for</label>
+      <div class="row" id="durs"></div>
 
-  <div class="stats"><div class="stat"><b id="sLive">0</b><span>live now</span></div><div class="stat"><b id="sTaps7">0</b><span>WhatsApp taps (7 days)</span></div><div class="stat"><b id="sTapsAll">0</b><span>taps, all time</span></div></div>
+      <label class="switch"><input type="checkbox" id="cta" checked><span>"Order on WhatsApp" button<small>Turns readers into orders — recommended</small></span></label>
 
-  <h2>Currently live</h2>
-  <div id="list">Enter your access code to see your updates.</div>
-  <h2>Past updates — tap Repost to reuse</h2>
-  <div id="past"></div>
+      <label class="l" style="display:flex;justify-content:space-between;align-items:center">Preview
+        <span class="seg" id="pvLang"><button type="button" data-l="en" class="on">EN</button><button type="button" data-l="sw">SW</button></span></label>
+      <div class="pv" id="pv"><span class="pill" id="pvPill">Special</span><span class="t" id="pvText">Your message appears here…</span><span class="c" id="pvCta">Order on WhatsApp</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Live now</h2>
+      <div id="list"><p class="empty">Loading…</p></div>
+    </section>
+
+    <section class="card">
+      <h2>Past updates</h2>
+      <p class="sub">Tap Repost to bring one back in a couple of taps.</p>
+      <div id="past"></div>
+    </section>
+  </main>
+</div>
+
+<div class="bar" id="postBar" hidden><div><button class="btn" id="postBtn" type="button">Post to website</button></div></div>
+<div id="toast" role="status"></div>
 
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var tokenEl = $('token'), textEl = $('text'), expiresEl = $('expires'), postBtn = $('postBtn'), statusEl = $('status');
   var KEY = 'bullheadAdminToken';
   var TEMPLATES = [
     ['🐟 Fresh in', 'Fresh tilapia in today — come get it while it lasts', 'stock', 'Samaki tilapia wabichi wamefika leo — njoo uchukue kabla hawajaisha'],
@@ -100,104 +158,112 @@
     ['🎉 Holiday', 'Happy holiday to all our esteemed customers — we are open 24 hours', 'notice', 'Heri ya sikukuu kwa wateja wetu wapendwa — tuko wazi masaa 24'],
     ['⚠️ Sold out', 'Sold out for now: ', 'closing', 'Vimeisha kwa sasa: ']
   ];
-  var TYPES = [['special', '🔥 Special'], ['stock', '🐟 Fresh stock'], ['notice', '📢 Notice'], ['closing', '⚠️ Heads up']];
-  var COLORS = { special: '#F2A33A', stock: '#6FCF97', notice: '#8FB8FF', closing: '#E5533D' };
-  var type = 'special';
+  var TYPES = { special: ['🔥 Special', "Today's special", 'Maalum ya leo', '#b45309', '#e08a1a'], stock: ['🐟 Fresh stock', 'Fresh in', 'Mpya sasa', '#15803d', '#2fae63'], notice: ['📢 Notice', 'Update', 'Taarifa', '#1d4ed8', '#4f86f7'], closing: ['⚠️ Heads up', 'Heads up', 'Tahadhari', '#991b1b', '#e0392f'] };
+  var DURS = [['4 hours', 4], ['12 hours', 12], ['24 hours', 24], ['3 days', 72], ['Until I remove it', '']];
+  var type = 'special', dur = 24, pvLang = 'en', token = '';
 
-  tokenEl.value = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
-  $('remember').checked = !!localStorage.getItem(KEY);
+  function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, 3200); }
+  function auth() { return 'Bearer ' + token; }
+  function when(iso) { try { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+  function mk(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
-  function chips(el, list, onclick, cls) {
-    list.forEach(function (it) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'chip ' + (cls || '');
-      b.textContent = it[1] && it[2] ? it[0] : (it[1] || it[0]); b.dataset.k = it[0];
-      b.onclick = function () { onclick(it, b); }; el.appendChild(b);
+  function chipGroup(el, items, isOn, pick) {
+    el.innerHTML = '';
+    items.forEach(function (it) {
+      var b = mk('button', 'chip' + (isOn(it) ? ' on' : ''), it.label); b.type = 'button';
+      b.onclick = function () { pick(it); chipGroup(el, items, isOn, pick); }; el.appendChild(b);
     });
   }
-  chips($('tpls'), TEMPLATES, function (t) { textEl.value = t[1]; $('textSw').value = t[3] || ''; setType(t[2]); update(); textEl.focus(); }, 'tpl');
-  chips($('types'), TYPES, function (t) { setType(t[0]); });
-  function setType(t) {
-    type = t;
-    Array.prototype.forEach.call($('types').children, function (b) { b.classList.toggle('on', b.dataset.k === t); });
-    $('preview').style.borderLeftColor = COLORS[t]; update();
-  }
-  function update() {
-    $('charCount').textContent = textEl.value.length + ' / 140';
-    $('pvText').textContent = textEl.value.trim() || 'Your update appears here…';
-    $('pvCta').style.display = $('cta').checked ? 'inline-block' : 'none';
-  }
-  textEl.addEventListener('input', update); $('cta').addEventListener('change', update);
-  setType('special');
+  function drawTypes() { chipGroup($('types'), Object.keys(TYPES).map(function (k) { return { k: k, label: TYPES[k][0] }; }), function (i) { return i.k === type; }, function (i) { type = i.k; refresh(); }); }
+  function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
+  chipGroup($('tpls'), TEMPLATES.map(function (t) { return { t: t, label: t[0] }; }), function () { return false; }, function (i) {
+    $('text').value = i.t[1]; $('textSw').value = i.t[3]; type = i.t[2]; refresh(); $('text').focus();
+    $('tpls').querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
+  });
 
-  function auth() { return 'Bearer ' + tokenEl.value.trim(); }
-  function setStatus(m, k) { statusEl.textContent = m; statusEl.className = k || ''; }
-  function when(iso) { try { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function refresh() {
+    var en = $('text').value, sw = $('textSw').value, T = TYPES[type];
+    $('charCount').textContent = en.length + ' / 140'; $('charSw').textContent = sw.length + ' / 140';
+    var say = (pvLang === 'sw' && sw.trim()) ? sw : en;
+    $('pvText').textContent = say.trim() || 'Your message appears here…';
+    $('pvPill').textContent = pvLang === 'sw' ? T[2] : T[1];
+    $('pv').style.setProperty('--a', T[3]); $('pv').style.setProperty('--b', T[4]);
+    $('pvCta').style.display = $('cta').checked ? '' : 'none';
+    $('pvCta').textContent = pvLang === 'sw' ? 'Agiza kwa WhatsApp' : 'Order on WhatsApp';
+    drawTypes();
+  }
+  $('text').addEventListener('input', refresh); $('textSw').addEventListener('input', refresh); $('cta').addEventListener('change', refresh);
+  $('pvLang').addEventListener('click', function (e) { var l = e.target.dataset.l; if (!l) return; pvLang = l; Array.prototype.forEach.call($('pvLang').children, function (b) { b.classList.toggle('on', b.dataset.l === l); }); refresh(); });
 
   function row(u, live) {
-    var r = document.createElement('div'); r.className = 'update-row';
-    var t = document.createElement('div'); t.className = 'txt';
-    var main = document.createElement('span'); main.textContent = u.text;
-    var w = document.createElement('span'); w.className = 'when';
-    var b = document.createElement('span'); b.className = 'badge' + (live ? ' live' : ''); b.textContent = live ? 'LIVE' : 'ended';
-    w.appendChild(b); w.appendChild(document.createTextNode('Posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
-    t.appendChild(main); t.appendChild(w); r.appendChild(t);
-    var a = document.createElement('div'); a.className = 'actions';
-    function btn(label, fn, cls) { var x = document.createElement('button'); x.type = 'button'; x.textContent = label; if (cls) x.className = cls; x.onclick = fn; a.appendChild(x); }
-    if (live) btn('Remove', function () { remove(u.id); });
-    btn('Repost', function () { textEl.value = u.text; $('textSw').value = u.textSw || ''; setType(u.type || 'notice'); $('cta').checked = u.cta !== false; update(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    btn('Share', function () { window.open('https://wa.me/?text=' + encodeURIComponent(u.text + '\n— Bullhead, Emali · bullheadhotels.co.ke'), '_blank'); }, 'share');
+    var T = TYPES[u.type] || TYPES.notice, r = mk('div', 'item');
+    var d = mk('span', 'dot'); d.style.background = T[4]; r.appendChild(d);
+    var b = mk('div', 'body'); b.appendChild(mk('p', '', u.text));
+    if (u.textSw) b.appendChild(mk('p', '', u.textSw)).style.opacity = .65;
+    b.appendChild(mk('small', '', (live ? '● Live · ' : 'Ended · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
+    r.appendChild(b);
+    var a = mk('div', 'acts');
+    function act(label, cls, fn) { var x = mk('button', 'mini ' + cls, label); x.type = 'button'; x.onclick = fn; a.appendChild(x); }
+    act('Repost', '', function () { $('text').value = u.text; $('textSw').value = u.textSw || ''; type = u.type || 'notice'; $('cta').checked = u.cta !== false; refresh(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Loaded — tweak it and post'); });
+    act('Share', 'wa', function () { window.open('https://wa.me/?text=' + encodeURIComponent(u.text + '\n— Bullhead, Emali · bullheadhotels.co.ke'), '_blank'); });
+    if (live) act('Remove', '', function () { if (confirm('Take this update off the website?')) remove(u.id); });
     r.appendChild(a); return r;
   }
 
-  function load() {
-    if (!tokenEl.value.trim()) return;
-    fetch('/api/updates?all=1', { headers: { Authorization: auth() } })
-      .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+  function load(first) {
+    return fetch('/api/updates?all=1', { headers: { Authorization: auth() } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'auth' : 'net'); return r.json(); })
       .then(function (d) {
-        var all = d.updates || [], now = Date.now(), week = now - 7 * 864e5, live = [], past = [], t7 = 0, tAll = 0;
-        all.forEach(function (u) {
-          var isLive = !u.expiresAt || new Date(u.expiresAt).getTime() > now;
-          (isLive ? live : past).push(u); tAll += u.taps || 0; if (new Date(u.postedAt).getTime() > week) t7 += u.taps || 0;
-        });
+        var all = d.updates || [], now = Date.now(), wk = now - 7 * 864e5, live = [], past = [], t7 = 0, tAll = 0;
+        all.forEach(function (u) { var lv = !u.expiresAt || new Date(u.expiresAt).getTime() > now; (lv ? live : past).push(u); tAll += u.taps || 0; if (new Date(u.postedAt).getTime() > wk) t7 += u.taps || 0; });
         $('sLive').textContent = live.length; $('sTaps7').textContent = t7; $('sTapsAll').textContent = tAll;
-        $('list').innerHTML = live.length ? '' : 'Nothing live right now.'; live.forEach(function (u) { $('list').appendChild(row(u, true)); });
-        $('past').innerHTML = past.length ? '' : 'Past updates will show up here.'; past.forEach(function (u) { $('past').appendChild(row(u, false)); });
-      })
-      .catch(function () { $('list').textContent = 'Could not load — check the access code.'; });
+        $('list').innerHTML = ''; if (!live.length) $('list').appendChild(mk('p', 'empty', 'Nothing live right now. Post one above 👆')); live.forEach(function (u) { $('list').appendChild(row(u, true)); });
+        $('past').innerHTML = ''; if (!past.length) $('past').appendChild(mk('p', 'empty', 'Your past updates will show up here.')); past.forEach(function (u) { $('past').appendChild(row(u, false)); });
+        $('gate').hidden = true; $('app').hidden = false; $('postBar').hidden = false;
+      });
   }
+
+  function signIn() {
+    token = $('token').value.trim(); if (!token) return toast('Enter your access code', true);
+    $('loginBtn').disabled = true;
+    load().then(function () {
+      if ($('remember').checked) localStorage.setItem(KEY, token); else { localStorage.removeItem(KEY); sessionStorage.setItem(KEY, token); }
+    }).catch(function (e) { toast(e.message === 'auth' ? 'That access code is not right' : 'Could not connect — try again', true); })
+      .finally(function () { $('loginBtn').disabled = false; });
+  }
+  $('loginBtn').onclick = signIn; $('token').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
+  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; };
 
   function remove(id) {
     fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
-      .then(function (r) { if (!r.ok) throw new Error(); load(); })
-      .catch(function () { setStatus('Could not remove — check the access code.', 'err'); });
+      .then(function (r) { if (!r.ok) throw new Error(); toast('Removed from the website'); load(); })
+      .catch(function () { toast('Could not remove — try again', true); });
   }
 
-  postBtn.addEventListener('click', function () {
-    var text = textEl.value.trim(), token = tokenEl.value.trim();
-    if (!token) return setStatus('Enter the access code.', 'err');
-    if (!text) return setStatus('Write something first.', 'err');
-    postBtn.disabled = true; setStatus('Posting…');
-    fetch('/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() },
-      body: JSON.stringify({ text: text, textSw: $('textSw').value.trim(), type: type, cta: $('cta').checked, expiresInHours: expiresEl.value || undefined }) })
-      .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Failed to post'); return r.json(); })
-      .then(function () {
-        sessionStorage.setItem(KEY, token);
-        if ($('remember').checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY);
-        textEl.value = ''; $('textSw').value = ''; update(); setStatus('Live on your site ✓ — share it on WhatsApp too', 'ok'); load();
-      })
-      .catch(function (e) { setStatus(e.message || 'Something went wrong.', 'err'); })
-      .finally(function () { postBtn.disabled = false; });
-  });
-  $('trBtn').addEventListener('click', function () {
-    if (!tokenEl.value.trim()) return setStatus('Enter the access code.', 'err');
-    if (!textEl.value.trim()) return setStatus('Write the English update first.', 'err');
-    setStatus('Translating…');
-    fetch('/api/updates?translate=1', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ text: textEl.value.trim() }) })
+  $('trBtn').onclick = function () {
+    if (!$('text').value.trim()) return toast('Write the English message first', true);
+    $('trBtn').textContent = 'Translating…';
+    fetch('/api/updates?translate=1', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ text: $('text').value.trim() }) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Failed'); return d; }); })
-      .then(function (d) { $('textSw').value = d.text; setStatus('Draft ready — please read it over before posting.', 'ok'); })
-      .catch(function (e) { setStatus(e.message + ' — you can type the Swahili yourself.', 'err'); });
-  });
-  tokenEl.addEventListener('change', load); load();
+      .then(function (d) { $('textSw').value = d.text; refresh(); toast('Draft ready — please read it over'); })
+      .catch(function (e) { toast(e.message + ' — type the Swahili yourself', true); })
+      .finally(function () { $('trBtn').textContent = '🌍 Draft it for me'; });
+  };
+
+  $('postBtn').onclick = function () {
+    var text = $('text').value.trim(); if (!text) { toast('Write a message first', true); $('text').focus(); return; }
+    $('postBtn').disabled = true; $('postBtn').textContent = 'Posting…';
+    fetch('/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() },
+      body: JSON.stringify({ text: text, textSw: $('textSw').value.trim(), type: type, cta: $('cta').checked, expiresInHours: dur || undefined }) })
+      .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Could not post'); return r.json(); })
+      .then(function () { $('text').value = ''; $('textSw').value = ''; refresh(); toast('Live on your website ✓'); load(); })
+      .catch(function (e) { toast(e.message, true); })
+      .finally(function () { $('postBtn').disabled = false; $('postBtn').textContent = 'Post to website'; });
+  };
+
+  drawDurs(); refresh();
+  token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
+  if (token) { $('token').value = token; load().catch(function () { token = ''; $('token').value = ''; localStorage.removeItem(KEY); }); }
 })();
 </script>
 </body>
