@@ -1,7 +1,7 @@
 // POST   /api/orders            -> public: the site drops each WhatsApp order here so the owner sees it live
-// GET    /api/orders            -> owner only: recent orders (newest first)
+// GET    /api/orders            -> owner or staff: recent orders (newest first)
 // GET    /api/orders?id=<uuid>  -> public: ONE order's progress, for the customer's tracking page
-// PATCH  /api/orders?id=&status= -> owner only: new | preparing | ready | done
+// PATCH  /api/orders?id=&status= -> owner or staff: new | preparing | ready | done
 // DELETE /api/orders?id=        -> owner only
 //
 // Orders now live in a D1 database (binding: DB), one row per order, so two orders
@@ -9,6 +9,7 @@
 // KV storage could). The tables are created automatically on first use.
 // ADMIN_TOKEN is the same owner access code as /api/updates.
 import { ensureSchema, notifyOwner } from './push.js';
+import { isStaff } from './staff.js';
 
 const MAX_KEEP = 1000;     // rows kept in the database
 const MAX_LIST = 150;      // rows the dashboard loads
@@ -45,7 +46,7 @@ export async function onRequestGet({ request, env }) {
       } });
     } catch (e) { return fail(e); }
   }
-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  if (!authed(request, env) && !(await isStaff(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
   try {
     await ensureSchema(env);
     const { results } = await env.DB.prepare('SELECT id, status, body FROM orders ORDER BY ts DESC LIMIT ?').bind(MAX_LIST).all();
@@ -92,7 +93,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 }
 
 export async function onRequestPatch({ request, env }) {
-  if (!authed(request, env)) return json({ error: 'Unauthorized' }, { status: 401 });
+  if (!authed(request, env) && !(await isStaff(request, env))) return json({ error: 'Unauthorized' }, { status: 401 });
   const u = new URL(request.url), status = u.searchParams.get('status');
   if (!STATUSES.includes(status)) return json({ error: 'Bad status' }, { status: 400 });
   try {
