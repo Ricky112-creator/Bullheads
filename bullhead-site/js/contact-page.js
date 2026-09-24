@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fieldAddress = document.getElementById('field-address');
   const fieldPickupTime = document.getElementById('field-pickupTime');
   const fieldReserveDateTime = document.getElementById('field-reserveDateTime');
+  const fieldEta = document.getElementById('field-eta');
   const reserveDateInput = document.getElementById('reserveDate');
 
   const today = new Date().toISOString().split('T')[0];
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'delivery':      { partySize: false, address: true,  pickupTime: false, reserveDateTime: false },
     'drive-through': { partySize: false, address: false, pickupTime: true,  reserveDateTime: false },
     'reserve':       { partySize: true,  address: false, pickupTime: false, reserveDateTime: true  },
+    'on-the-way':    { partySize: false, address: false, pickupTime: false, reserveDateTime: false },
   };
 
   function applyOrderType(type) {
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fieldAddress.hidden = !v.address;
     fieldPickupTime.hidden = !v.pickupTime;
     fieldReserveDateTime.hidden = !v.reserveDateTime;
+    if (fieldEta) fieldEta.hidden = type !== 'on-the-way';
 
     // required attributes follow visibility, so hidden fields never block submit
     document.getElementById('address').required = v.address;
@@ -123,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'delivery': 'Delivery',
       'drive-through': 'Drive-Through Pickup',
       'reserve': 'Table Reservation',
+      'on-the-way': 'ON MY WAY (pre-order)',
     };
 
     let liveLocationUrl = '';
@@ -155,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (type === 'delivery' && address) message += `\nDelivery address: ${address}`;
     if (liveLocationUrl) message += `\nGoogle Maps Location: ${liveLocationUrl}`;
     if (type === 'drive-through' && pickupTime) message += `\nArriving at: ${pickupTime}`;
+    const etaEl = form.querySelector('input[name="eta"]:checked');
+    const etaMinutes = type === 'on-the-way' && etaEl ? Number(etaEl.value) : 0;
+    if (etaMinutes) message += `\nArriving in about: ${etaMinutes} min`;
     if (type === 'reserve') {
       if (partySize) message += `\nParty size: ${partySize}`;
       if (reserveDate) message += `\nDate: ${reserveDate}`;
@@ -181,6 +188,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (name) message += `\nName: ${name}`;
     if (notes) message += `\nCustom instructions: ${notes}`;
 
+    // Also drop the order on the owner's dashboard (fire-and-forget; WhatsApp stays the source of truth).
+    try {
+      fetch('/api/orders', {
+        method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type, name, notes, table: activeTable || '', counter: location, partySize, address,
+          arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
+          items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+
     const url = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank', 'noopener');
 
@@ -199,4 +218,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   render();
+  applyMenuOverrides().then(render); // live prices / sold-out
 });
