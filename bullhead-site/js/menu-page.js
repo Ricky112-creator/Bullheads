@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const barTotalEl = document.getElementById('orderBarTotal');
   if (!listEl) return;
 
-  const categories = [...new Set(MENU_ITEMS.map((i) => i.category))];
+  let categories = [];
 
   function soldLabel(item) {
     if (!item.backAt) return 'Sold out';
@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function draw() {
+  categories = [...new Set(MENU_ITEMS.map((i) => i.category))];
   listEl.innerHTML = categories
     .map((cat) => {
       const items = MENU_ITEMS.filter((i) => i.category === cat).sort((a, b) => (b.special ? 1 : 0) - (a.special ? 1 : 0));
