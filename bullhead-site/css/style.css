@@ -1128,3 +1128,14 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
   .lu-track span:nth-child(2) { display: none; }
   .lu-ticker { text-overflow: ellipsis; }
 }
+
+/* Live menu board: sold out / back at / today's special */
+.menu-item.is-sold .menu-item-name, .menu-item.is-sold .menu-item-price { opacity: 0.45; text-decoration: line-through; }
+.menu-item-unavailable.sold-tag { font-style: normal; font-weight: 700; color: var(--red); }
+.tag-special { display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px; background: var(--cognac); color: #fff; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; vertical-align: middle; text-decoration: none; }
+.menu-item.is-special { box-shadow: inset 3px 0 0 var(--cognac); }
+.eta-field { display: flex; flex-wrap: wrap; gap: 8px; }
+.eta-field label { cursor: pointer; }
+.eta-field input { position: absolute; opacity: 0; pointer-events: none; }
+.eta-field span { display: inline-block; padding: 9px 16px; border: 1.5px solid rgba(36,23,18,0.25); border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+.eta-field input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
