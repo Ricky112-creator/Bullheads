@@ -60,6 +60,10 @@
   <textarea id="text" rows="3" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
   <div id="charCount">0 / 140</div>
 
+  <label for="textSw">Swahili version <span style="color:#8a7a6c">(shown when a visitor taps SW)</span></label>
+  <textarea id="textSw" rows="2" maxlength="140" placeholder="Toleo la Kiswahili…"></textarea>
+  <button type="button" class="chip" id="trBtn" style="margin-top:8px">🌍 Auto-translate to Swahili</button>
+
   <label for="expires">Auto-remove after</label>
   <select id="expires">
     <option value="4">4 hours</option>
@@ -90,11 +94,11 @@
   var tokenEl = $('token'), textEl = $('text'), expiresEl = $('expires'), postBtn = $('postBtn'), statusEl = $('status');
   var KEY = 'bullheadAdminToken';
   var TEMPLATES = [
-    ['🐟 Fresh in', 'Fresh tilapia in today — come get it while it lasts', 'stock'],
-    ['🔥 Special', "Today's special: ", 'special'],
-    ['🕒 Late hours', 'Open all night — hot food ready anytime', 'notice'],
-    ['🎉 Holiday', 'Happy holiday to all our esteemed customers — we are open 24 hours', 'notice'],
-    ['⚠️ Sold out', 'Sold out for now: ', 'closing']
+    ['🐟 Fresh in', 'Fresh tilapia in today — come get it while it lasts', 'stock', 'Samaki tilapia wabichi wamefika leo — njoo uchukue kabla hawajaisha'],
+    ['🔥 Special', "Today's special: ", 'special', 'Maalum ya leo: '],
+    ['🕒 Late hours', 'Open all night — hot food ready anytime', 'notice', 'Tuko wazi usiku kucha — chakula moto wakati wowote'],
+    ['🎉 Holiday', 'Happy holiday to all our esteemed customers — we are open 24 hours', 'notice', 'Heri ya sikukuu kwa wateja wetu wapendwa — tuko wazi masaa 24'],
+    ['⚠️ Sold out', 'Sold out for now: ', 'closing', 'Vimeisha kwa sasa: ']
   ];
   var TYPES = [['special', '🔥 Special'], ['stock', '🐟 Fresh stock'], ['notice', '📢 Notice'], ['closing', '⚠️ Heads up']];
   var COLORS = { special: '#F2A33A', stock: '#6FCF97', notice: '#8FB8FF', closing: '#E5533D' };
@@ -110,7 +114,7 @@
       b.onclick = function () { onclick(it, b); }; el.appendChild(b);
     });
   }
-  chips($('tpls'), TEMPLATES, function (t) { textEl.value = t[1]; setType(t[2]); update(); textEl.focus(); }, 'tpl');
+  chips($('tpls'), TEMPLATES, function (t) { textEl.value = t[1]; $('textSw').value = t[3] || ''; setType(t[2]); update(); textEl.focus(); }, 'tpl');
   chips($('types'), TYPES, function (t) { setType(t[0]); });
   function setType(t) {
     type = t;
@@ -140,7 +144,7 @@
     var a = document.createElement('div'); a.className = 'actions';
     function btn(label, fn, cls) { var x = document.createElement('button'); x.type = 'button'; x.textContent = label; if (cls) x.className = cls; x.onclick = fn; a.appendChild(x); }
     if (live) btn('Remove', function () { remove(u.id); });
-    btn('Repost', function () { textEl.value = u.text; setType(u.type || 'notice'); $('cta').checked = u.cta !== false; update(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    btn('Repost', function () { textEl.value = u.text; $('textSw').value = u.textSw || ''; setType(u.type || 'notice'); $('cta').checked = u.cta !== false; update(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
     btn('Share', function () { window.open('https://wa.me/?text=' + encodeURIComponent(u.text + '\n— Bullhead, Emali · bullheadhotels.co.ke'), '_blank'); }, 'share');
     r.appendChild(a); return r;
   }
@@ -174,15 +178,24 @@
     if (!text) return setStatus('Write something first.', 'err');
     postBtn.disabled = true; setStatus('Posting…');
     fetch('/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() },
-      body: JSON.stringify({ text: text, type: type, cta: $('cta').checked, expiresInHours: expiresEl.value || undefined }) })
+      body: JSON.stringify({ text: text, textSw: $('textSw').value.trim(), type: type, cta: $('cta').checked, expiresInHours: expiresEl.value || undefined }) })
       .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Failed to post'); return r.json(); })
       .then(function () {
         sessionStorage.setItem(KEY, token);
         if ($('remember').checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY);
-        textEl.value = ''; update(); setStatus('Live on your site ✓ — share it on WhatsApp too', 'ok'); load();
+        textEl.value = ''; $('textSw').value = ''; update(); setStatus('Live on your site ✓ — share it on WhatsApp too', 'ok'); load();
       })
       .catch(function (e) { setStatus(e.message || 'Something went wrong.', 'err'); })
       .finally(function () { postBtn.disabled = false; });
+  });
+  $('trBtn').addEventListener('click', function () {
+    if (!tokenEl.value.trim()) return setStatus('Enter the access code.', 'err');
+    if (!textEl.value.trim()) return setStatus('Write the English update first.', 'err');
+    setStatus('Translating…');
+    fetch('/api/updates?translate=1', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ text: textEl.value.trim() }) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Failed'); return d; }); })
+      .then(function (d) { $('textSw').value = d.text; setStatus('Draft ready — please read it over before posting.', 'ok'); })
+      .catch(function (e) { setStatus(e.message + ' — you can type the Swahili yourself.', 'err'); });
   });
   tokenEl.addEventListener('change', load); load();
 })();
