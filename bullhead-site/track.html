@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#241712">
+<title>Track your order | Bullhead Hotel &amp; Butchery</title>
+<link rel="icon" type="image/png" href="/assets/img/logo-mark.png">
+<link rel="apple-touch-icon" href="/assets/img/icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=9">
+<style>
+  .tk { max-width: 520px; margin: 0 auto; padding: 26px 20px calc(48px + env(safe-area-inset-bottom)); }
+  .tk-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .tk-head img { height: 44px; width: auto; }
+  .tk-head b { font-family: var(--font-display); font-size: 1.3rem; }
+  .tk-head a { margin-left: auto; font-size: .85rem; color: var(--ink-soft); border: 1px solid var(--cream-deep); padding: 7px 14px; border-radius: 999px; }
+  .tk-card { background: #fff; border: 1px solid var(--cream-deep); border-radius: 22px; padding: 24px 20px; margin-bottom: 16px; box-shadow: 0 8px 28px rgba(36, 23, 18, .06); }
+  .tk-emoji { font-size: 2.6rem; line-height: 1; margin-bottom: 10px; }
+  .tk h1 { font-size: clamp(1.6rem, 6vw, 2rem); line-height: 1.15; }
+  .tk-sw { color: var(--cognac); font-weight: 600; margin: 4px 0 0; }
+  .tk-sub { color: var(--ink-soft); margin: 12px 0 0; }
+  .tk-eta { display: inline-block; margin-top: 14px; padding: 7px 14px; border-radius: 999px; background: var(--cream); color: var(--green); font-weight: 600; font-size: .9rem; }
+  .tk-eta[hidden] { display: none; }
+
+  .steps { list-style: none; margin: 24px 0 0; padding: 0; display: flex; }
+  .steps li { flex: 1; text-align: center; position: relative; font-size: .78rem; color: #9b8a80; font-weight: 600; }
+  .steps li::before { content: ""; position: absolute; top: 15px; left: -50%; width: 100%; height: 3px; background: var(--cream-deep); z-index: 0; }
+  .steps li:first-child::before { display: none; }
+  .steps .dot { position: relative; z-index: 1; width: 32px; height: 32px; margin: 0 auto 8px; border-radius: 50%; background: var(--cream-deep); color: #9b8a80; display: grid; place-content: center; font-size: .95rem; }
+  .steps li.done, .steps li.now { color: var(--ink); }
+  .steps li.done::before, .steps li.now::before { background: var(--green); }
+  .steps li.done .dot { background: var(--green); color: #fff; }
+  .steps li.now .dot { background: var(--red); color: #fff; animation: tkpulse 1.6s ease-in-out infinite; }
+  .steps li.now.final .dot { animation: none; background: var(--green); }
+  .steps small { display: block; font-weight: 500; color: #9b8a80; font-size: .7rem; }
+  @keyframes tkpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 51, 43, .45); } 50% { box-shadow: 0 0 0 9px rgba(232, 51, 43, 0); } }
+  @media (prefers-reduced-motion: reduce) { .steps li.now .dot { animation: none; } }
+
+  .tk-card h2 { font-size: 1.05rem; margin-bottom: 10px; }
+  .tk-items { list-style: none; margin: 0; padding: 0; }
+  .tk-items li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--cream-deep); font-size: .95rem; }
+  .tk-items li:first-child { border-top: 0; }
+  .tk-total { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 12px; border-top: 2px solid var(--cream-deep); font-weight: 700; }
+  .tk-meta { color: var(--ink-soft); font-size: .85rem; margin: 0 0 10px; }
+  .tk-wa { display: block; text-align: center; padding: 14px; border-radius: 14px; background: #25D366; color: #06210f; font-weight: 700; }
+  .tk-live { text-align: center; color: #9b8a80; font-size: .78rem; margin-top: 14px; }
+  .tk-live.off { color: var(--rust); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="tk">
+  <div class="tk-head">
+    <img src="/assets/img/logo-mark.png" alt="" width="254" height="223">
+    <b>Bullhead</b>
+    <a href="/menu">Menu</a>
+  </div>
+
+  <section class="tk-card" id="statusCard" aria-live="polite">
+    <div class="tk-emoji" id="emoji">⏳</div>
+    <h1 id="headline">Finding your order…</h1>
+    <p class="tk-sw" id="headlineSw"></p>
+    <p class="tk-sub" id="sub"></p>
+    <span class="tk-eta" id="eta" hidden></span>
+    <ol class="steps" id="steps" hidden>
+      <li><span class="dot">📝</span>Received<small>Imepokelewa</small></li>
+      <li><span class="dot">🔥</span>Preparing<small>Inaandaliwa</small></li>
+      <li><span class="dot">✓</span>Ready<small>Tayari</small></li>
+    </ol>
+  </section>
+
+  <section class="tk-card" id="orderCard" hidden>
+    <h2>Your order</h2>
+    <p class="tk-meta" id="meta"></p>
+    <ul class="tk-items" id="items"></ul>
+    <div class="tk-total" id="totalRow" hidden><span>Total</span><span id="total"></span></div>
+  </section>
+
+  <a class="tk-wa" id="wa" href="https://wa.me/254720707323" target="_blank" rel="noopener">Questions? Message us on WhatsApp</a>
+  <p class="tk-live" id="live">This page updates by itself. No need to refresh.</p>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var id = new URLSearchParams(location.search).get('o') || '';
+  var TYPE = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
+  var STAGE = { new: 0, preparing: 1, ready: 2, done: 3 };
+  var READY_SUB = {
+    'dine-in': 'Your food is ready and on its way to your table.',
+    'drive-through': 'Your order is ready for pick-up at the counter.',
+    'on-the-way': 'Your order is ready and waiting for you at the counter.',
+    delivery: 'Your order is ready and heading out to you.',
+    reserve: 'Your table is ready for you.'
+  };
+  var COPY = {
+    new:       { e: '📝', h: 'We’ve got your order', sw: 'Tumepokea oda yako', s: 'The kitchen will start on it in a moment.' },
+    preparing: { e: '🔥', h: 'Being prepared', sw: 'Inaandaliwa sasa', s: 'Your food is being cooked fresh right now.' },
+    ready:     { e: '🍽', h: 'Your order is ready!', sw: 'Oda yako iko tayari!', s: '' },
+    done:      { e: '😋', h: 'Enjoy your meal', sw: 'Karibu tena!', s: 'Thank you for choosing Bullhead. We’re open 24 hours.' }
+  };
+  var last = null, timer = null, failed = 0;
+
+  function show(state, o) {
+    var c = COPY[state];
+    $('emoji').textContent = c.e; $('headline').textContent = c.h; $('headlineSw').textContent = c.sw;
+    $('sub').textContent = state === 'ready' ? (READY_SUB[o && o.type] || 'Your order is ready.') : c.s;
+    var cur = STAGE[state];
+    Array.prototype.forEach.call($('steps').children, function (li, i) {
+      li.className = i < cur ? 'done' : (i === cur ? 'now' + (i === 2 ? ' final' : '') : '');
+    });
+    $('steps').hidden = false;
+    document.title = c.h + ' | Bullhead';
+  }
+
+  function notFound(wasKnown) {
+    $('steps').hidden = true; $('orderCard').hidden = true; $('eta').hidden = true;
+    if (wasKnown) {
+      $('emoji').textContent = '😋'; $('headline').textContent = 'This order is complete'; $('headlineSw').textContent = 'Oda hii imekamilika';
+      $('sub').textContent = 'Thank you for choosing Bullhead. Order again any time. We’re open 24 hours.';
+    } else {
+      $('emoji').textContent = '🤔'; $('headline').textContent = 'We can’t find this order'; $('headlineSw').textContent = 'Hatuipati oda hii';
+      $('sub').textContent = 'The link may be incomplete. Open the exact link from your WhatsApp message, or message us and we’ll check.';
+    }
+    $('live').hidden = true; stop();
+  }
+
+  function render(o) {
+    show(o.status, o);
+    var eta = $('eta');
+    if (o.etaAt && (o.status === 'new' || o.status === 'preparing')) {
+      var t = new Date(o.etaAt); eta.textContent = '🚗 You’ll arrive around ' + t.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }); eta.hidden = false;
+    } else eta.hidden = true;
+    var ul = $('items'); ul.innerHTML = '';
+    o.items.forEach(function (i) {
+      var li = document.createElement('li'), a = document.createElement('span'), b = document.createElement('span');
+      a.textContent = i.name; b.textContent = i.unit === 'kg' ? i.qty + ' kg' : '× ' + i.qty; li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+    });
+    $('meta').textContent = (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
+    $('total').textContent = 'KES ' + (o.total || 0).toLocaleString('en-KE'); $('totalRow').hidden = !o.total;
+    $('orderCard').hidden = !(o.items.length || o.table || o.type);
+    if (last && last !== 'ready' && o.status === 'ready' && navigator.vibrate) navigator.vibrate([250, 120, 250]);
+    last = o.status;
+  }
+
+  function stop() { clearTimeout(timer); timer = null; }
+  function schedule() { stop(); timer = setTimeout(poll, last === 'done' ? 60000 : 12000); }
+
+  function poll() {
+    if (document.hidden) return schedule();
+    fetch('/api/orders?id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) {
+      if (r.status === 404) return { gone: true };
+      if (!r.ok) throw 0; return r.json();
+    }).then(function (d) {
+      failed = 0; $('live').className = 'tk-live'; $('live').textContent = 'This page updates by itself. No need to refresh.';
+      if (d.gone) return notFound(!!last);
+      render(d.order); schedule();
+    }).catch(function () {
+      failed++; $('live').className = 'tk-live off'; $('live').textContent = 'Connection lost. Trying again…'; schedule();
+    });
+  }
+
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && timer) { stop(); poll(); } });
+  if (!UUID.test(id)) notFound(false); else poll();
+})();
+</script>
+</body>
+</html>
