@@ -97,6 +97,15 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
     .catch(() => {});
 })();
 
+// --- Live Emali clock in the "Open now" badge (Nairobi time, whatever the visitor's timezone) ---
+(function emaliClock() {
+  const el = document.getElementById('obTime');
+  if (!el) return;
+  const fmt = new Intl.DateTimeFormat('en-KE', { timeZone: 'Africa/Nairobi', hour: 'numeric', minute: '2-digit', hour12: true });
+  const tick = () => { el.textContent = fmt.format(new Date()); };
+  tick(); setInterval(tick, 15000);
+})();
+
 // --- Table QR: capture ?table=N from the URL, remember it briefly.
 //     Printed QR at each table links to /menu?table=5 (or /contact?table=5).
 //     getActiveTable() is used by contact-page.js to tag the order. ---
