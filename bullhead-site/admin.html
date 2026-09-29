@@ -54,6 +54,7 @@ label.l{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:20
 input[type=text],input[type=password],input[type=number],textarea,select{width:100%;min-height:48px;padding:12px 14px;font:inherit;font-size:16px;color:var(--txt);background:var(--fill);border:1px solid transparent;border-radius:14px}
 textarea{min-height:84px;resize:vertical}
 .pw{position:relative}.pw input{padding-right:52px}
+.pw input::-ms-reveal,.pw input::-ms-clear{display:none}.pw input::-webkit-credentials-auto-fill-button{visibility:hidden;display:none!important;pointer-events:none;position:absolute;right:0}
 .pw .eye{position:absolute;right:2px;top:2px;width:44px;height:44px;display:grid;place-items:center;padding:0;color:var(--mute);background:none;border:0}
 .pw .eye svg{width:22px;height:22px}.pw .eye .off{display:none}
 .pw .eye[aria-pressed=true] .on{display:none}.pw .eye[aria-pressed=true] .off{display:block}
