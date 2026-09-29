@@ -292,7 +292,27 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--red)}
 #gate .btn{margin-top:18px}
 #toast{background:var(--cream);color:var(--ink)}
 
-/* Sticky owner controls */
+/* Sticky owner controls — header + incoming-orders panel */
+header{
+  position:sticky;
+  top:0;
+  z-index:30;
+  background:rgba(36,23,18,.97);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.orders-intake{
+  position:sticky;
+  top:var(--bh-header-height, 76px);
+  z-index:20;
+  background:rgba(36,23,18,.98);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+#ordActive{position:static}
+@media (max-width:800px){
+  .orders-intake{top:var(--bh-header-height, 68px)}
+}
 header{
   position:sticky;
   top:0;
@@ -370,7 +390,7 @@ header{
     </nav>
 
     <div data-tab="orders">
-      <section class="card">
+      <section class="card orders-intake">
         <h2>Incoming orders</h2>
         <p class="sub">Orders customers send through the website show up here live — including drivers who are on their way.</p>
         <div class="row" id="brView" style="margin-bottom:12px"></div>
