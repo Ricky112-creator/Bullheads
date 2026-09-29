@@ -634,7 +634,23 @@ header{
   var orders = [], seen = null, ordTimer = null;
   var TYPE_LBL = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
   function beep() { try { var a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .15; o.start(); o.stop(a.currentTime + .18); setTimeout(function () { var o2 = a.createOscillator(); o2.connect(g); o2.frequency.value = 1175; o2.start(); o2.stop(a.currentTime + .22); }, 220); } catch (e) {} }
-  function ago(iso) { var m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; }
+  function ago(iso) {
+    var ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return 'just now';
+    var min = Math.floor(ms / 60000);
+    if (min < 1) return 'just now';
+    if (min < 60) return min + (min === 1 ? ' min ago' : ' mins ago');
+    var hour = Math.floor(min / 60);
+    if (hour < 24) return hour + (hour === 1 ? ' hour ago' : ' hours ago');
+    var day = Math.floor(hour / 24);
+    if (day < 7) return day + (day === 1 ? ' day ago' : ' days ago');
+    var week = Math.floor(day / 7);
+    if (week < 4) return week + (week === 1 ? ' week ago' : ' weeks ago');
+    var month = Math.floor(day / 30);
+    if (month < 12) return month + (month === 1 ? ' month ago' : ' months ago');
+    var year = Math.floor(day / 365);
+    return year + (year === 1 ? ' year ago' : ' years ago');
+  }
   function etaText(o) {
     if (!o.etaAt) return ''; var m = Math.round((new Date(o.etaAt) - Date.now()) / 60000);
     return m > 1 ? '🚗 arrives in ~' + m + ' min' : '🚗 should be here now';
