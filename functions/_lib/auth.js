@@ -30,6 +30,28 @@ async function safeEqual(a, b) {
   return d === 0;
 }
 
+// ---------- owner code ----------
+// The owner code is the ADMIN_TOKEN secret until the owner changes it from the dashboard (Settings). A changed code is
+// stored in D1 as salt:sha256(salt:code), never in clear, and REPLACES the secret. To go back to the secret, run in the
+// D1 console:  DELETE FROM settings WHERE k = 'owner_code';
+let settingsReady = null;
+const ensureSettings = (env) => (settingsReady = settingsReady || env.DB.prepare('CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)').run().catch((e) => { settingsReady = null; throw e; }));
+async function ownerOverride(env) {
+  if (!env.DB) return null;
+  try { await ensureSettings(env); const r = await env.DB.prepare("SELECT v FROM settings WHERE k = 'owner_code'").first(); return r ? r.v : null; } catch (e) { return null; }
+}
+export async function isOwnerCode(env, t) {
+  const ov = await ownerOverride(env);
+  if (ov) { const i = ov.indexOf(':'); return safeEqual(await sha256(ov.slice(0, i) + ':' + t), ov.slice(i + 1)); }
+  return !!(env.ADMIN_TOKEN && (await safeEqual(t, String(env.ADMIN_TOKEN))));
+}
+export async function setOwnerCode(env, code) {
+  await ensureSettings(env);
+  const salt = hex(crypto.getRandomValues(new Uint8Array(16)));
+  await env.DB.prepare("INSERT INTO settings (k, v) VALUES ('owner_code', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(salt + ':' + (await sha256(salt + ':' + code))).run();
+}
+export const hasCustomOwnerCode = async (env) => !!(await ownerOverride(env));
+
 // ---------- tiny rate limiter (D1) ----------
 let rlReady = null;
 function rlEnsure(env) {
@@ -83,7 +105,7 @@ export async function whoOf(request, env) {
   if (!t || t.length > 200) return { role: 'none', branch: '' };
   const key = 'auth:' + ((await ipHash(request)) || 'unknown');
   if ((await rlCount(env, key, FAIL_WINDOW)) >= FAIL_MAX) return { role: 'locked', branch: '' };
-  if (env.ADMIN_TOKEN && (await safeEqual(t, String(env.ADMIN_TOKEN)))) return { role: 'owner', branch: '' };
+  if (await isOwnerCode(env, t)) return { role: 'owner', branch: '' };
   const s = await staffOf(t, env);
   if (s) return { role: 'staff', branch: s.branch, id: s.id };
   await rlHit(env, key);

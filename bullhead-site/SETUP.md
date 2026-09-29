@@ -20,6 +20,11 @@ Everything here runs on Cloudflare Pages + GitHub free plans. Nothing below need
 | `VAPID_PUBLIC`, `VAPID_PRIVATE` | phone-alert keys. Generate once, free: `npx web-push generate-vapid-keys` |
 | `VAPID_SUBJECT` | optional `mailto:` or `https:` contact for the push service |
 
+### Changing the owner code from the dashboard
+Dashboard → gear icon (top right) → **Change access code**. The new code (8+ characters) is stored in D1, hashed with a random salt, and **replaces** `ADMIN_TOKEN`: the old code stops working at once and every other phone signed in with it is signed out. Staff codes are not affected.
+
+If the owner ever forgets the new code: Cloudflare → Storage & Databases → D1 → the database → Console, run `DELETE FROM settings WHERE k = 'owner_code';`. The `ADMIN_TOKEN` secret works again.
+
 Staff codes are made in `/tools` (owner only). Staff can see orders, confirm them and move them along. Nothing else.
 
 ## How an order moves
