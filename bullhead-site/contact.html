@@ -226,23 +226,35 @@
     }
     btn.disabled = true;
     btn.textContent = 'Finding you…';
+    function reset() {
+      btn.textContent = 'Use my location to pick the closer one';
+      btn.disabled = false;
+    }
+    function say(msg) { hint.hidden = false; hint.textContent = msg; }
     navigator.geolocation.getCurrentPosition(function (pos) {
       var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      var acc = pos.coords.accuracy || 0;
       var withDist = BRANCHES.map(function (b) {
         return { branch: b, km: distanceKm(lat, lng, b.lat, b.lng) };
       }).sort(function (a, b) { return a.km - b.km; });
       var closest = withDist[0];
+      // The two counters are ~450 m apart, so a fix coarser than ~250 m (typical of a laptop's Wi-Fi/IP
+      // guess) cannot tell them apart, and one that lands many km away is simply wrong. Don't pretend.
+      if (acc > 250 || closest.km > 10) {
+        say("This device could only guess your location roughly" +
+          (closest.km > 10 ? " (it put you about " + Math.round(closest.km) + " km away)" : "") +
+          ", which isn't accurate enough to choose a counter. Please pick one above. Phones with GPS on work best.");
+        reset();
+        return;
+      }
       select.value = closest.branch.value;
-      hint.hidden = false;
-      hint.textContent = closest.branch.label + ' is closer to you — about ' + closest.km.toFixed(1) + ' km away. Selected it above.';
-      btn.textContent = 'Use my location to pick the closer one';
-      btn.disabled = false;
+      say(closest.branch.label + ' is closer to you — about ' +
+        (closest.km < 1 ? Math.round(closest.km * 1000) + ' m' : closest.km.toFixed(1) + ' km') + ' away. Selected it above.');
+      reset();
     }, function () {
-      hint.hidden = false;
-      hint.textContent = "Couldn't get your location — pick manually above.";
-      btn.textContent = 'Use my location to pick the closer one';
-      btn.disabled = false;
-    }, { timeout: 8000 });
+      say("Couldn't get your location — pick manually above.");
+      reset();
+    }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
   });
 })();
 </script>
