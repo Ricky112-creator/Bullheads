@@ -1,0 +1,13 @@
+# Bullhead Hotel & Butchery, Emali
+
+> Bullhead is a 24-hour butchery and hotel (restaurant) on the Nairobi–Mombasa road in Emali, Makueni County, Kenya. Customers can browse the menu, build a plate and send the order to WhatsApp.
+
+## Pages
+- [Home](https://bullheadhotels.co.ke/): overview
+- [Menu](https://bullheadhotels.co.ke/menu): cuts, plates and prices
+- [Visit](https://bullheadhotels.co.ke/visit): location, map and opening hours (open 24 hours)
+- [Contact](https://bullheadhotels.co.ke/contact): WhatsApp and phone
+- [Gallery](https://bullheadhotels.co.ke/gallery): photos
+
+## Contact
+- WhatsApp / phone: +254 720 707 323
