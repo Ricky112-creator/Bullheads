@@ -116,7 +116,7 @@ textarea{min-height:84px;resize:vertical}
 .order .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
 .order .foot b{font:700 1.15rem 'Fraunces',serif}
 .order .foot>div{flex:1;justify-content:flex-end}
-.mini{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;font-size:14px;font-weight:600;background:var(--fill);border:0;border-radius:99px}
+.mini{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;font-size:14px;font-weight:600;color:var(--txt);background:var(--fill);border:0;border-radius:99px;text-decoration:none}
 .mini.wa{background:#25D366;color:#06210f}
 .go{min-height:44px;padding:0 22px;font-size:15px;font-weight:650;color:#fff;background:var(--acc);border:0;border-radius:99px}
 .go.ready{background:var(--grn);color:var(--grn-on)}
@@ -161,6 +161,12 @@ textarea{min-height:84px;resize:vertical}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.err{background:#B3261E;color:#fff}
 
+/* orders toolbar */
+.osr{margin-top:12px}.osr input{background:var(--fill)}
+.fl{display:flex;gap:8px;overflow-x:auto;margin:12px -20px 0;padding:0 20px 2px;scrollbar-width:none}.fl::-webkit-scrollbar{display:none}
+.fl .chip{flex:none;min-height:38px;padding:0 14px;font-size:14px}.fl .chip b{font-weight:700;margin-left:6px;color:var(--mute)}.fl .chip.on b{color:var(--accT)}
+.ohd{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.ohd .link{padding:0;min-height:36px;font-size:13px;font-weight:500;color:var(--mute)}
+.more{margin-top:12px}
 /* settings + dialogs */
 .sheet{overscroll-behavior:contain}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}.sh h2{font:700 1.6rem/1.2 'Fraunces',serif;margin:0}.sh .link{font-size:17px;font-weight:650;padding:0 4px}
@@ -223,10 +229,14 @@ textarea{min-height:84px;resize:vertical}
 
     <div data-tab="orders">
       <div class="row" id="brView" role="group" aria-label="Show orders for"></div>
-      <h2 class="sec">Incoming</h2>
+      <div class="stats" style="margin:14px 0 0"><div class="stat"><b id="oToday">0</b><span>orders today</span></div><div class="stat"><b id="oSales">0</b><span>KES sales today</span></div></div>
+      <div class="osr"><input type="text" id="oSearch" inputmode="search" enterkeyhint="search" placeholder="Search name, #code, phone or dish" aria-label="Search orders" autocomplete="off"></div>
+      <div class="fl" id="oFilter" role="group" aria-label="Filter orders"></div>
+      <div class="ohd"><h2 class="sec">Incoming</h2><button class="link" id="oUpd" type="button">Updating…</button></div>
       <div id="ordActive"><p class="empty">Loading…</p></div>
-      <h2 class="sec">Done</h2>
+      <h2 class="sec" id="doneH">Done</h2>
       <div id="ordDone"></div>
+      <button class="btn ghost more" id="doneMore" type="button" hidden></button>
     </div>
 
     <div data-tab="menu" hidden>
@@ -304,6 +314,7 @@ textarea{min-height:84px;resize:vertical}
       <p class="gnote" style="margin:12px 0 0">Phones signed in with the old code are signed out. Staff codes are not affected.</p>
       <button class="btn" id="pwSave" type="button" style="margin-top:14px">Save new code</button>
     </div></div></div>
+  <p class="gl">This phone</p><div class="grp"><label class="lrow"><span>New-order chime<small>Plays while the dashboard is open</small></span><input type="checkbox" id="soundSw" checked style="width:20px;height:20px;accent-color:#1E7F52"></label></div>
   <div id="setNotif" hidden><p class="gl">Order alerts</p><div class="grp">
     <label class="lrow"><span>Alerts for<small>Which branch's orders buzz this phone</small></span><select id="alertBr" aria-label="Alerts for"><option value="">All branches</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select></label>
     <button class="lrow" id="testAlert" type="button" disabled><span>Send a test alert</span></button></div>
@@ -508,9 +519,9 @@ textarea{min-height:84px;resize:vertical}
     if (o.status === 'cancelled') l.appendChild(mk('span', 'tag', 'Cancelled'));
     l.appendChild(mk('span', 'who', o.name || 'Customer'));
     var sm = mk('div', '', ''); sm.style.cssText = 'font-size:.78rem;color:var(--mute);margin-top:4px';
-    sm.textContent = ago(o.ts) + (o.table ? ' · Table ' + o.table : '') + (o.partySize ? ' · ' + o.partySize + ' people' : '') + (o.arriving ? ' · at ' + o.arriving : '') + (o.address ? ' · ' + o.address : '');
+    sm.textContent = ago(o.ts) + (o.table ? ' · Table ' + o.table : '') + (o.partySize ? ' · ' + o.partySize + ' people' : '') + (o.arriving ? ' · at ' + o.arriving : '') + (o.address ? ' · ' + o.address : '') + (/^\d{9,15}$/.test(o.phone || '') ? ' · ' + o.phone.replace(/^254(\d{3})(\d{3})(\d{3})$/, '0$1 $2 $3') : '');
     l.appendChild(sm); top.appendChild(l);
-    if (o.etaAt) { var e = mk('b', '', etaText(o)); e.style.cssText = 'color:var(--green);font-size:.85rem;text-align:right'; top.appendChild(e); }
+    if (o.etaAt) { var e = mk('b', '', etaText(o)); e.style.cssText = 'color:var(--grn);font-size:.85rem;text-align:right'; top.appendChild(e); }
     c.appendChild(top);
     if (unc && (Date.now() - new Date(o.ts)) > 30 * 60000) c.appendChild(mk('div', 'stale', '⏳ No confirmation yet. Check WhatsApp for #' + code + ', or call them. Cancel it if it’s a ghost order.'));
     var ul = mk('ul'); o.items.forEach(function (i) { ul.appendChild(mk('li', '', (i.unit === 'kg' ? i.qty + ' kg ' : i.qty + '× ') + i.name)); });
@@ -520,7 +531,7 @@ textarea{min-height:84px;resize:vertical}
     var reach = mk('div', 'reach'), ph = /^\d{9,15}$/.test(o.phone || '') ? o.phone : '';
     function link(label, href, cls) { var a = mk('a', 'mini ' + (cls || ''), label); a.href = href; if (href.indexOf('http') === 0) { a.target = '_blank'; a.rel = 'noopener'; } reach.appendChild(a); }
     if (ph) {
-      link('📞 Call ' + ph.replace(/^254/, '0'), 'tel:+' + ph);
+      link('📞 Call', 'tel:+' + ph);
       var hi = 'Hi' + (o.name ? ' ' + o.name : '') + ', this is Bullhead confirming your order #' + code + '. ';
       link('💬 WhatsApp', 'https://wa.me/' + ph + '?text=' + encodeURIComponent(hi), 'wa');
     }
@@ -541,12 +552,10 @@ textarea{min-height:84px;resize:vertical}
       orders = d.orders || [];
       if (d.scope && d.scope.branch && d.scope.branch !== myBranch) { myBranch = d.scope.branch; var hs = document.querySelector('header small'); if (hs) hs.textContent = BRN[myBranch] + ' — staff'; }
       var fresh = orders.filter(function (o) { return o.status === 'new' || o.status === 'unconfirmed'; });
-      if (seen) { var add = fresh.filter(function (o) { return !seen[o.id]; }); if (add.length) { beep(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('🔔 New order' + (add[0].name ? ' from ' + add[0].name : '') + '!'); } }
+      if (seen) { var add = fresh.filter(function (o) { return !seen[o.id]; }); if (add.length) { if (!localStorage.getItem('bhMute')) beep(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('🔔 New order' + (add[0].name ? ' from ' + add[0].name : '') + '!'); } }
       seen = {}; orders.forEach(function (o) { seen[o.id] = 1; });
       $('newN').hidden = !fresh.length; $('newN').textContent = fresh.length; document.title = (fresh.length ? '(' + fresh.length + ') ' : '') + 'Bullhead — Owner Dashboard';
-      var act = orders.filter(function (o) { return o.status !== 'done' && o.status !== 'cancelled'; }).reverse(), done = orders.filter(function (o) { return o.status === 'done' || o.status === 'cancelled'; }).slice(0, 8);
-      $('ordActive').innerHTML = ''; if (!act.length) $('ordActive').appendChild(mk('p', 'empty', 'No orders waiting. You’ll hear a chime when one arrives 🔔')); act.forEach(function (o) { $('ordActive').appendChild(ordCard(o)); });
-      $('ordDone').innerHTML = ''; if (!done.length) $('ordDone').appendChild(mk('p', 'empty', 'Finished orders appear here.')); done.forEach(function (o) { $('ordDone').appendChild(ordCard(o)); });
+      drawOrders(); stamp();
       drawInsights();
     }).catch(function () {});
   }
@@ -700,7 +709,7 @@ textarea{min-height:84px;resize:vertical}
       var st = mk('button', 'star' + (m.special ? ' on' : ''), '★'); st.type = 'button'; st.title = "Today's special";
       st.onclick = function () { var x = menuState[it.id] = menuState[it.id] || {}; if (x.special) delete x.special; else x.special = true; saveMenu(); drawMenu(); };
       nm.appendChild(st); nm.appendChild(document.createTextNode(it.name + (it.unit === 'kg' ? ' /kg' : '')));
-      if (it.custom) { var nw = mk('span', 'dirty-pill', customSaved.some(function (c) { return c.id === it.id; }) ? 'ADDED' : 'NEW'); nw.style.background = 'var(--green)'; nw.style.color = '#06210f'; nm.appendChild(nw);
+      if (it.custom) { var nw = mk('span', 'dirty-pill', customSaved.some(function (c) { return c.id === it.id; }) ? 'ADDED' : 'NEW'); nw.style.background = 'var(--grn)'; nw.style.color = '#06210f'; nm.appendChild(nw);
         var rm = mk('button', 'star', '✕'); rm.type = 'button'; rm.title = 'Remove this item'; rm.style.marginLeft = '6px'; rm.onclick = function () { if (!confirm('Remove "' + it.name + '" from the menu?')) return; customState = customState.filter(function (c) { return c.id !== it.id; }); delete menuState[it.id]; drawMenu(); saveMenu(); }; nm.appendChild(rm); }
       r.appendChild(nm);
       var pr = mk('input'); pr.type = 'number'; pr.min = 0; pr.inputMode = 'numeric'; pr.placeholder = typeof it.price === 'number' ? it.price : 'Price'; pr.value = it.custom ? (typeof it.price === 'number' ? it.price : '') : (typeof m.price === 'number' ? m.price : '');
@@ -743,6 +752,43 @@ textarea{min-height:84px;resize:vertical}
     customState.push({ id: id, category: cat, name: name, price: pr === '' ? null : Number(pr), unit: aUnit, custom: true });
     $('addModal').hidden = true; $('mSearch').value = ''; drawMenu(); saveMenu(); toast('Added — tap Review & save to publish');
   };
+
+  // ---------- Orders list: today strip, search, filters, show-more ----------
+  var ordFilter = 'all', ordQ = '', doneShown = 8, lastOk = 0;
+  var FILTERS = [['all', 'All'], ['new', 'New'], ['preparing', 'Preparing'], ['ready', 'Ready']];
+  var isActive = function (o) { return o.status !== 'done' && o.status !== 'cancelled'; };
+  var stageOf = function (o) { return o.status === 'unconfirmed' ? 'new' : o.status; };
+  function matches(o) {
+    if (!ordQ) return true;
+    var hay = [o.name, '#' + orderCode(o.id), orderCode(o.id), o.phone, (o.phone || '').replace(/^254/, '0'), o.table ? 'table ' + o.table : '', o.address].concat((o.items || []).map(function (i) { return i.name; })).join(' ').toLowerCase();
+    return ordQ.split(/\s+/).every(function (w) { return hay.indexOf(w.replace(/^#/, '')) >= 0; });
+  }
+  function stamp() { lastOk = Date.now(); $('oUpd').textContent = 'Updated ' + new Date().toLocaleTimeString('en-KE', { hour: 'numeric', minute: '2-digit' }) + ' · Refresh'; }
+  function drawOrders() {
+    var day = function (iso) { return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Africa/Nairobi' }); }, today = day(new Date()),
+        td = orders.filter(function (o) { return day(o.ts) === today && o.status !== 'cancelled'; });
+    $('oToday').textContent = td.length;
+    $('oSales').textContent = td.filter(function (o) { return o.status === 'done'; }).reduce(function (t, o) { return t + (o.total || 0); }, 0).toLocaleString('en-KE');
+    var act = orders.filter(isActive).reverse(), cnt = { all: act.length, new: 0, preparing: 0, ready: 0 };
+    act.forEach(function (o) { cnt[stageOf(o)] = (cnt[stageOf(o)] || 0) + 1; });
+    if (ordFilter !== 'all' && !cnt[ordFilter] && !ordQ) ordFilter = 'all';
+    var fl = $('oFilter'); fl.innerHTML = '';
+    FILTERS.forEach(function (f) { var b = mk('button', 'chip' + (f[0] === ordFilter ? ' on' : ''), f[1]); b.type = 'button'; b.appendChild(mk('b', '', String(cnt[f[0]] || 0))); b.onclick = function () { ordFilter = f[0]; drawOrders(); }; fl.appendChild(b); });
+    var shown = act.filter(function (o) { return (ordFilter === 'all' || stageOf(o) === ordFilter) && matches(o); });
+    $('ordActive').innerHTML = '';
+    if (!shown.length) $('ordActive').appendChild(mk('p', 'empty', ordQ || ordFilter !== 'all' ? 'No incoming orders match' + (ordQ ? ' “' + ordQ + '”' : '') + '.' : 'No orders waiting. You’ll hear a chime when one arrives 🔔'));
+    shown.forEach(function (o) { $('ordActive').appendChild(ordCard(o)); });
+    var fin = orders.filter(function (o) { return !isActive(o); }).filter(matches);
+    $('doneH').textContent = 'Done' + (fin.length ? ' · ' + fin.length : '');
+    $('ordDone').innerHTML = ''; if (!fin.length) $('ordDone').appendChild(mk('p', 'empty', ordQ ? 'No finished orders match.' : 'Finished orders appear here.'));
+    fin.slice(0, doneShown).forEach(function (o) { $('ordDone').appendChild(ordCard(o)); });
+    var left = fin.length - doneShown; $('doneMore').hidden = left <= 0; $('doneMore').textContent = 'Show ' + Math.min(left, 20) + ' more';
+  }
+  $('oSearch').addEventListener('input', function () { ordQ = this.value.trim().toLowerCase(); doneShown = 8; drawOrders(); });
+  $('doneMore').onclick = function () { doneShown += 20; drawOrders(); };
+  $('oUpd').onclick = function () { $('oUpd').textContent = 'Updating…'; loadOrders().then(function () { if (Date.now() - lastOk < 3000) toast('Orders refreshed'); else { $('oUpd').textContent = 'Could not refresh · Try again'; toast('Could not refresh. Check your connection', true); } }); };
+  $('soundSw').checked = !localStorage.getItem('bhMute');
+  $('soundSw').onchange = function () { if (this.checked) { localStorage.removeItem('bhMute'); beep(); } else localStorage.setItem('bhMute', '1'); };
 
   // ---------- Confirm dialog (replaces the browser's plain confirm box for the new actions) ----------
   function ask(title, msg, ok) {
