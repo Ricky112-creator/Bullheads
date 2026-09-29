@@ -2,6 +2,7 @@
 // POST   /api/updates          -> owner only, posts a new update
 // POST   /api/updates?tap=<id> -> public, counts one WhatsApp-button tap (D1, rate-limited)
 // DELETE /api/updates?id=<id>  -> owner only, removes one early
+// DELETE /api/updates?past=1   -> owner only, clears every ended update (live ones stay), with their tap counts
 //
 // Storage: a single JSON array under the KV key "updates", newest first,
 // capped at MAX_UPDATES entries. Each entry:
@@ -147,7 +148,18 @@ export async function onRequestDelete(context) {
   const g = await requireRole(request, env, ['owner']);
   if (g.res) return g.res;
 
-  const id = new URL(request.url).searchParams.get('id');
+  const q = new URL(request.url).searchParams;
+  if (q.get('past') === '1') {
+    const now = Date.now(), all = await readUpdates(env);
+    const keep = all.filter((u) => !u.expiresAt || new Date(u.expiresAt).getTime() > now), gone = all.filter((u) => !keep.includes(u));
+    if (gone.length) {                                         // nothing ended -> no KV write (1,000 a day on the free plan)
+      await env.UPDATES_KV.put('updates', JSON.stringify(keep));
+      try { if (env.DB) { await ensureTaps(env); await env.DB.batch(gone.map((u) => env.DB.prepare('DELETE FROM update_taps WHERE id = ?').bind(u.id))); } } catch (e) { /* tap counts are best effort */ }
+    }
+    return json({ ok: true, removed: gone.length });
+  }
+
+  const id = q.get('id');
   const updates = await readUpdates(env);
   await env.UPDATES_KV.put('updates', JSON.stringify(updates.filter((u) => u.id !== id)));
 
