@@ -389,7 +389,7 @@
     this.setAttribute('aria-pressed', show); this.setAttribute('aria-label', show ? 'Hide access code' : 'Show access code');
   };
   $('loginBtn').onclick = signIn; $('token').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
-  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; $('alertsBtn').hidden = true; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false; };
+  $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('token').type = 'password'; $('eye').setAttribute('aria-pressed', 'false'); $('eye').setAttribute('aria-label', 'Show access code'); $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; $('alertsBtn').hidden = true; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false; };
 
   function remove(id) {
     fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
