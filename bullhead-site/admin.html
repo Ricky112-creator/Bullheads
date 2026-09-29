@@ -132,6 +132,182 @@
   .chg .z { color:var(--green); font-weight:600; }
   .btn.ghost { background:#3a2a20; }
   .dirty-pill { display:inline-block; margin-left:8px; padding:2px 10px; border-radius:99px; background:#F2A33A; color:#2a1200; font-size:.72rem; font-weight:800; vertical-align:middle; }
+
+/* ============================================
+   BULLHEAD ADMIN — brand-led interface layer
+   Uses the same palette, type and restraint as the public site.
+   ============================================ */
+:root{
+  --cream:#F7EFE6;
+  --cream-deep:#EFE3D2;
+  --ink:#241712;
+  --ink-2:#2f1f18;
+  --ink-soft:#4A3830;
+  --line:rgba(247,239,230,.14);
+  --line-strong:rgba(247,239,230,.22);
+  --mute:#b9a99a;
+  --rose:#E7C9D6;
+  --cognac:#C77E3F;
+  --green:#1F5C3F;
+  --green-soft:#6FCF97;
+  --red:#E8332B;
+}
+html{background:var(--ink)}
+body{
+  background:
+    radial-gradient(900px 520px at 50% -260px,rgba(199,126,63,.12),transparent 68%),
+    var(--ink);
+  color:var(--cream);
+}
+.wrap{max-width:1180px;padding:0 32px 120px}
+header{
+  min-height:76px;
+  padding:20px 0 16px;
+  border-bottom:1px solid var(--line);
+  gap:12px;
+}
+header img{width:38px}
+header h1{font-size:1.42rem;letter-spacing:-.02em}
+header small{color:var(--rose);font-size:.72rem;letter-spacing:.04em;text-transform:uppercase}
+header a{
+  color:var(--cream);
+  border:1px solid var(--line);
+  background:rgba(247,239,230,.025);
+  transition:.2s ease;
+}
+header a:hover{border-color:var(--cognac);background:rgba(199,126,63,.08)}
+header .bell{border-color:var(--line);transition:.2s ease}
+header .bell.on{background:var(--red);border-color:var(--red)}
+.signed{
+  margin:18px 0 14px;
+  color:var(--mute);
+  font-size:.75rem;
+  letter-spacing:.01em;
+}
+.signed i{background:var(--green-soft)}
+.tabs{
+  position:static;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:0 0 22px;
+  padding:0;
+  overflow:visible;
+  background:transparent;
+}
+.tabs button{
+  min-height:46px;
+  color:var(--mute);
+  background:transparent;
+  border:1px solid var(--line);
+  border-radius:12px;
+  transition:background .2s ease,border-color .2s ease,color .2s ease,transform .2s ease;
+}
+.tabs button:hover{border-color:var(--line-strong);color:var(--cream)}
+.tabs button.on{
+  color:#fff;
+  background:var(--red);
+  border-color:var(--red);
+  box-shadow:0 8px 24px rgba(232,51,43,.14);
+}
+.tabs .n{background:#fff;color:var(--red)}
+.card,.stat{
+  background:rgba(247,239,230,.035);
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+.card{
+  border-radius:18px;
+  padding:22px;
+  margin-bottom:18px;
+}
+.card h2{font-size:1.12rem}
+.sub{color:var(--mute)}
+.row{gap:7px}
+.chip{
+  color:var(--cream);
+  border-color:var(--line);
+  background:rgba(247,239,230,.025);
+  transition:.18s ease;
+}
+.chip:hover{border-color:var(--line-strong);background:rgba(247,239,230,.05)}
+.chip.on{background:var(--red);border-color:var(--red)}
+input[type=password],input[type=text],textarea,
+.mrow input,.mrow select{
+  background:#1c120e;
+  border-color:var(--line);
+}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--red)}
+.btn{background:var(--red);border-radius:12px;transition:.2s ease}
+.btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.btn.ghost{background:rgba(247,239,230,.07);border:1px solid var(--line)}
+.link{color:var(--cognac)}
+.stats{gap:12px}
+.stat{
+  border-radius:16px;
+  padding:18px 14px;
+}
+.stat b{font-size:1.8rem}
+.stat.hot b{color:var(--green-soft)}
+.order{
+  background:rgba(247,239,230,.025);
+  border-color:var(--line);
+  border-radius:16px;
+  padding:18px;
+  transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+.order:hover{
+  border-color:var(--line-strong);
+  background:rgba(247,239,230,.045);
+}
+.order.new{
+  border-color:var(--red);
+  box-shadow:0 0 0 1px rgba(232,51,43,.35) inset;
+}
+.order .tag{background:rgba(247,239,230,.09);color:var(--cream)}
+.order .tag.code{background:transparent;border-color:var(--line)}
+.order .tag.way{background:var(--green-soft);color:#06210f}
+.order .go{background:var(--red)}
+.order .go.ready{background:var(--green-soft);color:#06210f}
+.order.unconfirmed{border-color:#C77E3F;box-shadow:0 0 0 1px rgba(199,126,63,.25) inset}
+.order.unconfirmed .go{background:var(--cognac);color:#241712}
+#ordActive,#ordDone{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#ordActive .empty,#ordDone .empty{grid-column:1/-1}
+#ordActive .order,#ordDone .order{margin-bottom:0}
+.mcat{color:var(--cognac);font-size:1rem}
+.mrow{padding:12px 0}
+.bar-row .b{background:rgba(247,239,230,.09)}
+.bar-row .b i{background:var(--red)}
+.modal{background:rgba(36,23,18,.78);backdrop-filter:blur(10px)}
+.sheet{
+  background:#2b1c16;
+  border-color:var(--line);
+  box-shadow:0 -18px 60px rgba(0,0,0,.25);
+}
+#gate{
+  max-width:520px;
+  margin:56px auto 0;
+}
+#gate h2{font-size:1.35rem}
+#gate .btn{margin-top:18px}
+#toast{background:var(--cream);color:var(--ink)}
+@media (max-width:800px){
+  .wrap{padding-left:18px;padding-right:18px}
+  header{min-height:68px}
+  #ordActive,#ordDone{grid-template-columns:1fr}
+  #ordActive .order,#ordDone .order{margin-bottom:0}
+}
+@media (max-width:600px){
+  .tabs{grid-template-columns:repeat(4,minmax(104px,1fr));overflow-x:auto}
+  .tabs button{min-height:44px}
+  .card{padding:18px}
+  #ordActive,#ordDone{display:block}
+  #ordActive .order,#ordDone .order{margin-bottom:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}
+}
+
 </style>
 </head>
 <body>
@@ -164,10 +340,10 @@
     <div class="signed"><i></i> Signed in <button class="link" id="logout">Sign out</button></div>
 
     <nav class="tabs" id="tabs">
-      <button type="button" data-t="orders">🚗 Orders<span class="n" id="newN" hidden>0</span></button>
-      <button type="button" data-t="updates">📢 Updates</button>
-      <button type="button" data-t="menu">🍽 Menu</button>
-      <button type="button" data-t="insights">📈 Insights</button>
+      <button type="button" data-t="orders">Orders<span class="n" id="newN" hidden>0</span></button>
+      <button type="button" data-t="updates">Updates</button>
+      <button type="button" data-t="menu">Menu</button>
+      <button type="button" data-t="insights">Insights</button>
     </nav>
 
     <div data-tab="orders">
