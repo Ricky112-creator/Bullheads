@@ -24,6 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/relay.css?v=1">
 </head>
 <body>
 <a class="skip-link" href="#top" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
@@ -104,6 +105,33 @@
     </div>
   </section>
 
+  <!-- THE RELAY -->
+  <section class="relay" id="relay" aria-label="How an order reaches the counter">
+    <div class="relay-in">
+      <div>
+        <h2 data-sw="Agizo lako linamfikia mpishi kabla hujaweka simu chini.">Your order reaches the grill before you set your phone down.</h2>
+        <p data-sw="Kila agizo hupata nambari yake, linaingia kwenye dashibodi ya kaunta, na simu ya wafanyakazi inalia. Hakuna karatasi iliyopotea, hakuna simu ya &quot;nilisema nini?&quot;.">Every order gets its own code, lands on that counter's dashboard, and buzzes the staff phone. No lost paper, no &ldquo;what did I order?&rdquo; call-backs.</p>
+        <button class="relay-replay" type="button" data-sw="Cheza tena">Watch it again</button>
+      </div>
+      <div class="stage">
+        <div class="rail"><i></i></div>
+        <div class="beat"><b>You tap send</b><span>Cart, name, M-Pesa till, all in one move.</span><br><span class="phone-btn">Send to WhatsApp</span></div>
+        <div class="beat"><b>The counter is alerted</b><span>Push to the right branch's staff only.</span></div>
+        <div class="beat"><b>The ticket prints</b><span>Ready to cook. Nothing retyped.</span></div>
+        <div class="ticket" role="img" aria-label="Sample kitchen ticket">
+          <div class="hd"><span data-branch-name>Bullhead Two</span><span class="clk">0:00</span></div>
+          <span class="ln w">ORDER BH-7K2Q &middot; PICKUP</span><hr>
+          <span class="ln w">1  Nyama choma &frac12; kg</span>
+          <span class="ln w">2  Ugali</span>
+          <span class="ln w">1  Kachumbari</span>
+          <span class="ln w">2  Chai</span><hr>
+          <span class="ln w">NOTE  no chili, extra ugali</span>
+          <span class="ln w">PAID  M-Pesa till &#10003;</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- LOOK AROUND -->
   <section class="explore">
     <h2 data-sw="Angalia Karibu">Look around</h2>
@@ -124,6 +152,17 @@
           <p data-sw="Maeneo yote mawili, masaa, mawasiliano, na jinsi ya kulipa">Both locations, hours, contact, and how to pay</p>
         </div>
       </a>
+    </div>
+  </section>
+
+  <!-- PITCH -->
+  <section class="pitch" data-apex-only>
+    <div class="pitch-in">
+      <div>
+        <h3>Run a restaurant, hotel or shop? This is what we build.</h3>
+        <p>Ordering, M-Pesa, live staff alerts and separate branch sites, all from one codebase you own. You&rsquo;re looking at it running, day and night, in Emali.</p>
+      </div>
+      <a class="cta" href="https://wa.me/254789077483?text=Hi%20Apex%2C%20I%20saw%20the%20Bullhead%20site%20and%20want%20something%20like%20it%20for%20my%20business." target="_blank" rel="noopener">Talk to Apex on WhatsApp</a>
     </div>
   </section>
 
@@ -155,6 +194,7 @@
 <script src="js/branches.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/main.js?v=9"></script>
+<script src="js/relay.js?v=1"></script>
 <script>
 (function () {
   var INSTALLED_KEY = 'bullheadInstalled';

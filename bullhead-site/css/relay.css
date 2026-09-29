@@ -1,0 +1,38 @@
+/* The Relay: an order travelling from a phone to the counter's ticket rail */
+.relay{background:var(--green-deep);color:var(--cream);padding:clamp(56px,9vw,120px) var(--edge);position:relative;overflow:hidden}
+.relay-in{max-width:1120px;margin:0 auto;display:grid;gap:clamp(32px,5vw,72px);grid-template-columns:1fr}
+@media(min-width:900px){.relay-in{grid-template-columns:5fr 6fr;align-items:center}}
+.relay h2{font-family:var(--font-display);font-weight:500;font-size:clamp(2rem,4.6vw,3.6rem);line-height:1.04;letter-spacing:-.02em;margin:0 0 18px}
+.relay p{color:#d8cdbf;line-height:1.65;max-width:44ch;margin:0 0 22px}
+.relay-replay{font:600 .95rem var(--font-body);color:var(--cream);background:none;border:1px solid #ffffff55;border-radius:99px;padding:11px 20px;cursor:pointer;transition:background .2s,border-color .2s}
+.relay-replay:hover{background:#ffffff14;border-color:#fff}
+.stage{display:grid;grid-template-columns:auto 1fr;gap:0 20px;align-items:start}
+.rail{grid-row:1/4;width:2px;background:#ffffff26;position:relative;margin:14px 0 14px 15px;border-radius:2px}
+.rail i{position:absolute;left:0;top:0;width:100%;height:0;background:var(--red);border-radius:2px;transition:height 1.1s cubic-bezier(.6,.05,.2,1)}
+.beat{position:relative;grid-column:2;padding:0 0 26px;opacity:.28;transition:opacity .5s}
+.beat.on{opacity:1}
+.beat b{display:block;font:600 1.02rem var(--font-body);margin-bottom:4px}
+.beat span{font-size:.92rem;color:#cbbfb0}
+.beat::before{content:"";position:absolute;left:-32px;top:6px;width:10px;height:10px;border-radius:50%;background:#ffffff40;transition:background .3s,box-shadow .3s}
+.beat.on::before{background:var(--red);box-shadow:0 0 0 6px #e8332b33}
+.phone-btn{margin-top:12px;display:inline-block;background:var(--red);color:#fff;font:600 .9rem var(--font-body);padding:10px 18px;border-radius:99px;transition:transform .15s}
+.beat.press .phone-btn{transform:scale(.94)}
+/* the ticket: thermal paper with a torn edge */
+.ticket{grid-column:2;background:#fbf6ec;color:#241712;font:500 .86rem/1.55 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:18px 20px 26px;max-width:340px;position:relative;transform-origin:top;transform:scaleY(.02);opacity:0;transition:transform .9s cubic-bezier(.2,.8,.2,1),opacity .2s;
+  -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - 8px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 8px repeat-x;
+  mask:linear-gradient(#000,#000) top/100% calc(100% - 8px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 8px repeat-x}
+.ticket.on{transform:scaleY(1);opacity:1}
+.ticket hr{border:0;border-top:1px dashed #241712;opacity:.4;margin:8px 0}
+.ticket .hd{display:flex;justify-content:space-between;font-weight:700}
+.ticket .ln{display:block;min-height:1.55em;white-space:pre}
+.ticket .ln.w{opacity:0;transform:translateY(-4px);transition:opacity .3s,transform .3s}
+.ticket .ln.w.on{opacity:1;transform:none}
+.ticket .clk{color:#1F5C3F;font-weight:700}
+@media(prefers-reduced-motion:reduce){.rail i,.ticket,.beat,.ticket .ln.w{transition:none}}
+/* pitch band */
+.pitch{padding:clamp(40px,7vw,84px) var(--edge);border-top:1px solid #24171222;background:var(--cream-deep)}
+.pitch-in{max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px 48px;align-items:center;justify-content:space-between}
+.pitch h3{font-family:var(--font-display);font-weight:500;font-size:clamp(1.5rem,3vw,2.3rem);line-height:1.12;letter-spacing:-.015em;margin:0 0 8px;max-width:22ch}
+.pitch p{margin:0;color:var(--ink-soft);max-width:52ch;line-height:1.6}
+.pitch a.cta{background:var(--ink);color:var(--cream);font:600 1rem var(--font-body);padding:15px 26px;border-radius:99px;text-decoration:none;transition:transform .2s,background .2s}
+.pitch a.cta:hover{background:var(--green);transform:translateY(-2px)}
