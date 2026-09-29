@@ -922,6 +922,18 @@ header{
     $('addModal').hidden = true; $('mSearch').value = ''; drawMenu(); saveMenu(); toast('Added — tap Review & save to publish');
   };
 
+  // Keep the incoming-orders panel exactly below the real header height on every screen size.
+  function syncStickyHeaderHeight() {
+    var h = document.querySelector('header');
+    if (h) document.documentElement.style.setProperty('--bh-header-height', h.getBoundingClientRect().height + 'px');
+  }
+  syncStickyHeaderHeight();
+  if (window.ResizeObserver) {
+    new ResizeObserver(syncStickyHeaderHeight).observe(document.querySelector('header'));
+  } else {
+    window.addEventListener('resize', syncStickyHeaderHeight);
+  }
+
   drawDurs(); refresh(); drawBrView(); drawUBr();
   $('alertBr').onchange = function () {
     alertBr = this.value; localStorage.setItem('bhAlertBr', alertBr);
