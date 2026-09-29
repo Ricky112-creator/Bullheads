@@ -134,6 +134,8 @@ textarea{min-height:84px;resize:vertical}
 .mrow{display:grid;grid-template-columns:1fr 100px 150px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .mrow .nm{font-size:16px;line-height:1.3}.mrow .nm.sold{opacity:.55;text-decoration:line-through}
 .mrow input,.mrow select{min-height:44px;padding:8px 10px;font-size:16px}
+.mrow .star{width:44px;height:44px}
+@media (max-width:480px){.mrow{grid-template-columns:96px 1fr}.mrow .nm{grid-column:1/-1}}
 .star{width:40px;height:40px;background:none;border:0;font-size:1.3rem;color:var(--track);vertical-align:middle}
 .star.on{color:#F2A33A}
 .dirty-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:99px;background:#F2A33A;color:#2a1200;font-size:12px;font-weight:700;vertical-align:middle}
@@ -547,7 +549,7 @@ textarea{min-height:84px;resize:vertical}
     var f = mk('div', 'foot'); f.appendChild(mk('b', '', o.total ? 'KES ' + o.total.toLocaleString('en-KE') : ''));
     var nx = { unconfirmed: ['Confirm order', 'new'], new: ['Start preparing', 'preparing'], preparing: ['Mark ready', 'ready'], ready: ['Done ✓', 'done'] }[o.status];
     var acts = mk('div'); acts.style.cssText = 'display:flex;gap:8px;align-items:center';
-    if (unc || o.status === 'new') { var x = mk('button', 'mini', 'Cancel'); x.type = 'button'; x.onclick = function () { if (confirm('Cancel order #' + code + '?')) setStatus(o.id, 'cancelled'); }; acts.appendChild(x); }
+    if (unc || o.status === 'new') { var x = mk('button', 'mini', 'Cancel'); x.type = 'button'; x.onclick = function () { ask('Cancel order #' + code + '?', 'The customer will see it as cancelled.', 'Cancel order').then(function (ok) { if (ok) setStatus(o.id, 'cancelled'); }); }; acts.appendChild(x); }
     if (nx) { var b = mk('button', 'go ' + (o.status === 'preparing' ? 'ready' : ''), nx[0]); b.type = 'button'; b.onclick = function () { setStatus(o.id, nx[1]); }; acts.appendChild(b); }
     else { var d = mk('button', 'mini', 'Remove'); d.type = 'button'; d.onclick = function () { fetch('/api/orders?id=' + o.id, { method: 'DELETE', headers: { Authorization: auth() } }).then(loadOrders); }; acts.appendChild(d); }
     f.appendChild(acts);
@@ -693,7 +695,7 @@ textarea{min-height:84px;resize:vertical}
   };
   $('mBack').onclick = function () { $('modal').hidden = true; };
   $('modal').addEventListener('click', function (e) { if (e.target === $('modal')) $('modal').hidden = true; });
-  $('mDiscard').onclick = function () { if (!confirm('Throw away your unsaved menu changes?')) return; menuState = clone(menuSaved); customState = clone(customSaved); drawMenu(); updateBars(); toast('Changes discarded'); };
+  $('mDiscard').onclick = function () { ask('Discard changes?', 'Your unsaved menu changes will be thrown away. The live menu stays as it is.', 'Discard').then(function (ok) { if (!ok) return; menuState = clone(menuSaved); customState = clone(customSaved); drawMenu(); updateBars(); toast('Changes discarded'); }); };
   $('mSave').onclick = function () {
     $('mSave').disabled = true; $('mSave').textContent = 'Saving…';
     fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState, branch: menuBranch || undefined }) })
@@ -717,7 +719,7 @@ textarea{min-height:84px;resize:vertical}
       st.onclick = function () { var x = menuState[it.id] = menuState[it.id] || {}; if (x.special) delete x.special; else x.special = true; saveMenu(); drawMenu(); };
       nm.appendChild(st); nm.appendChild(document.createTextNode(it.name + (it.unit === 'kg' ? ' /kg' : '')));
       if (it.custom) { var nw = mk('span', 'dirty-pill', customSaved.some(function (c) { return c.id === it.id; }) ? 'ADDED' : 'NEW'); nw.style.background = 'var(--grn)'; nw.style.color = '#06210f'; nm.appendChild(nw);
-        var rm = mk('button', 'star', '✕'); rm.type = 'button'; rm.title = 'Remove this item'; rm.style.marginLeft = '6px'; rm.onclick = function () { if (!confirm('Remove "' + it.name + '" from the menu?')) return; customState = customState.filter(function (c) { return c.id !== it.id; }); delete menuState[it.id]; drawMenu(); saveMenu(); }; nm.appendChild(rm); }
+        var rm = mk('button', 'star', '✕'); rm.type = 'button'; rm.title = 'Remove this item'; rm.style.marginLeft = '6px'; rm.setAttribute('aria-label', 'Remove ' + it.name); rm.onclick = function () { ask('Remove this item?', '\u201c' + it.name + '\u201d comes off the menu once you review and save.', 'Remove').then(function (ok) { if (!ok) return; customState = customState.filter(function (c) { return c.id !== it.id; }); delete menuState[it.id]; drawMenu(); saveMenu(); }); }; nm.appendChild(rm); }
       r.appendChild(nm);
       var pr = mk('input'); pr.type = 'number'; pr.min = 0; pr.inputMode = 'numeric'; pr.placeholder = typeof it.price === 'number' ? it.price : 'Price'; pr.value = it.custom ? (typeof it.price === 'number' ? it.price : '') : (typeof m.price === 'number' ? m.price : '');
       pr.title = 'Price in KES (leave empty to use the default' + (typeof it.price === 'number' ? ': ' + it.price : '') + ')';
@@ -858,9 +860,9 @@ textarea{min-height:84px;resize:vertical}
       .then(function () { toast(alertBr ? 'Alerts: ' + BRN[alertBr] + ' orders only' : 'Alerts: both branches'); }).catch(function () { toast('Could not change alerts', true); });
   };
   $('mBranch').onchange = function () {
-    var nb = this.value;
-    if (menuLoaded && typeof diffs === 'function' && diffs().length && !confirm('Throw away your unsaved menu changes and switch boards?')) { this.value = menuBranch; return; }
-    menuBranch = nb; menuLoaded = false; loadMenu();
+    var nb = this.value, sel = this, go = function () { menuBranch = nb; menuLoaded = false; loadMenu(); };
+    if (menuLoaded && typeof diffs === 'function' && diffs().length) ask('Switch boards?', 'Your unsaved menu changes will be thrown away.', 'Switch').then(function (ok) { if (ok) go(); else sel.value = menuBranch; });
+    else go();
   };
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
   if (token) { $('token').value = token; load().catch(function () { token = ''; $('token').value = ''; localStorage.removeItem(KEY); }); }
