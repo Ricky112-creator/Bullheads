@@ -9,7 +9,7 @@
   var meat = { one: 'meat off the choma zone', two: 'chicken and fresh beef' }[b] || 'fresh meat from the butchery';
   var eve = { one: 'Choma, chips and ugali, straight from the counter.', two: 'Chicken, tilapia and ugali at a proper table.' }[b] || 'Ugali, meat and chai to end the day well.';
   var s = h >= 5 && h < 10 ? ['Breakfast is on.', 'Hot chai, andazi, chapati and porridge. Start the day right.']
-    : h < 15 && h >= 10 ? ['Lunch is on.', 'Ugali, pilau, githeri and ' + meat + '.']
+    : h < 15 && h >= 10 ? ['Lunch is on.', 'Ugali, pilau, githeri, ' + meat + '.']
     : h >= 15 && h < 19 ? ['Tea time.', 'Chai, chapati and something warm while the day winds down.']
     : h >= 19 && h < 23 ? ['Supper is on.', eve]
     : ['The night shift is on.', 'Long road ahead? The kitchen is awake and the tea is hot.'];
