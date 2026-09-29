@@ -291,6 +291,29 @@ input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--red)}
 #gate h2{font-size:1.35rem}
 #gate .btn{margin-top:18px}
 #toast{background:var(--cream);color:var(--ink)}
+
+/* Sticky owner controls */
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(36,23,18,.96);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+#ordActive{
+  position:sticky;
+  top:76px;
+  z-index:15;
+}
+#ordActive > .card{
+  background:rgba(36,23,18,.97);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+@media (max-width:800px){
+  #ordActive{top:68px}
+}
 @media (max-width:800px){
   .wrap{padding-left:18px;padding-right:18px}
   header{min-height:68px}
