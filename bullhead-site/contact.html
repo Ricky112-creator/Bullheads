@@ -102,7 +102,9 @@
       <div class="form-field" id="field-partySize">
         <label for="partySize" data-sw="Watu wangapi?">How many people?</label>
         <input type="number" id="partySize" name="partySize" min="1" max="40" placeholder="e.g. 4">
-        <p style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Bullhead One ina viti kama 70, Bullhead Two ina kama 24 — kama kikundi chako ni kikubwa zaidi ya hivyo, taja hilo kwenye maelezo hapa chini.">Bullhead One seats around 70, Bullhead Two around 24 — if your group's bigger than that, mention it in the notes below.</p>
+        <p data-only="main" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Bullhead One ina viti kama 70, Bullhead Two ina kama 24 — kama kikundi chako ni kikubwa zaidi ya hivyo, taja hilo kwenye maelezo hapa chini.">Bullhead One seats around 70, Bullhead Two around 24 — if your group's bigger than that, mention it in the notes below.</p>
+        <p data-only="one" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Bullhead One ina viti kama 70 — kama kikundi chako ni kikubwa zaidi ya hivyo, taja hilo kwenye maelezo hapa chini.">Bullhead One seats around 70 — if your group's bigger than that, mention it in the notes below.</p>
+        <p data-only="two" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Bullhead Two ina viti kama 24 — kama kikundi chako ni kikubwa zaidi ya hivyo, taja hilo kwenye maelezo hapa chini.">Bullhead Two seats around 24 — if your group's bigger than that, mention it in the notes below.</p>
       </div>
 
       <div class="form-field" id="field-address" hidden>
@@ -148,7 +150,7 @@
         <p id="phoneHint" style="color: var(--ink-soft); font-size: 0.9em; margin: 6px 0 0;" data-sw="Ili tukupigie au tukutumie ujumbe kuhusu oda hii. Tunaifuta baada ya siku 30.">So we can reach you about this order. We delete it after 30 days.</p>
         <p id="phoneErr" role="alert" style="color: #b3261e; font-weight: 600; font-size: 0.9em; margin: 6px 0 0;" hidden></p>
       </div>
-      <div class="form-field">
+      <div class="form-field" data-apex-only>
         <label for="location" data-sw="Kaunta gani?">Which counter?</label>
         <select id="location" name="location">
           <option value="Bullhead One" data-sw="Bullhead One — kaunta ya awali">Bullhead One — the original counter</option>
@@ -187,6 +189,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/branches.js"></script>
 <script src="js/menu-data.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/mpesa.js"></script>

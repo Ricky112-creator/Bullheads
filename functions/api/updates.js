@@ -5,7 +5,7 @@
 //
 // Storage: a single JSON array under the KV key "updates", newest first,
 // capped at MAX_UPDATES entries. Each entry:
-//   { id, text, postedAt (ISO string), expiresAt (ISO string | null) }
+//   { id, text, postedAt (ISO string), expiresAt (ISO string | null), branch ('' = both sites | 'one' | 'two') }
 //
 // Requires, set in the Cloudflare Pages dashboard under
 // Settings -> Functions -> Bindings/Variables:
@@ -15,6 +15,7 @@
 //     site visitors)
 
 import { requireRole, ipHash, rlCount, rlHit } from '../_lib/auth.js';
+import { cleanBranch, hostBranch } from '../_lib/branches.js';
 
 const MAX_UPDATES = 30; // history kept for Repost + stats
 const TYPES = ['special', 'stock', 'notice', 'closing'];
@@ -72,8 +73,10 @@ export async function onRequestGet(context) {
     return json({ updates: updates.map((u) => ({ ...u, taps: (u.taps || 0) + (taps[u.id] || 0) })) }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
+  const u0 = new URL(request.url), site = hostBranch(u0.hostname) || cleanBranch(u0.searchParams.get('branch'));
   const live = updates
     .filter((u) => !u.expiresAt || new Date(u.expiresAt).getTime() > now)
+    .filter((u) => !u.branch || !site || u.branch === site)   // a branch site shows its own notices and the shared ones
     .slice(0, 5)
     .map(({ taps, ...pub }) => pub); // keep stats private
 
@@ -125,6 +128,7 @@ export async function onRequestPost(context) {
     textSw: String(body.textSw || '').trim().slice(0, MAX_TEXT_LENGTH) || undefined,
     type: TYPES.includes(body.type) ? body.type : 'notice',
     cta: body.cta !== false, // show "Order on WhatsApp" button
+    branch: cleanBranch(body.branch),   // '' = shows on every site
     taps: 0,
     postedAt: new Date().toISOString(),
     expiresAt: hours > 0 ? new Date(Date.now() + hours * 3600 * 1000).toISOString() : null,

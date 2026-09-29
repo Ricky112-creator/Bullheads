@@ -1,7 +1,8 @@
 // GET    /api/push          -> public: { publicKey } so the browser can subscribe
-// POST   /api/push          -> owner only: save this phone's push subscription
+// POST   /api/push          -> owner or staff: save this phone's push subscription (body may carry branch: 'one'|'two'; a
+//                              branch-scoped staff login is always saved under its own branch)
 // POST   /api/push?test=1   -> owner only: send a test alert to every saved phone
-// DELETE /api/push          -> owner only: remove a subscription (body: { endpoint })
+// DELETE /api/push          -> owner (any) or staff (own branch's phones only): remove a subscription (body: { endpoint })
 //
 // Also exports two helpers used by /api/orders:
 //   ensureSchema(env) - creates the D1 tables on first use (no manual SQL needed)
@@ -17,7 +18,8 @@
 // no order details ever pass through the browser vendors' push servers.
 
 import { json, requireRole } from '../_lib/auth.js';
-const MAX_SUBS = 10;
+import { cleanBranch } from '../_lib/branches.js';
+const MAX_SUBS = 20;
 
 // ---------- database ----------
 let schemaReady = null;
@@ -62,10 +64,15 @@ export async function vapidHeader(env, endpoint) {
 }
 
 // Returns how many phones were reached.
-export async function notifyOwner(env) {
+// `branch` is the branch the order is for: phones saved for that branch, and phones saved for "all" (the owner's), get the buzz.
+export async function notifyOwner(env, branch = '') {
   if (!env.VAPID_PUBLIC || !env.VAPID_PRIVATE) return 0;
   await ensureSchema(env);
-  const { results } = await env.DB.prepare('SELECT endpoint FROM push_subs ORDER BY ts DESC LIMIT ?').bind(MAX_SUBS).all();
+  const { results: all } = await env.DB.prepare('SELECT endpoint, sub FROM push_subs ORDER BY ts DESC LIMIT ?').bind(MAX_SUBS).all();
+  const results = all.filter((r) => {
+    let b = ''; try { b = cleanBranch(JSON.parse(r.sub).branch); } catch (e) {}
+    return !b || !branch || b === branch;
+  });
   let sent = 0;
   await Promise.all(results.map(async (r) => {
     try {
@@ -86,33 +93,41 @@ export async function onRequestGet({ env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  const g = await requireRole(request, env, ['owner']);
+  const u = new URL(request.url);
+  // Sending a test alert is owner-only; saving your own phone is allowed for staff too.
+  const g = await requireRole(request, env, u.searchParams.get('test') ? ['owner'] : ['owner', 'staff']);
   if (g.res) return g.res;
   try {
     await ensureSchema(env);
-    const u = new URL(request.url);
     if (u.searchParams.get('test')) return json({ ok: true, sent: await notifyOwner(env) });
 
     let sub; try { sub = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
     const ep = String((sub && sub.endpoint) || '');
     if (!/^https:\/\//.test(ep) || ep.length > 700) return json({ error: 'Bad subscription' }, { status: 400 });
+    const branch = g.role === 'staff' ? g.branch : cleanBranch(sub.branch);   // '' = alerts for every branch
     await env.DB.batch([
-      env.DB.prepare('INSERT OR REPLACE INTO push_subs (endpoint, sub, ts) VALUES (?, ?, ?)').bind(ep, JSON.stringify({ endpoint: ep }), new Date().toISOString()),
+      env.DB.prepare('INSERT OR REPLACE INTO push_subs (endpoint, sub, ts) VALUES (?, ?, ?)').bind(ep, JSON.stringify({ endpoint: ep, branch }), new Date().toISOString()),
       env.DB.prepare('DELETE FROM push_subs WHERE endpoint NOT IN (SELECT endpoint FROM push_subs ORDER BY ts DESC LIMIT ?)').bind(MAX_SUBS),
     ]);
-    return json({ ok: true });
+    return json({ ok: true, branch });
   } catch (e) {
     return json({ error: String(e.message || e) }, { status: 500 });
   }
 }
 
 export async function onRequestDelete({ request, env }) {
-  const g = await requireRole(request, env, ['owner']);
+  const g = await requireRole(request, env, ['owner', 'staff']);
   if (g.res) return g.res;
   try {
     await ensureSchema(env);
     let b = {}; try { b = await request.json(); } catch {}
-    if (b.endpoint) await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(String(b.endpoint)).run();
+    if (b.endpoint) {
+      if (g.role === 'staff') {   // staff can only remove phones saved under their own branch
+        await env.DB.prepare("DELETE FROM push_subs WHERE endpoint = ? AND COALESCE(json_extract(sub, '$.branch'), '') = ?").bind(String(b.endpoint), g.branch).run();
+      } else {
+        await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(String(b.endpoint)).run();
+      }
+    }
     return json({ ok: true });
   } catch (e) {
     return json({ error: String(e.message || e) }, { status: 500 });

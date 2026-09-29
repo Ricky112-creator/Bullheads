@@ -1139,3 +1139,16 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
 .eta-field input { position: absolute; opacity: 0; pointer-events: none; }
 .eta-field span { display: inline-block; padding: 9px 16px; border: 1.5px solid rgba(36,23,18,0.25); border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
 .eta-field input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* ===== Branch sites (branch1. / branch2.) =====
+   <html data-branch="one|two"> is set by functions/_middleware.js (and js/branches.js in preview mode).
+   [data-apex-only]  = only on the main site (e.g. the "which counter?" picker)
+   [data-only="x"]   = only on branch x's site; [data-only="main"] = only on the main site.
+   (The server also removes mismatched [data-only]/[data-branch] blocks from the HTML on the real branch hostnames.) */
+html[data-branch] [data-apex-only],
+html[data-branch] [data-only="main"],
+html:not([data-branch]) [data-only="one"],
+html:not([data-branch]) [data-only="two"],
+html[data-branch="one"] [data-only="two"],
+html[data-branch="two"] [data-only="one"] { display: none !important; }
+html[data-branch] .locations-grid { grid-template-columns: 1fr; max-width: 760px; margin-left: auto; margin-right: auto; }

@@ -1,10 +1,15 @@
-// GET  /api/menu -> public: per-item overrides { [itemId]: { price?, special?, soldOut?, until? } }
-// POST /api/menu -> owner only: replaces the overrides (body: { menu: {...} })
+// GET  /api/menu[?branch=one|two] -> public: per-item overrides { [itemId]: { price?, special?, soldOut?, until? } }
+//      A branch site (branch1./branch2.) gets that branch's board if the owner has saved one, otherwise the shared board.
+// POST /api/menu -> owner only: replaces the overrides (body: { menu: {...}, branch?: 'one'|'two' }).
+//      With a branch it saves that branch's own board (e.g. Bullhead Two sold out of tilapia); without, the shared board.
 // Same KV namespace (UPDATES_KV) and ADMIN_TOKEN as /api/updates.
 import { json, requireRole } from '../_lib/auth.js';
+import { cleanBranch, hostBranch } from '../_lib/branches.js';
 
-export async function onRequestGet({ env }) {
-  const raw = await env.UPDATES_KV.get('menu');
+export async function onRequestGet({ request, env }) {
+  const u = new URL(request.url);
+  const br = hostBranch(u.hostname) || cleanBranch(u.searchParams.get('branch'));
+  const raw = (br && (await env.UPDATES_KV.get('menu:' + br))) || (await env.UPDATES_KV.get('menu'));
   const cust = await env.UPDATES_KV.get('menu-custom');
   return json({ menu: raw ? JSON.parse(raw) : {}, custom: cust ? JSON.parse(cust) : [] }, { headers: { 'Cache-Control': 'public, max-age=15' } });
 }
@@ -23,7 +28,8 @@ export async function onRequestPost({ request, env }) {
     if (e.soldOut && m.until && !isNaN(Date.parse(m.until))) e.until = new Date(m.until).toISOString();
     if (Object.keys(e).length) clean[id] = e;
   }
-  await env.UPDATES_KV.put('menu', JSON.stringify(clean));
+  const branch = cleanBranch(body.branch);
+  await env.UPDATES_KV.put(branch ? 'menu:' + branch : 'menu', JSON.stringify(clean));
 
   // Owner-added dishes (whole list replaced each save).
   let custom;

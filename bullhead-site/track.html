@@ -96,6 +96,7 @@
   <p class="tk-live" style="margin-top:6px">Tip: this link is also in your WhatsApp chat with us.</p>
 </main>
 
+<script src="/js/branches.js"></script>
 <script src="/js/order-utils.js"></script>
 <script src="/js/mpesa.js"></script>
 <script>
@@ -190,13 +191,14 @@ var REVIEW = { 'Bullhead One': 'https://g.page/r/CZlFY4eey516EBM/review', 'Bullh
     $('meta').textContent = 'Order #' + orderCode(id) + ' · ' + (TYPE[o.type] || 'Order') + (o.table ? ' · Table ' + o.table : '');
     // Recovery button: if the customer never sent the WhatsApp message (pop-up blocked, tab closed), it is one tap away.
     var sc = $('sendCard'); sc.hidden = o.status !== 'unconfirmed';
+    WA = window.BH ? BH.whatsapp(BH.current || BH.byCounter(o.counter)) : WA;   // the branch this order is for
     if (!sc.hidden) $('sendBtn').href = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(waText(o));
     $('total').textContent = 'KES ' + (o.total || 0).toLocaleString('en-KE'); $('totalRow').hidden = !o.total;
     $('orderCard').hidden = !(o.items.length || o.table || o.type);
     // Optional pay-ahead card, only while the order is still open.
     var pay = $('pay'), wantPay = o.total > 0 && o.status !== 'done' && o.status !== 'cancelled' && o.status !== 'unconfirmed' && typeof mpesaCard === 'function';   // no paying for an order we haven’t confirmed
     if (!wantPay) pay.innerHTML = '';
-    else if (!pay.firstChild) { var pc = mpesaCard(o.total); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
+    else if (!pay.firstChild) { var pc = mpesaCard(o.total, o.counter); pc.style.margin = '0 0 16px'; pay.appendChild(pc); }
        showReview(o);
     if (last && last !== 'ready' && o.status === 'ready' && navigator.vibrate) navigator.vibrate([250, 120, 250]);
     last = o.status;

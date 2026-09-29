@@ -127,10 +127,14 @@
   </section>
 
   <section class="locations">
-    <h2 data-sw="Bullhead One na Bullhead Two">Bullhead One &amp; Bullhead Two</h2>
-    <p class="locations-sub" data-sw="Bullhead One ndiyo ya kwanza — ile ambayo madereva wa malori walianza kuizungumzia kwanza. Bullhead Two ilifunguliwa mita mia moja chini kwa ajili ya usiku ambapo ya kwanza inakosa meza, jambo ambalo, saa hizi, hutokea mara kwa mara.">Bullhead One is the original — the one the truckers started talking about first. Bullhead Two opened a hundred metres down for the nights the first ran out of tables, which, at this hour, it usually has.</p>
+    <h2 data-only="main" data-sw="Bullhead One na Bullhead Two">Bullhead One &amp; Bullhead Two</h2>
+    <h2 data-only="one">Bullhead One</h2>
+    <h2 data-only="two">Bullhead Two</h2>
+    <p class="locations-sub" data-only="main" data-sw="Bullhead One ndiyo ya kwanza — ile ambayo madereva wa malori walianza kuizungumzia kwanza. Bullhead Two ilifunguliwa mita mia moja chini kwa ajili ya usiku ambapo ya kwanza inakosa meza, jambo ambalo, saa hizi, hutokea mara kwa mara.">Bullhead One is the original — the one the truckers started talking about first. Bullhead Two opened a hundred metres down for the nights the first ran out of tables, which, at this hour, it usually has.</p>
+    <p class="locations-sub" data-only="one" data-sw="Kaunta ya kwanza — ilipoanzia yote. Kaunta yetu nyingine, Bullhead Two, iko umbali mfupi wa kutembea.">The original counter — where it all started. Our other counter, Bullhead Two, is a short walk away.</p>
+    <p class="locations-sub" data-only="two" data-sw="Kaunta yetu ya pili, umbali mfupi kutoka Bullhead One. Moto uleule, kaunta yake ya bucha na friji.">Our second counter, a short walk from Bullhead One. Same fire, its own butchery counter and fridge.</p>
     <div class="locations-grid">
-      <article class="location-card">
+      <article class="location-card" data-branch="one">
         <div class="location-media">
           <img loading="lazy" src="assets/img/gallery-01.jpg" alt="Bullhead One storefront in Emali" width="720" height="1600">
         </div>
@@ -145,7 +149,7 @@
           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3987.192885805414!2d37.46938597496739!3d-2.078669697902706!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x183abb0047746825%3A0x7a9dcb9e87634599!2sBullhead%20Hotel%20%26%20Butchery%201!5e0!3m2!1sen!2ske!4v1789229026720!5m2!1sen!2ske" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="Map to Bullhead One"></iframe>
         </div>
       </article>
-      <article class="location-card">
+      <article class="location-card" data-branch="two">
         <div class="location-media">
           <img loading="lazy" src="assets/img/location-bullhead-two.jpg" alt="Bullhead Two storefront in Emali" width="720" height="1600">
         </div>
@@ -173,13 +177,13 @@
         </div>
         <div class="visit-block">
           <h3 data-sw="Ongea Nasi">Talk to us</h3>
-          <p style="color:var(--ink-soft);"><a href="https://wa.me/254720707323" target="_blank" rel="noopener">WhatsApp: 0720 707 323</a><br>
-          <a href="tel:+254720707323">Call: 0720 707 323</a><br>
-          <a href="sms:+254720707323">SMS: 0720 707 323</a></p>
+          <p style="color:var(--ink-soft);"><a href="https://wa.me/254720707323" target="_blank" rel="noopener">WhatsApp: <span data-bh-phone>0720 707 323</span></a><br>
+          <a href="tel:+254720707323">Call: <span data-bh-phone>0720 707 323</span></a><br>
+          <a href="sms:+254720707323">SMS: <span data-bh-phone>0720 707 323</span></a></p>
         </div>
         <div class="visit-block">
           <h3 data-sw="Lipa jinsi unavyozoea">Pay how you already do</h3>
-          <p style="color:var(--ink-soft);">Lipa na M-Pesa<br>Buy Goods Till: 3502492</p>
+          <p style="color:var(--ink-soft);">Lipa na M-Pesa<br>Buy Goods Till: <span data-bh-till>3502492</span></p>
         </div>
       </div>
     </div>
@@ -209,6 +213,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="js/branches.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/main.js?v=9"></script>
 <script>

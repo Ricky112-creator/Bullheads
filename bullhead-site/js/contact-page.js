@@ -3,7 +3,7 @@
 // take name/location/notes, send to WhatsApp
 // ============================================
 
-const ORDER_WHATSAPP_NUMBER = '254720707323';
+const ORDER_WHATSAPP_NUMBER = '254720707323';   // fallback only: each branch's number lives in js/branches.js
 
 // Item names can be typed in by the owner (custom dishes), so escape them before they go into innerHTML.
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -135,7 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const lines = cartLines(cart);
     const type = orderTypeInput.value;
     const name = form.name.value.trim();
-    const location = form.location.value;
+    // Which counter is this order for? On a branch site it is that branch; on the main site it is what the customer picked.
+    const cfg = (window.BH && (BH.current || BH.byCounter(form.location.value))) || null;
+    const location = cfg ? cfg.counter : form.location.value;
     const notes = form.notes.value.trim();
     const partySize = form.partySize.value;
     const address = form.address.value.trim();
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const trackId = willRecord ? makeTrackId() : '';
     const code = trackId ? orderCode(trackId) : '';
 
-    let message = `Hi Bullhead, I'd like to place an order.${code ? ` (Order #${code})` : ''}\n`;
+    let message = `Hi ${cfg ? cfg.name : 'Bullhead'}, I'd like to place an order.${code ? ` (Order #${code})` : ''}\n`;
     message += `\nType: ${TYPE_LABELS[type]}`;
     if (activeTable) message += `\nTable: ${activeTable}`;
 
@@ -231,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tracking link.
     if (trackId) message += `\n\nTrack your order live: ${window.location.origin}/track?o=${trackId}`;
-    const waUrl = `https://wa.me/${ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const waUrl = `https://wa.me/${window.BH ? BH.whatsapp(cfg) : ORDER_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
     // 1) Record the order on the dashboard FIRST and wait for the answer, so the customer is never told
     //    "sent" when it wasn't. The dashboard is the order; the WhatsApp message is the receipt.
@@ -239,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (trackId) {
       if (submitBtn) submitBtn.textContent = 'Sending…';
       const payload = JSON.stringify({
-        id: trackId, type, name, phone, notes, table: activeTable || '', counter: location, partySize, address, pin: liveLocationUrl,
+        id: trackId, type, name, phone, notes, table: activeTable || '', counter: location, branch: cfg ? cfg.key : '', partySize, address, pin: liveLocationUrl,
         arriving: pickupTime || (reserveDate ? reserveDate + ' ' + reserveTime : ''), etaMinutes,
         items: lines.map((l) => ({ id: l.id, name: l.name, qty: l.qty, unit: l.unit || '', lineTotal: l.lineTotal })),
       });

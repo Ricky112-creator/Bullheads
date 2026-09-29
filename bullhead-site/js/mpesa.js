@@ -8,7 +8,10 @@
 const MPESA_TILL = '3502492'; // Lipa na M-Pesa, Buy Goods Till
 
 // Returns a ready-made <div> card. `total` is the order amount in KES (0 = don't show an amount).
-function mpesaCard(total) {
+// `counter` ("Bullhead One" / "Bullhead Two") picks that branch's till; on a branch site the site's own branch wins.
+// Tills live in js/branches.js. MPESA_TILL above is only the fallback.
+function mpesaCard(total, counter) {
+  const till = window.BH ? BH.till(BH.current || BH.byCounter(counter)) : MPESA_TILL;
   const el = (tag, css, text) => {
     const e = document.createElement(tag);
     if (css) e.style.cssText = css;
@@ -26,7 +29,7 @@ function mpesaCard(total) {
   const row = el('div', 'display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 4px;padding:12px 14px;border-radius:12px;background:var(--cream);');
   const left = el('div');
   left.appendChild(el('div', 'font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);', 'Till number'));
-  left.appendChild(el('div', 'font-family:var(--font-display);font-size:1.7rem;font-weight:700;letter-spacing:.06em;line-height:1.2;', MPESA_TILL));
+  left.appendChild(el('div', 'font-family:var(--font-display);font-size:1.7rem;font-weight:700;letter-spacing:.06em;line-height:1.2;', till));
   row.appendChild(left);
 
   const btn = el('button', 'flex:none;padding:10px 16px;border:0;border-radius:999px;background:var(--green);color:#fff;font-weight:600;font-size:.9rem;cursor:pointer;', 'Copy');
@@ -34,13 +37,13 @@ function mpesaCard(total) {
   const flash = () => { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy'; }, 1800); };
   const fallback = () => {
     const t = document.createElement('textarea');
-    t.value = MPESA_TILL; t.style.cssText = 'position:fixed;opacity:0;';
+    t.value = till; t.style.cssText = 'position:fixed;opacity:0;';
     document.body.appendChild(t); t.select();
     try { if (document.execCommand('copy')) flash(); } catch (e) {}
     t.remove();
   };
   btn.addEventListener('click', () => {
-    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(MPESA_TILL).then(flash, fallback);
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(till).then(flash, fallback);
     else fallback();
   });
   row.appendChild(btn);

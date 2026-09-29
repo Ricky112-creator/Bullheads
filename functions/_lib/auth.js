@@ -56,33 +56,45 @@ export async function rlHit(env, key) {
 }
 
 // ---------- staff logins ----------
+// A staff login can be tied to one branch ('one' | 'two'). That lives in its own small table so the
+// existing staff table never needs altering. No row = the login works for every branch (logins made before branches existed).
 let staffReady = null;
-export const ensureStaff = (env) => (staffReady = staffReady || env.DB.prepare('CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, ts TEXT NOT NULL)').run().catch((e) => { staffReady = null; throw e; }));
-async function isStaffToken(t, env) {
-  if (!env.DB) return false;
-  try { await ensureStaff(env); return !!(await env.DB.prepare('SELECT 1 AS x FROM staff WHERE hash = ?').bind(await sha256(t)).first()); } catch (e) { return false; }
+export const ensureStaff = (env) => (staffReady = staffReady || env.DB.batch([
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS staff (id TEXT PRIMARY KEY, name TEXT NOT NULL, hash TEXT NOT NULL UNIQUE, ts TEXT NOT NULL)'),
+  env.DB.prepare('CREATE TABLE IF NOT EXISTS staff_branch (id TEXT PRIMARY KEY, branch TEXT NOT NULL)'),
+]).catch((e) => { staffReady = null; throw e; }));
+async function staffOf(t, env) {
+  if (!env.DB) return null;
+  try {
+    await ensureStaff(env);
+    const r = await env.DB.prepare('SELECT s.id AS id, b.branch AS branch FROM staff s LEFT JOIN staff_branch b ON b.id = s.id WHERE s.hash = ?').bind(await sha256(t)).first();
+    return r ? { id: r.id, branch: r.branch || '' } : null;
+  } catch (e) { return null; }
 }
 
 // ---------- who is calling? ----------
-// 'owner' | 'staff' | 'none' (no code, or a wrong one) | 'locked' (too many wrong codes from this address).
+// { role, branch }. role: 'owner' | 'staff' | 'none' (no code, or a wrong one) | 'locked' (too many wrong codes from this address).
+// branch: '' for the owner (sees every branch) and for older staff logins; 'one' | 'two' for a branch-scoped staff login.
 // The lock is checked BEFORE the code is compared, so guessing is throttled no matter how lucky a guess is.
 // A staff code on an owner-only page is not a "wrong code", so it never counts against anyone.
 const FAIL_MAX = 30, FAIL_WINDOW = 10 * 60000;
-export async function roleOf(request, env) {
+export async function whoOf(request, env) {
   const t = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-  if (!t || t.length > 200) return 'none';
+  if (!t || t.length > 200) return { role: 'none', branch: '' };
   const key = 'auth:' + ((await ipHash(request)) || 'unknown');
-  if ((await rlCount(env, key, FAIL_WINDOW)) >= FAIL_MAX) return 'locked';
-  if (env.ADMIN_TOKEN && (await safeEqual(t, String(env.ADMIN_TOKEN)))) return 'owner';
-  if (await isStaffToken(t, env)) return 'staff';
+  if ((await rlCount(env, key, FAIL_WINDOW)) >= FAIL_MAX) return { role: 'locked', branch: '' };
+  if (env.ADMIN_TOKEN && (await safeEqual(t, String(env.ADMIN_TOKEN)))) return { role: 'owner', branch: '' };
+  const s = await staffOf(t, env);
+  if (s) return { role: 'staff', branch: s.branch, id: s.id };
   await rlHit(env, key);
-  return 'none';
+  return { role: 'none', branch: '' };
 }
+export const roleOf = async (request, env) => (await whoOf(request, env)).role;
 
 // Usage:  const g = await requireRole(request, env, ['owner']);  if (g.res) return g.res;
 export async function requireRole(request, env, allow) {
-  const role = await roleOf(request, env);
-  if (role === 'locked') return { res: json({ error: 'Too many wrong codes. Try again in a few minutes.' }, { status: 429 }) };
-  if (!(allow || ['owner']).includes(role)) return { res: json({ error: 'Unauthorized' }, { status: 401 }) };
-  return { role };
+  const w = await whoOf(request, env);
+  if (w.role === 'locked') return { res: json({ error: 'Too many wrong codes. Try again in a few minutes.' }, { status: 429 }) };
+  if (!(allow || ['owner']).includes(w.role)) return { res: json({ error: 'Unauthorized' }, { status: 401 }) };
+  return { role: w.role, branch: w.branch, id: w.id };
 }

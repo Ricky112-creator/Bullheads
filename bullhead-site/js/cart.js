@@ -57,7 +57,7 @@ function formatKES(n) {
 // Owner's live menu board (/api/menu): price changes, sold-out / back-at, today's special.
 // Applies the overrides onto MENU_ITEMS in place; resolves either way so pages never break.
 function applyMenuOverrides() {
-  return fetch('/api/menu')
+  return fetch('/api/menu' + (window.BH && BH.key ? '?branch=' + BH.key : ''))
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => {
       const o = (d && d.menu) || {};

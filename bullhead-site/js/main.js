@@ -26,7 +26,7 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
 (function loadLiveUpdate() {
   const bar = document.getElementById('liveUpdateBar');
   if (!bar) return;
-  const WA = 'https://wa.me/254720707323?text=';
+  const WA = 'https://wa.me/' + ((window.BH && BH.current && BH.current.whatsapp) || '254720707323') + '?text=';
   const LABEL = {
     en: { special: "Today's special", stock: 'Fresh in', notice: 'Update', closing: 'Heads up' },
     sw: { special: 'Maalum ya leo', stock: 'Mpya sasa', notice: 'Taarifa', closing: 'Tahadhari' },
@@ -90,7 +90,7 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
     bar.appendChild(x);
   }
 
-  fetch('/api/updates')
+  fetch('/api/updates' + (window.BH && BH.key ? '?branch=' + BH.key : ''))
     .then((r) => (r.ok ? r.json() : null))
     .then((data) => {
       const gone = dismissed();

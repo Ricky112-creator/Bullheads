@@ -132,6 +132,7 @@
     <img src="assets/img/logo-mark.png" alt="Bullhead">
     <div><h1>Bullhead</h1><small>Owner dashboard</small></div>
     <a href="/" target="_blank" rel="noopener">View site ↗</a>
+    <select id="alertBr" hidden title="Which branch's orders buzz this phone" aria-label="Alerts for" style="background:transparent;color:inherit;border:1px solid var(--line);border-radius:999px;padding:6px 8px;font-size:.8rem"><option value="">All branches</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select>
     <button class="bell" id="alertsBtn" type="button" hidden title="Order alerts" aria-label="Order alerts">🔕</button>
   </header>
 
@@ -159,6 +160,7 @@
       <section class="card">
         <h2>Incoming orders</h2>
         <p class="sub">Orders customers send through the website show up here live — including drivers who are on their way.</p>
+        <div class="row" id="brView" style="margin-bottom:12px"></div>
         <div id="ordActive"><p class="empty">Loading…</p></div>
       </section>
       <section class="card">
@@ -171,6 +173,9 @@
       <section class="card">
         <h2>Menu board</h2>
         <p class="sub">Make your changes, then tap <b>Review &amp; save</b> at the bottom. Nothing goes live until you save. Tap ★ to make an item today's special.</p>
+        <label class="l" for="mBranch">Editing the board for</label>
+        <select id="mBranch" style="width:100%;margin-bottom:10px"><option value="">Both branches (shared board)</option><option value="one">Bullhead One only</option><option value="two">Bullhead Two only</option></select>
+        <p class="sub" style="margin-top:-2px">A branch's own board overrides the shared one on that branch's site. Use it for "sold out" and prices that differ between counters.</p>
         <div style="display:flex;gap:8px"><input type="text" id="mSearch" placeholder="Search the menu…"><button class="btn" id="addItemBtn" type="button" style="width:auto;padding:0 18px;white-space:nowrap;font-size:.9rem">＋ Add item</button></div>
         <div id="mList" style="margin-top:6px"></div>
       </section>
@@ -182,6 +187,10 @@
         <div class="stat hot"><b id="iSales">0</b><span>KES from completed orders</span></div>
         <div class="stat"><b id="iWay">0</b><span>"on my way"</span></div>
       </div>
+      <section class="card">
+        <h2>By counter · 7 days</h2>
+        <div id="iBranch"><p class="empty">No orders yet.</p></div>
+      </section>
       <section class="card">
         <h2>Most ordered this week</h2>
         <div id="iTop"><p class="empty">No orders yet.</p></div>
@@ -220,6 +229,9 @@
 
       <label class="l">4 · Stay live for</label>
       <div class="row" id="durs"></div>
+
+      <label class="l">5 · Show on</label>
+      <div class="row" id="ubr"></div>
 
       <label class="switch"><input type="checkbox" id="cta" checked><span>"Order on WhatsApp" button<small>Turns readers into orders — recommended</small></span></label>
 
@@ -270,6 +282,11 @@
   var TYPES = { special: ['🔥 Special', "Today's special", 'Maalum ya leo', '#b45309', '#e08a1a'], stock: ['🐟 Fresh stock', 'Fresh in', 'Mpya sasa', '#15803d', '#2fae63'], notice: ['📢 Notice', 'Update', 'Taarifa', '#1d4ed8', '#4f86f7'], closing: ['⚠️ Heads up', 'Heads up', 'Tahadhari', '#991b1b', '#e0392f'] };
   var DURS = [['4 hours', 4], ['12 hours', 12], ['24 hours', 24], ['3 days', 72], ['Until I remove it', '']];
   var type = 'special', dur = 24, pvLang = 'en', token = '';
+  // ---- branches ----
+  var BRN = { one: 'Bullhead One', two: 'Bullhead Two' };
+  var isStaff = false, myBranch = '';                                   // myBranch: a branch-scoped staff login's branch
+  var viewBranch = localStorage.getItem('bhView') || '', alertBr = localStorage.getItem('bhAlertBr') || '', updBranch = '', menuBranch = '';
+  var BR_CHOICES = [{ k: '', label: 'Both' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }];
 
   function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, err ? 8000 : 3200); }
   function auth() { return 'Bearer ' + token; }
@@ -284,6 +301,8 @@
     });
   }
   function drawTypes() { chipGroup($('types'), Object.keys(TYPES).map(function (k) { return { k: k, label: TYPES[k][0] }; }), function (i) { return i.k === type; }, function (i) { type = i.k; refresh(); }); }
+  function drawBrView() { chipGroup($('brView'), BR_CHOICES, function (i) { return i.k === viewBranch; }, function (i) { viewBranch = i.k; localStorage.setItem('bhView', viewBranch); seen = null; loadOrders(); }); }
+  function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'Both sites' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }], function (i) { return i.k === updBranch; }, function (i) { updBranch = i.k; }); }
   function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
   chipGroup($('tpls'), TEMPLATES.map(function (t) { return { t: t, label: t[0] }; }), function () { return false; }, function (i) {
     $('text').value = i.t[1]; $('textSw').value = i.t[3]; type = i.t[2]; refresh(); $('text').focus();
@@ -309,7 +328,7 @@
     var d = mk('span', 'dot'); d.style.background = T[4]; r.appendChild(d);
     var b = mk('div', 'body'); b.appendChild(mk('p', '', u.text));
     if (u.textSw) b.appendChild(mk('p', '', u.textSw)).style.opacity = .65;
-    b.appendChild(mk('small', '', (live ? '● Live · ' : 'Ended · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
+    b.appendChild(mk('small', '', (live ? '● Live · ' : 'Ended · ') + (u.branch ? BRN[u.branch] + ' only · ' : 'Both sites · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
     r.appendChild(b);
     var a = mk('div', 'acts');
     function act(label, cls, fn) { var x = mk('button', 'mini ' + cls, label); x.type = 'button'; x.onclick = fn; a.appendChild(x); }
@@ -323,8 +342,8 @@
   function enterStaff() {
     return fetch('/api/orders', { headers: { Authorization: auth() } }).then(function (r) {
       if (!r.ok) throw new Error('auth');
-      $('tabs').style.display = 'none'; $('postBar').hidden = true; $('alertsBtn').hidden = true;
-      $('gate').hidden = true; $('app').hidden = false; showTab('orders'); startOrders();
+      $('tabs').style.display = 'none'; $('postBar').hidden = true; $('brView').hidden = true; isStaff = true;
+      $('gate').hidden = true; $('app').hidden = false; showTab('orders'); startOrders(); checkAlerts();
     });
   }
   function load(first) {
@@ -372,7 +391,7 @@
     var text = $('text').value.trim(); if (!text) { toast('Write a message first', true); $('text').focus(); return; }
     $('postBtn').disabled = true; $('postBtn').textContent = 'Posting…';
     fetch('/api/updates', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() },
-      body: JSON.stringify({ text: text, textSw: $('textSw').value.trim(), type: type, cta: $('cta').checked, expiresInHours: dur || undefined }) })
+      body: JSON.stringify({ text: text, textSw: $('textSw').value.trim(), type: type, cta: $('cta').checked, branch: updBranch || undefined, expiresInHours: dur || undefined }) })
       .then(function (r) { if (!r.ok) throw new Error(r.status === 401 ? 'Wrong access code' : 'Could not post'); return r.json(); })
       .then(function () { $('text').value = ''; $('textSw').value = ''; refresh(); toast('Live on your website ✓'); load(); })
       .catch(function (e) { toast(e.message, true); })
@@ -407,6 +426,7 @@
     var c = mk('div', 'order ' + o.status), top = mk('div', 'top'), l = mk('div');
     var tg = mk('span', 'tag' + (o.type === 'on-the-way' ? ' way' : ''), TYPE_LBL[o.type] || 'Order'); l.appendChild(tg);
     if (code) l.appendChild(mk('span', 'tag code', '#' + code));
+    if (o.branch && !myBranch) l.appendChild(mk('span', 'tag', o.branch === 'one' ? 'One' : 'Two'));
     if (STATUS_LBL[o.status] && o.status !== 'cancelled') l.appendChild(mk('span', 'tag unc', STATUS_LBL[o.status]));
     if (o.status === 'cancelled') l.appendChild(mk('span', 'tag', 'Cancelled'));
     l.appendChild(mk('span', 'who', o.name || 'Customer'));
@@ -440,8 +460,9 @@
   }
   function setStatus(id, s) { fetch('/api/orders?id=' + id + '&status=' + s, { method: 'PATCH', headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return loadOrders(); }).catch(function () { toast('Could not update — try again', true); }); }
   function loadOrders() {
-    return fetch('/api/orders', { headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
+    return fetch('/api/orders' + (viewBranch && !isStaff ? '?branch=' + viewBranch : ''), { headers: { Authorization: auth() } }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (d) {
       orders = d.orders || [];
+      if (d.scope && d.scope.branch && d.scope.branch !== myBranch) { myBranch = d.scope.branch; var hs = document.querySelector('header small'); if (hs) hs.textContent = BRN[myBranch] + ' — staff'; }
       var fresh = orders.filter(function (o) { return o.status === 'new' || o.status === 'unconfirmed'; });
       if (seen) { var add = fresh.filter(function (o) { return !seen[o.id]; }); if (add.length) { beep(); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); toast('🔔 New order' + (add[0].name ? ' from ' + add[0].name : '') + '!'); } }
       seen = {}; orders.forEach(function (o) { seen[o.id] = 1; });
@@ -458,13 +479,13 @@
   var pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window, alertsOn = false;
   function b64uToU8(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); var b = atob(s + '='.repeat((4 - s.length % 4) % 4)), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function swReady() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
-  function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(sub) }).then(function (r) { if (r.ok) return; return r.json().catch(function () { return {}; }).then(function (d) { throw new Error('save:' + (d.error || r.status)); }); }); }
+  function saveSub(sub) { return fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify(Object.assign({}, JSON.parse(JSON.stringify(sub)), { branch: isStaff ? '' : alertBr })) }).then(function (r) { if (r.ok) return; return r.json().catch(function () { return {}; }).then(function (d) { throw new Error('save:' + (d.error || r.status)); }); }); }
   function alertsUI(on) {
     alertsOn = on; var b = $('alertsBtn'), t = on ? 'Order alerts are on. Tap to turn off' : 'Turn on order alerts';
     b.textContent = on ? '🔔' : '🔕'; b.className = 'bell' + (on ? ' on' : ''); b.title = t; b.setAttribute('aria-label', t);
   }
   function checkAlerts() {
-    if (!pushOK) return; $('alertsBtn').hidden = false;
+    if (!pushOK) return; $('alertsBtn').hidden = false; $('alertBr').hidden = isStaff; $('alertBr').value = alertBr;
     if (Notification.permission === 'denied') return alertsUI(false);
     swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
       if (sub && Notification.permission === 'granted') { alertsUI(true); saveSub(sub).catch(function () {}); } else alertsUI(false);
@@ -515,6 +536,13 @@
     var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk && o.status !== 'cancelled'; });
     $('iOrders').textContent = o7.length; $('iSales').textContent = o7.filter(function (o) { return o.status === 'done'; }).reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
     $('iWay').textContent = o7.filter(function (o) { return o.type === 'on-the-way'; }).length;
+    var ib = $('iBranch'); ib.innerHTML = '';
+    [['one', 'Bullhead One'], ['two', 'Bullhead Two'], ['', 'Either / not chosen']].forEach(function (b) {
+      var r = o7.filter(function (o) { return (o.branch || '') === b[0]; }); if (!r.length && !b[0]) return;
+      var kes = r.filter(function (o) { return o.status === 'done'; }).reduce(function (t, o) { return t + (o.total || 0); }, 0);
+      var row = mk('div', 'bar-row'), t = mk('div', 't'); t.appendChild(mk('span', '', b[1])); t.appendChild(mk('b', '', r.length + (r.length === 1 ? ' order' : ' orders') + ' · KES ' + kes.toLocaleString('en-KE'))); row.appendChild(t); ib.appendChild(row);
+    });
+    if (!ib.firstChild) ib.appendChild(mk('p', 'empty', 'No orders yet.'));
     var cnt = {}; o7.forEach(function (o) { var seenN = {}; o.items.forEach(function (i) { if (!seenN[i.name]) { cnt[i.name] = (cnt[i.name] || 0) + 1; seenN[i.name] = 1; } }); });
     var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 6);
     $('iTop').innerHTML = ''; if (!top.length) $('iTop').appendChild(mk('p', 'empty', 'No orders yet — this fills up as customers order.'));
@@ -527,7 +555,7 @@
   // ---------- Menu board ----------
   var menuState = {}, menuLoaded = false, customState = [], customSaved = [];
   var allItems = function () { return MENU_ITEMS.concat(customState); };
-  function loadMenu() { if (menuLoaded) return; fetch('/api/menu').then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); customState = (d.custom || []).map(function (c) { c.custom = true; return c; }); customSaved = clone(customState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
+  function loadMenu() { if (menuLoaded) return; fetch('/api/menu' + (menuBranch ? '?branch=' + menuBranch : '')).then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); customState = (d.custom || []).map(function (c) { c.custom = true; return c; }); customSaved = clone(customState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
   var menuSaved = {};
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var norm = function (e) { e = e || {}; return { price: typeof e.price === 'number' ? e.price : null, special: !!e.special, soldOut: !!e.soldOut, until: e.soldOut && e.until ? e.until : null }; };
@@ -575,9 +603,9 @@
   $('mDiscard').onclick = function () { if (!confirm('Throw away your unsaved menu changes?')) return; menuState = clone(menuSaved); customState = clone(customSaved); drawMenu(); updateBars(); toast('Changes discarded'); };
   $('mSave').onclick = function () {
     $('mSave').disabled = true; $('mSave').textContent = 'Saving…';
-    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState }) })
+    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState, branch: menuBranch || undefined }) })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); customSaved = clone(customState); $('modal').hidden = true; drawMenu(); updateBars(); toast('Saved — live on the menu ✓'); })
+      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); customSaved = clone(customState); $('modal').hidden = true; drawMenu(); updateBars(); toast(menuBranch ? 'Saved — live on ' + BRN[menuBranch] + ' ✓' : 'Saved — live on the menu ✓'); })
       .catch(function () { toast('Could not save — check your connection', true); })
       .finally(function () { $('mSave').disabled = false; $('mSave').textContent = 'Save & publish'; });
   };
@@ -639,7 +667,17 @@
     $('addModal').hidden = true; $('mSearch').value = ''; drawMenu(); saveMenu(); toast('Added — tap Review & save to publish');
   };
 
-  drawDurs(); refresh();
+  drawDurs(); refresh(); drawBrView(); drawUBr();
+  $('alertBr').onchange = function () {
+    alertBr = this.value; localStorage.setItem('bhAlertBr', alertBr);
+    if (alertsOn) swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) { if (sub) return saveSub(sub); })
+      .then(function () { toast(alertBr ? 'Alerts: ' + BRN[alertBr] + ' orders only' : 'Alerts: both branches'); }).catch(function () { toast('Could not change alerts', true); });
+  };
+  $('mBranch').onchange = function () {
+    var nb = this.value;
+    if (menuLoaded && typeof diffs === 'function' && diffs().length && !confirm('Throw away your unsaved menu changes and switch boards?')) { this.value = menuBranch; return; }
+    menuBranch = nb; menuLoaded = false; loadMenu();
+  };
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
   if (token) { $('token').value = token; load().catch(function () { token = ''; $('token').value = ''; localStorage.removeItem(KEY); }); }
 })();

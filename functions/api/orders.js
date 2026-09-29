@@ -14,9 +14,14 @@
 //     the customer never pressed Send in WhatsApp.
 //   * A dine-in order from a table QR code (?table=N) is already in the room, so it starts as "new".
 //
+// Branches: every order carries a branch ('one' | 'two'), taken from the hostname (branch1./branch2.) or, on the
+// main site, from the counter the customer picked. A branch-scoped staff login only ever sees and moves its own
+// branch's orders; the owner sees everything (or one branch with ?branch=one|two).
+//
 // Orders live in a D1 database (binding: DB), one row per order. Tables are created automatically.
 import { ensureSchema, notifyOwner } from './push.js';
 import { json, ipHash, requireRole } from '../_lib/auth.js';
+import { BRANCH_NAMES, cleanBranch, hostBranch, counterBranch, branchOfOrder, ORDER_BRANCH_SQL } from '../_lib/branches.js';
 
 const MAX_KEEP = 3000;     // finished / cancelled / unconfirmed rows kept (live orders are never trimmed)
 const MAX_LIST = 150;      // rows the dashboard loads
@@ -50,17 +55,20 @@ export async function onRequestGet({ request, env }) {
       if (!r) return json({ error: 'Not found' }, { status: 404 });
       const o = JSON.parse(r.body);
       return json({ order: {
-        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', counter: o.counter || '', total: o.total || 0,
+        status: r.status, type: o.type, ts: o.ts, etaAt: o.etaAt || null, table: o.table || '', counter: o.counter || '', branch: branchOfOrder(o), total: o.total || 0,
         items: (o.items || []).map((i) => ({ name: i.name, qty: i.qty, unit: i.unit })),
       } });
     } catch (e) { return fail(e); }
   }
   const g = await requireRole(request, env, ['owner', 'staff']);
   if (g.res) return g.res;
+  // A branch-scoped staff login is pinned to its branch; the owner may narrow the view with ?branch=one|two.
+  // Orders with no branch (a customer on the main site who picked "Either counter") are shown to every branch so none get lost.
+  const scope = g.role === 'staff' ? g.branch : cleanBranch(new URL(request.url).searchParams.get('branch'));
   try {
     await ensureSchema(env);
-    const { results } = await env.DB.prepare('SELECT id, status, body FROM orders ORDER BY ts DESC LIMIT ?').bind(MAX_LIST).all();
-    return json({ orders: results.map((r) => ({ ...JSON.parse(r.body), id: r.id, status: r.status })) });
+    const { results } = await env.DB.prepare(`SELECT id, status, body FROM orders WHERE (? = '' OR ${ORDER_BRANCH_SQL} IN (?, '')) ORDER BY ts DESC LIMIT ?`).bind(scope, scope, MAX_LIST).all();
+    return json({ orders: results.map((r) => { const o = JSON.parse(r.body); return { ...o, id: r.id, status: r.status, branch: branchOfOrder(o) }; }), scope: { role: g.role, branch: g.role === 'staff' ? g.branch : '' } });
   } catch (e) { return fail(e); }
 }
 
@@ -81,11 +89,14 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const pin = type === 'delivery' && PIN_RE.test(str(b.pin, 100)) ? str(b.pin, 100) : '';
 
   const eta = Number(b.etaMinutes) > 0 ? Math.min(Number(b.etaMinutes), 240) : null;
+  // Branch: the site they are on decides (branch1./branch2.); on the main site it is the counter they picked.
+  // The counter text is then made to agree, so the dashboard and the WhatsApp message can never disagree about it.
+  const branch = hostBranch(new URL(request.url).hostname) || cleanBranch(b.branch) || counterBranch(b.counter);
   const order = {
     // The browser makes the id so the tracking link and order code can go into the WhatsApp message instantly.
     id: UUID_RE.test(String(b.id || '')) ? String(b.id).toLowerCase() : crypto.randomUUID(), ts: new Date().toISOString(),
     status: atTable ? 'new' : 'unconfirmed',
-    type, name: str(b.name, 40), phone, notes: str(b.notes, 200), table, counter: str(b.counter, 30),
+    type, name: str(b.name, 40), phone, notes: str(b.notes, 200), table, counter: branch ? BRANCH_NAMES[branch] : str(b.counter, 30), branch,
     partySize: str(b.partySize, 4), arriving: str(b.arriving, 20), address: str(b.address, 120), pin,
     etaMinutes: eta, etaAt: eta ? new Date(Date.now() + eta * 60000).toISOString() : null,
     items, total: items.reduce((s, i) => s + i.lineTotal, 0),
@@ -118,7 +129,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
 
   // Buzz the owner's phone(s) after the response has gone back to the customer.
-  const push = notifyOwner(env).catch(() => {});
+  const push = notifyOwner(env, order.branch).catch(() => {});
   if (waitUntil) waitUntil(push);
   return json({ ok: true, id: order.id, status: order.status });
 }
@@ -130,7 +141,12 @@ export async function onRequestPatch({ request, env }) {
   if (!STATUSES.includes(status)) return json({ error: 'Bad status' }, { status: 400 });
   try {
     await ensureSchema(env);
-    const r = await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, u.searchParams.get('id') || '').run();
+    const id = u.searchParams.get('id') || '';
+    if (g.role === 'staff' && g.branch) {                    // a branch login may only move its own branch's orders
+      const row = await env.DB.prepare(`SELECT ${ORDER_BRANCH_SQL} AS br FROM orders WHERE id = ?`).bind(id).first();
+      if (row && row.br && row.br !== g.branch) return json({ error: 'That order belongs to the other branch' }, { status: 403 });
+    }
+    const r = await env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, id).run();
     if (r && r.meta && r.meta.changes === 0) return json({ error: 'Order not found' }, { status: 404 });
     return json({ ok: true });
   } catch (e) { return fail(e); }
