@@ -273,7 +273,7 @@ textarea{min-height:84px;resize:vertical}
         <label class="l" for="text">Message</label>
         <textarea id="text" maxlength="140" placeholder="e.g. Fresh tilapia in today"></textarea>
         <div class="meta"><span>Short and clear works best</span><span id="charCount">0 / 140</span></div>
-        <label class="l" for="textSw">Swahili version, shown when a visitor taps SW</label>
+        <label class="l" for="textSw">Swahili version, shown when a visitor taps SW. Empty shows English</label>
         <textarea id="textSw" maxlength="140" placeholder="Toleo la Kiswahili…"></textarea>
         <div class="meta"><button class="link" id="trBtn" type="button">🌍 Draft it for me</button><span id="charSw">0 / 140</span></div>
         <label class="l">Type</label><div class="row" id="types"></div>
@@ -381,23 +381,30 @@ textarea{min-height:84px;resize:vertical}
     $('pv').style.setProperty('--a', T[3]); $('pv').style.setProperty('--b', T[4]);
     $('pvCta').style.display = $('cta').checked ? '' : 'none';
     $('pvCta').textContent = pvLang === 'sw' ? 'Agiza kwa WhatsApp' : 'Order on WhatsApp';
-    drawTypes();
+    $('charCount').style.color = en.length >= 125 ? 'var(--amb)' : ''; $('charSw').style.color = sw.length >= 125 ? 'var(--amb)' : '';
+    try { if (en || sw) localStorage.setItem('bhDraft', JSON.stringify({ t: en, s: sw, y: type })); else localStorage.removeItem('bhDraft'); } catch (e) {}
+    drawTypes(); if (typeof updateBars === 'function') updateBars();
   }
   $('text').addEventListener('input', refresh); $('textSw').addEventListener('input', refresh); $('cta').addEventListener('change', refresh);
   $('pvLang').addEventListener('click', function (e) { var l = e.target.dataset.l; if (!l) return; pvLang = l; Array.prototype.forEach.call($('pvLang').children, function (b) { b.classList.toggle('on', b.dataset.l === l); }); refresh(); });
 
+  function ends(iso) {
+    var m = Math.round((new Date(iso).getTime() - Date.now()) / 60000);
+    if (m < 1) return 'any moment'; if (m < 60) return 'in ' + m + ' min'; if (m < 1440) return 'in ' + Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '');
+    var d = Math.round(m / 1440); return 'in ' + d + (d === 1 ? ' day' : ' days');
+  }
   function row(u, live) {
     var T = TYPES[u.type] || TYPES.notice, r = mk('div', 'item');
     var d = mk('span', 'dot'); d.style.background = T[4]; r.appendChild(d);
     var b = mk('div', 'body'); b.appendChild(mk('p', '', u.text));
     if (u.textSw) b.appendChild(mk('p', '', u.textSw)).style.opacity = .65;
-    b.appendChild(mk('small', '', (live ? '● Live · ' : 'Ended · ') + (u.branch ? BRN[u.branch] + ' only · ' : 'Both sites · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
+    b.appendChild(mk('small', '', (live ? '● Live · ' + (u.expiresAt ? 'ends ' + ends(u.expiresAt) : 'until removed') + ' · ' : 'Ended · ') + (u.branch ? BRN[u.branch] + ' only · ' : 'Both sites · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
     r.appendChild(b);
     var a = mk('div', 'acts');
     function act(label, cls, fn) { var x = mk('button', 'mini ' + cls, label); x.type = 'button'; x.onclick = fn; a.appendChild(x); }
     act('Repost', '', function () { $('text').value = u.text; $('textSw').value = u.textSw || ''; type = u.type || 'notice'; $('cta').checked = u.cta !== false; refresh(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Loaded — tweak it and post'); });
     act('Share', 'wa', function () { window.open('https://wa.me/?text=' + encodeURIComponent(u.text + '\n— Bullhead, Emali · bullheadhotels.co.ke'), '_blank'); });
-    if (live) act('Remove', '', function () { if (confirm('Take this update off the website?')) remove(u.id); });
+    act(live ? 'Remove' : 'Delete', '', function () { ask(live ? 'Take it off the website?' : 'Delete this past update?', live ? 'Visitors stop seeing it right away.' : 'It is deleted for good, with its tap count.', live ? 'Remove' : 'Delete').then(function (ok) { if (ok) remove(u.id, live); }); });
     r.appendChild(a); return r;
   }
   // Staff codes can't open Updates/Menu/Insights, so if the owner check fails we try the code
@@ -442,9 +449,9 @@ textarea{min-height:84px;resize:vertical}
   $('logout').onclick = function () { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); token = ''; $('token').value = ''; $('token').type = 'password'; $('eye').setAttribute('aria-pressed', 'false'); $('eye').setAttribute('aria-label', 'Show access code'); $('app').hidden = true; $('postBar').hidden = true; $('gate').hidden = false; $('alertsBtn').hidden = true; clearInterval(ordTimer); ordTimer = null; seen = null; $('menuBar').hidden = true; menuLoaded = false;
     isStaff = false; myBranch = ''; $('tabs').style.display = ''; $('brView').hidden = false; $('setModal').hidden = true; $('pwForm').hidden = true; var hs = document.querySelector('header small'); if (hs) hs.textContent = 'Owner dashboard'; };
 
-  function remove(id) {
+  function remove(id, live) {
     fetch('/api/updates?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { Authorization: auth() } })
-      .then(function (r) { if (!r.ok) throw new Error(); toast('Removed from the website'); load(); })
+      .then(function (r) { if (!r.ok) throw new Error(); toast(live ? 'Removed from the website' : 'Deleted'); load(); })
       .catch(function () { toast('Could not remove — try again', true); });
   }
 
@@ -669,7 +676,7 @@ textarea{min-height:84px;resize:vertical}
   function updateBars() {
     var n = diffs().length, on = curTab === 'menu' && n > 0 && !$('app').hidden;
     $('menuBar').hidden = !on; $('mReview').textContent = 'Review & save (' + n + ')';
-    $('postBar').hidden = curTab !== 'updates' || $('app').hidden;
+    $('postBar').hidden = curTab !== 'updates' || $('app').hidden || !$('text').value.trim();
     return n;
   }
   function saveMenu() { updateBars(); }   // staged only — nothing is sent until "Save & publish"
@@ -843,6 +850,7 @@ textarea{min-height:84px;resize:vertical}
       .catch(function () { toast('Could not send the test', true); });
   };
 
+  try { var dr = JSON.parse(localStorage.getItem('bhDraft') || 'null'); if (dr && (dr.t || dr.s)) { $('text').value = dr.t || ''; $('textSw').value = dr.s || ''; if (TYPES[dr.y]) type = dr.y; } } catch (e) {}
   drawDurs(); refresh(); drawBrView(); drawUBr();
   $('alertBr').onchange = function () {
     alertBr = this.value; localStorage.setItem('bhAlertBr', alertBr);
