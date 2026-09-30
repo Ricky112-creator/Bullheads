@@ -197,6 +197,16 @@ textarea{min-height:84px;resize:vertical}
   .tabs .n{position:static;margin-left:auto}
   .bar{bottom:24px;left:232px}
 }
+/* wide desktop: Updates becomes two columns (write on the left, stats and what is live on the right); other tabs keep their width */
+@media(min-width:1280px){
+  #app{max-width:1480px}
+  [data-tab]:not([data-tab="updates"]){max-width:920px}
+  [data-tab="updates"]:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:24px;grid-template-rows:auto auto 1fr;align-items:start}
+  [data-tab="updates"]>.stats{grid-column:2;grid-row:1}
+  [data-tab="updates"]>section:nth-of-type(1){grid-column:1;grid-row:1/span 3}
+  [data-tab="updates"]>section:nth-of-type(2){grid-column:2;grid-row:2}
+  [data-tab="updates"]>section:nth-of-type(3){grid-column:2;grid-row:3}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}}
 </style>
 </head>
