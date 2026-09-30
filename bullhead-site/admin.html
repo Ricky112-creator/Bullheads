@@ -876,7 +876,11 @@ textarea{min-height:84px;resize:vertical}
     else go();
   };
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
-  if (token) { $('token').value = token; load().catch(function () { token = ''; $('token').value = ''; localStorage.removeItem(KEY); }); }
+  if (token) { $('token').value = token; load().catch(function (e) {
+    // A server problem or a dropped connection says nothing about the saved code, so keep it and let the owner retry.
+    if (e && (e.message === 'server' || e instanceof TypeError)) { toast(e.message === 'server' ? (e.detail || 'The server had a problem — try again') : 'Could not connect — try again', true); return; }
+    token = ''; $('token').value = ''; localStorage.removeItem(KEY);
+  }); }
 })();
 </script>
 </body>
