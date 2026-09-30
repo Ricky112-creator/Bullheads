@@ -425,7 +425,13 @@ textarea{min-height:84px;resize:vertical}
   }
   function load(first) {
     return fetch('/api/updates?all=1', { headers: { Authorization: auth() } })
-      .then(function (r) { if (r.status === 401) return { staff: true }; if (!r.ok) throw new Error('net'); return r.json(); })
+      .then(function (r) {
+        if (r.status === 401) return { staff: true };
+        if (r.ok) return r.json();
+        if (r.status < 500) throw new Error('net');
+        // the server answered but failed; if it says what is missing (e.g. an unset binding), show that
+        return r.json().catch(function () { return {}; }).then(function (d) { var er = new Error('server'); er.detail = d && d.missing ? d.error : ''; throw er; });
+      })
       .then(function (d) {
         if (d.staff) return enterStaff();
         var all = d.updates || [], now = Date.now(), wk = now - 7 * 864e5, live = [], past = [], t7 = 0, tAll = 0;
@@ -443,7 +449,7 @@ textarea{min-height:84px;resize:vertical}
     $('loginBtn').disabled = true;
     load().then(function () {
       if ($('remember').checked) localStorage.setItem(KEY, token); else { localStorage.removeItem(KEY); sessionStorage.setItem(KEY, token); }
-    }).catch(function (e) { toast(e.message === 'auth' ? 'That access code is not right' : 'Could not connect — try again', true); })
+    }).catch(function (e) { toast(e.message === 'auth' ? 'That access code is not right' : e.message === 'server' ? (e.detail || 'The server had a problem — try again') : 'Could not connect — try again', true); })
       .finally(function () { $('loginBtn').disabled = false; });
   }
   $('eye').addEventListener('mousedown', function (e) { e.preventDefault(); });   // keep the phone keyboard open
@@ -870,7 +876,11 @@ textarea{min-height:84px;resize:vertical}
     else go();
   };
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
-  if (token) { $('token').value = token; load().catch(function () { token = ''; $('token').value = ''; localStorage.removeItem(KEY); }); }
+  if (token) { $('token').value = token; load().catch(function (e) {
+    // A server problem or a dropped connection says nothing about the saved code, so keep it and let the owner retry.
+    if (e && (e.message === 'server' || e instanceof TypeError)) { toast(e.message === 'server' ? (e.detail || 'The server had a problem — try again') : 'Could not connect — try again', true); return; }
+    token = ''; $('token').value = ''; localStorage.removeItem(KEY);
+  }); }
 })();
 </script>
 </body>
