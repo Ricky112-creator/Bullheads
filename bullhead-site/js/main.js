@@ -267,6 +267,7 @@ if (nav) {
 
 // --- Everything below is animation polish and needs GSAP.
 //     If it failed to load, skip it quietly — core site still works. ---
+function initMotion() {
 if (window.gsap && window.ScrollTrigger) {
   gsap.registerPlugin(ScrollTrigger);
 
@@ -325,6 +326,10 @@ if (window.gsap && window.ScrollTrigger) {
 } else {
   console.warn('Bullhead: GSAP failed to load — animations skipped, core site still works.');
 }
+}
+// GSAP/ScrollTrigger/Lenis are loaded with `defer` (they no longer block the page), and deferred
+// scripts always finish before DOMContentLoaded, so the animation setup runs then.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMotion); else initMotion();
 
 // Footer copyright year stays current on its own.
 document.querySelectorAll('.js-year').forEach((el) => { el.textContent = new Date().getFullYear(); });
