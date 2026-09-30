@@ -4,7 +4,7 @@
 // menu/pricing changes shouldn't risk being served stale.
 
 const CACHE = 'bullhead-shell-v4';
-const SHELL = ['/', '/menu', '/visit', '/contact'];
+const SHELL = self.location.hostname.indexOf('admin.') === 0 ? ['/'] : ['/', '/menu', '/visit', '/contact'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -44,17 +44,17 @@ self.addEventListener('push', (event) => {
       renotify: true,
       requireInteraction: true,
       vibrate: [300, 100, 300, 100, 300],
-      data: { url: '/admin' },
+      data: { url: '/' },
     })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/admin';
+  const url = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
-      const open = wins.find((w) => w.url.includes('/admin'));
+      const open = wins.find((w) => w.url.indexOf(self.location.origin) === 0);
       return open ? open.focus() : self.clients.openWindow(url);
     })
   );

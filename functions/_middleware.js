@@ -16,6 +16,23 @@ import { BRANCH_NAMES, BRANCH_HOSTS, hostBranch } from './_lib/branches.js';
 
 const MAIN = 'https://bullheadhotels.co.ke';
 
+// Owner-only pages live on their own address, admin.bullheadhotels.co.ke, so the owner's sign-in (kept in the
+// browser, scoped to the address) is never shared with the public site. On every other address these pages do not exist.
+const ADMIN_HOST = 'admin.bullheadhotels.co.ke';
+const OWNER_PAGE = /^\/(admin|tools|qr)(\.html)?\/?$/i;
+const ADMIN_OK = /^\/(admin|tools|qr)(\.html)?\/?$|^\/api(\/|$)|^\/(sw\.js|favicon\.ico|site\.webmanifest)$/i;
+const notFound = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not found</title><body style="font-family:system-ui,sans-serif;padding:12vh 24px;text-align:center"><h1>Page not found</h1><p><a href="https://bullheadhotels.co.ke/">Go to Bullhead</a></p>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' } });
+
+async function adminHost(context, url) {
+  const p = url.pathname;
+  if (p === '/robots.txt') return new Response('User-agent: *\nDisallow: /\n', { headers: { 'Content-Type': 'text/plain', 'X-Robots-Tag': 'noindex, nofollow' } });
+  if (p !== '/' && !ADMIN_OK.test(p)) return notFound();
+  const res = p === '/' ? await context.env.ASSETS.fetch(new Request(new URL('/admin', url), context.request)) : await context.next();
+  const out = new Response(res.body, res);
+  out.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  return out;
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.hostname === 'bullheads.pages.dev') {
@@ -23,6 +40,9 @@ export async function onRequest(context) {
     url.host = 'bullheadhotels.co.ke';
     return Response.redirect(url.toString(), 301);
   }
+
+  if (url.hostname === ADMIN_HOST) return adminHost(context, url);
+  if (OWNER_PAGE.test(url.pathname)) return notFound();
 
   const bk = hostBranch(url.hostname);
   if (!bk) return context.next();

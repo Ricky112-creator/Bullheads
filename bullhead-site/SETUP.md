@@ -25,7 +25,7 @@ Dashboard → gear icon (top right) → **Change access code**. The new code (8+
 
 If the owner ever forgets the new code: Cloudflare → Storage & Databases → D1 → the database → Console, run `DELETE FROM settings WHERE k = 'owner_code';`. The `ADMIN_TOKEN` secret works again.
 
-Staff codes are made in `/tools` (owner only). Staff can see orders, confirm them and move them along. Nothing else.
+Staff codes are made in `admin.bullheadhotels.co.ke/tools` (owner only). Staff can see orders, confirm them and move them along. Nothing else.
 
 ## How an order moves
 `unconfirmed → new → preparing → ready → done` (or `cancelled`)
@@ -58,9 +58,9 @@ One repo, one Pages project, one database. Three addresses serve the same files:
 
 **To switch them on (nothing else to create or pay for):**
 1. Cloudflare → Workers & Pages → the project → **Custom domains** → add `branch1.bullheadhotels.co.ke`, then `branch2.bullheadhotels.co.ke`. DNS records are added for you because the domain is on Cloudflare.
-2. Dashboard → `/tools` → **Staff logins**: make one login per branch (pick the branch when you create it). Logins made before branches existed still see both branches until you move them with the dropdown next to their name.
-3. On each branch's staff phone: open `/admin`, sign in with that branch's code, tap the bell. On your own phone pick "All branches" in the box next to the bell.
-4. Print each counter's table QR posters from **that branch's own address** (`branch1.../qr`, `branch2.../qr`), so scans land on the right site.
+2. Dashboard → Tools → **Staff logins**: make one login per branch (pick the branch when you create it). Logins made before branches existed still see both branches until you move them with the dropdown next to their name.
+3. On each branch's staff phone: open `admin.bullheadhotels.co.ke`, sign in with that branch's code, tap the bell. On your own phone pick "All branches" in the box next to the bell.
+4. Print each counter's table QR posters from `admin.bullheadhotels.co.ke/qr`, choosing that branch in the **For** picker, so scans land on the right site.
 5. Google Business Profile: set each branch's website to its own address, e.g. `https://branch1.bullheadhotels.co.ke/?utm_source=google&utm_medium=organic&utm_campaign=gbp`.
 6. Search Console: a Domain property for `bullheadhotels.co.ke` already covers subdomains. Submit `https://branch1.bullheadhotels.co.ke/sitemap.xml` and the `branch2` one (each is generated for its own address).
 
