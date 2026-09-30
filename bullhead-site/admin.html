@@ -197,15 +197,29 @@ textarea{min-height:84px;resize:vertical}
   .tabs .n{position:static;margin-left:auto}
   .bar{bottom:24px;left:232px}
 }
-/* wide desktop: Updates becomes two columns (write on the left, stats and what is live on the right); other tabs keep their width */
+/* wide desktop (1280px and up): use the full width instead of a single 920px column */
 @media(min-width:1280px){
   #app{max-width:1480px}
-  [data-tab]:not([data-tab="updates"]){max-width:920px}
+  /* Updates: write on the left, stats and what is live on the right */
   [data-tab="updates"]:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:24px;grid-template-rows:auto auto 1fr;align-items:start}
   [data-tab="updates"]>.stats{grid-column:2;grid-row:1}
   [data-tab="updates"]>section:nth-of-type(1){grid-column:1;grid-row:1/span 3}
   [data-tab="updates"]>section:nth-of-type(2){grid-column:2;grid-row:2}
   [data-tab="updates"]>section:nth-of-type(3){grid-column:2;grid-row:3}
+  /* Orders: the controls stay compact, the order cards fill the width */
+  [data-tab="orders"]>#brView,[data-tab="orders"]>.stats,[data-tab="orders"]>.osr{max-width:920px}
+  #ordActive,#ordDone{grid-template-columns:repeat(auto-fill,minmax(410px,1fr))}
+  /* Menu: categories flow down two columns */
+  #mList{column-count:2;column-gap:40px}
+  #mList .mgroup{break-inside:avoid}
+  #mList .mcat{margin-top:0;padding-top:24px}
+  /* Insights: stat row across the top, then two columns of cards */
+  [data-tab="insights"]:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:24px;grid-template-rows:auto auto 1fr;align-items:start}
+  [data-tab="insights"]>.stats{grid-column:1/-1;grid-template-columns:2fr 1fr 1fr}
+  [data-tab="insights"]>.stats .stat.hot{grid-column:auto}
+  [data-tab="insights"]>section:nth-of-type(1){grid-column:1;grid-row:2}
+  [data-tab="insights"]>section:nth-of-type(2){grid-column:2;grid-row:2/span 2}
+  [data-tab="insights"]>section:nth-of-type(3){grid-column:1;grid-row:3}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}}
 </style>
@@ -270,7 +284,7 @@ textarea{min-height:84px;resize:vertical}
       <div class="stats">
         <div class="stat"><b id="iOrders">0</b><span>confirmed orders · 7 days</span></div>
         <div class="stat hot"><b id="iSales">0</b><span>KES from completed orders · 7 days</span></div>
-        <div class="stat"><b id="iWay">0</b><span>\u201cOn my way\u201d orders</span></div>
+        <div class="stat"><b id="iWay">0</b><span>“On my way” orders</span></div>
       </div>
       <section class="card"><h2>By counter</h2><div id="iBranch"><p class="empty">No orders yet.</p></div></section>
       <section class="card"><h2>Most ordered this week</h2><div id="iTop"><p class="empty">No orders yet.</p></div></section>
@@ -728,12 +742,12 @@ textarea{min-height:84px;resize:vertical}
   window.addEventListener('beforeunload', function (e) { if (diffs().length) { e.preventDefault(); e.returnValue = ''; } });
   function tomorrow6() { var d = new Date(), t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 3); if (t <= Date.now() + 36e5) t += 864e5; return new Date(t).toISOString(); }
   function drawMenu() {
-    var q = ($('mSearch').value || '').toLowerCase(), box = $('mList'); box.innerHTML = ''; var cat = '';
+    var q = ($('mSearch').value || '').toLowerCase(), box = $('mList'); box.innerHTML = ''; var cat = '', grp = box;
     var cats = []; allItems().forEach(function (i) { if (cats.indexOf(i.category) < 0) cats.push(i.category); });
     var ordered = []; cats.forEach(function (c) { allItems().forEach(function (i) { if (i.category === c) ordered.push(i); }); });
     ordered.forEach(function (it) {
       if (q && it.name.toLowerCase().indexOf(q) < 0) return;
-      if (it.category !== cat) { cat = it.category; box.appendChild(mk('div', 'mcat', cat)); }
+      if (it.category !== cat) { cat = it.category; grp = mk('div', 'mgroup'); box.appendChild(grp); grp.appendChild(mk('div', 'mcat', cat)); }
       var m = menuState[it.id] || {}, until = m.until ? new Date(m.until) : null, sold = m.soldOut && (!until || until > Date.now());
       var r = mk('div', 'mrow'), nm = mk('div', 'nm' + (sold ? ' sold' : ''));
       var st = mk('button', 'star' + (m.special ? ' on' : ''), '★'); st.type = 'button'; st.title = "Today's special";
@@ -756,7 +770,7 @@ textarea{min-height:84px;resize:vertical}
         if (v === 'ok') { delete x.soldOut; delete x.until; } else { x.soldOut = true; if (v === 'sold') delete x.until; else x.until = v === 'tom' ? tomorrow6() : new Date(Date.now() + Number(v) * 6e4).toISOString(); }
         saveMenu(); drawMenu();
       };
-      r.appendChild(sel); box.appendChild(r);
+      r.appendChild(sel); grp.appendChild(r);
     });
     if (!box.children.length) box.appendChild(mk('p', 'empty', 'No items match.'));
   }
