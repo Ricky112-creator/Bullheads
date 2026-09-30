@@ -104,6 +104,7 @@ textarea{min-height:84px;resize:vertical}
 .order.preparing::before{background:#C77E3F}.order.ready::before{background:var(--grn)}
 .order.cancelled{opacity:.55}
 .order .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.order .tag.br{font-weight:800;color:#1a1008}.order .tag.br-one{background:#e0a458}.order .tag.br-two{background:#8fc5a0}
 .order .tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--fill);margin:0 6px 0 0}
 .order .tag.way{background:var(--grn);color:var(--grn-on)}
 .order .tag.unc{background:var(--amb);color:#fff}
@@ -522,9 +523,9 @@ textarea{min-height:84px;resize:vertical}
   function ordCard(o) {
     var code = orderCode(o.id), unc = o.status === 'unconfirmed';
     var c = mk('div', 'order ' + o.status), top = mk('div', 'top'), l = mk('div');
+    if (o.branch && !myBranch) l.appendChild(mk('span', 'tag br br-' + o.branch, o.branch === 'one' ? 'Bullhead One' : 'Bullhead Two'));
     var tg = mk('span', 'tag' + (o.type === 'on-the-way' ? ' way' : ''), TYPE_LBL[o.type] || 'Order'); l.appendChild(tg);
     if (code) l.appendChild(mk('span', 'tag code', '#' + code));
-    if (o.branch && !myBranch) l.appendChild(mk('span', 'tag', o.branch === 'one' ? 'One' : 'Two'));
     if (STATUS_LBL[o.status] && o.status !== 'cancelled') l.appendChild(mk('span', 'tag unc', STATUS_LBL[o.status]));
     if (o.status === 'cancelled') l.appendChild(mk('span', 'tag', 'Cancelled'));
     l.appendChild(mk('span', 'who', o.name || 'Customer'));
