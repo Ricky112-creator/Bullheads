@@ -971,6 +971,7 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
   color: var(--ink);
 }
 .form-field textarea { resize: vertical; min-height: 80px; }
+.form-field select option { background: #fff; color: var(--ink); }
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
