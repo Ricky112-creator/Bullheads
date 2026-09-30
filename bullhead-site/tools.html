@@ -16,13 +16,35 @@ select{-webkit-appearance:none;appearance:none;padding-right:38px;background:#24
 .row>input,.row>select{flex:1 1 170px;min-width:0}.row>input[type=date]{flex:1 1 160px}
 input::placeholder{color:#b9a99a;opacity:.8}
 input[type=file]{padding:6px;color:#b9a99a}
-input[type=file]::file-selector-button{font:inherit;font-weight:600;margin-right:12px;padding:8px 14px;border:0;border-radius:9px;background:#3a2c24;color:#f6efe6;cursor:pointer}
+input[type=file]::file-selector-button{font:inherit;font-weight:600;margin-right:12px;padding:8px 14px;border:0;border-radius:99px;background:#3a2c24;color:#f6efe6;cursor:pointer}
 input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #ff8577;outline-offset:2px}
 small{opacity:.85;line-height:1.45}
 @media(max-width:480px){.row>button{flex:1 1 100%}}
+
+/* Password Toggle Wrapper Styles */
+.pw-wrap{position:relative;flex:1 1 170px;display:flex;align-items:center}
+.pw-wrap input{width:100%;padding-right:42px;box-sizing:border-box}
+.pw-toggle{position:absolute;right:10px;background:none;border:none;min-height:auto;padding:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#b9a99a}
+.pw-toggle:hover{color:#f6efe6}
+.pw-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style></head><body><main>
 <h1>Bullhead owner tools</h1>
-<section id="login"><h2>Owner code</h2><div class="row"><input id="tok" type="password" placeholder="Owner access code" aria-label="Owner access code" autocomplete="current-password"><button id="go">Unlock</button></div><small>Same code as the dashboard. Staff codes do not work here.</small></section>
+<section id="login">
+  <h2>Owner code</h2>
+  <div class="row">
+    <div class="pw-wrap">
+      <input id="tok" type="password" placeholder="Owner access code" aria-label="Owner access code" autocomplete="current-password">
+      <button type="button" id="toggleTok" class="pw-toggle" aria-label="Toggle password visibility">
+        <svg id="eyeIcon" viewBox="0 0 24 24">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <button id="go">Unlock</button>
+  </div>
+  <small>Same code as the dashboard. Staff codes do not work here.</small>
+</section>
 <div id="app" hidden>
 <section><h2>📊 Daily summary</h2><div class="row"><input type="date" id="day" aria-label="Date"><select id="sumBr" aria-label="Branch"><option value="">Both branches</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select><button id="sum">Load</button></div><pre id="sumText" hidden></pre>
 <div class="row" id="sumBtns" hidden><button id="copy" class="g">Copy</button><a id="wa" target="_blank" rel="noopener"><button type="button">Send on WhatsApp</button></a></div></section>
@@ -33,6 +55,23 @@ small{opacity:.85;line-height:1.45}
 </div></main>
 <script>
 var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||'';
+
+// Toggle owner code visibility
+var eyeOpen = '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+var eyeClosed = '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/>';
+
+$('toggleTok').onclick = function() {
+  var input = $('tok');
+  var icon = $('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = eyeClosed;
+  } else {
+    input.type = 'password';
+    icon.innerHTML = eyeOpen;
+  }
+};
+
 function api(p,o){o=o||{};o.headers=Object.assign({'Content-Type':'application/json',Authorization:'Bearer '+tok},o.headers);return fetch(p,o).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status);return d})})}
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function unlock(){api('/api/staff').then(function(d){sessionStorage.bhTok=tok;$('login').hidden=true;$('app').hidden=false;$('day').value=new Date(Date.now()+108e5).toISOString().slice(0,10);drawStaff(d.staff);loadPhotos()}).catch(function(){alert('Wrong code, or the database is not connected.')})}
