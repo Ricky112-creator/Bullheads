@@ -33,6 +33,14 @@ async function adminHost(context, url) {
   return out;
 }
 
+// Every /api route needs bindings set in the Cloudflare project. If one is missing, say so in plain words
+// (as JSON, so the dashboard can show it) instead of crashing into Cloudflare's Error 1101 page.
+const apiErr = (msg) => new Response(JSON.stringify({ error: msg }), { status: 500, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+async function apiGuard(context, url) {
+  if (/^\/api\/(updates|menu)\b/.test(url.pathname) && !context.env.UPDATES_KV) return apiErr('KV binding "UPDATES_KV" is missing in this Cloudflare project');
+  try { return await context.next(); } catch (e) { return apiErr(String((e && e.message) || e)); }
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   if (url.hostname === 'bullheads.pages.dev') {
@@ -40,6 +48,7 @@ export async function onRequest(context) {
     url.host = 'bullheadhotels.co.ke';
     return Response.redirect(url.toString(), 301);
   }
+  if (url.pathname.indexOf('/api/') === 0) return apiGuard(context, url);
 
   if (url.hostname === ADMIN_HOST) return adminHost(context, url);
   if (OWNER_PAGE.test(url.pathname)) return notFound();
