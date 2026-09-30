@@ -3,18 +3,24 @@
 <script src="js/branches.js"></script>
 <style>
 body{margin:0;font-family:Inter,system-ui,sans-serif;background:#eee;color:#241712}.bar{padding:14px;background:#241712;color:#fff;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.bar input,.bar button{font:inherit;padding:8px 10px;border-radius:8px;border:0}.bar input{width:70px}.bar button{background:#e8332b;color:#fff;font-weight:600;cursor:pointer}
+.bar{position:sticky;top:0;z-index:5}.bar input,.bar select,.bar button{font:inherit;font-size:16px;min-height:44px;padding:8px 12px;border-radius:10px;border:0}.bar input{width:78px}.bar label{display:flex;align-items:center;gap:8px}.bar small{flex:1 1 100%;line-height:1.4;opacity:.9}.bar button{background:#e8332b;color:#fff;font-weight:600;cursor:pointer}
 .p{width:148mm;height:210mm;margin:14px auto;background:#fff;text-align:center;box-sizing:border-box;padding:16mm 12mm;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always;border:3px solid #241712}
 .p h1{margin:0;font-size:34pt}.p h2{margin:0;font-size:22pt;color:#e8332b}.tn{font-size:90pt;font-weight:800;line-height:1}.q{display:flex;justify-content:center}.p small{font-size:12pt}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.ft{font-size:9pt;opacity:.7}
 @media print{body{background:#fff}.bar{display:none}.p{margin:0;border:0;width:auto;height:100vh}@page{size:A5;margin:0}}
 </style></head><body>
-<div class="bar"><b>Table QR posters</b><label>Tables 1 to <input id="n" type="number" min="1" max="60" value="10"></label><button id="mk">Make posters</button><button id="pr">Print</button><small>A5, one per page. Save as PDF to send to a printer. <b id="qrFor"></b></small></div>
+<div class="bar"><b>Table QR posters</b><label>For <select id="who"><option value="main">Main site</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select></label><label>Tables 1 to <input id="n" type="number" min="1" max="60" value="10"></label><button id="mk">Make posters</button><button id="pr">Print</button><small>A5, one per page. Save as PDF to send to a printer. <b id="qrFor"></b></small></div>
 <div id="out"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-function make(){var o=document.getElementById('out');o.innerHTML='';var n=+document.getElementById('n').value||1;
-for(var i=1;i<=n;i++){var d=document.createElement('div');d.className='p';d.innerHTML='<div><h1>'+(window.BH&&BH.current?BH.current.name:'Bullhead')+'</h1><h2>Order from your seat</h2><small>Agiza ukiwa umekaa</small></div><div><small>TABLE · MEZA</small><div class="tn">'+i+'</div></div><div class="q"></div><small>Scan · open the menu · tap send.<br>Skani · fungua menyu · tuma.</small>';
-o.appendChild(d);new QRCode(d.querySelector('.q'),{text:location.origin+'/menu?table='+i,width:300,height:300,correctLevel:QRCode.CorrectLevel.M})}}
-(function(){var e=document.getElementById('qrFor');e.textContent=(window.BH&&BH.current)?'These QR codes open '+BH.current.name+'\'s site, so orders land on the right counter.':'Open this page on branch1. or branch2. to make posters for that counter; on the main site the QR opens the main site.'})();
+var SITES={main:{host:'bullheadhotels.co.ke',name:'Bullhead'},one:{host:'branch1.bullheadhotels.co.ke',name:'Bullhead One'},two:{host:'branch2.bullheadhotels.co.ke',name:'Bullhead Two'}};
+var who=document.getElementById('who'),h=location.hostname;
+who.value=h.indexOf('branch1.')===0?'one':h.indexOf('branch2.')===0?'two':'main';
+function make(){var o=document.getElementById('out');o.innerHTML='';var n=Math.max(1,Math.min(60,+document.getElementById('n').value||1)),S=SITES[who.value];
+if(typeof QRCode==='undefined'){o.innerHTML='<p style="text-align:center;padding:24px">The QR code library could not load. Check your internet connection and press Make posters again.</p>';return}
+for(var i=1;i<=n;i++){var d=document.createElement('div');d.className='p';d.innerHTML='<div><h1>'+S.name+'</h1><h2>Order from your seat</h2><small>Agiza ukiwa umekaa</small></div><div><small>TABLE \u00b7 MEZA</small><div class="tn">'+i+'</div></div><div class="q"></div><div><small>Scan \u00b7 open the menu \u00b7 tap send.<br>Skani \u00b7 fungua menyu \u00b7 tuma.</small><div class="ft">'+S.host+'</div></div>';
+o.appendChild(d);new QRCode(d.querySelector('.q'),{text:'https://'+S.host+'/menu?table='+i,width:300,height:300,correctLevel:QRCode.CorrectLevel.M})}
+document.getElementById('qrFor').textContent='These QR codes open '+S.host+(who.value==='main'?' (orders on the main site are not tied to one counter).':', so orders land on '+S.name+'.')}
+who.onchange=make;document.getElementById('n').onchange=make;
 document.getElementById('mk').onclick=make;document.getElementById('pr').onclick=function(){window.print()};make();
 </script></body></html>
