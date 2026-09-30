@@ -838,12 +838,12 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
 .qty-stepper {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 6px;
   flex-shrink: 0;
 }
 .qty-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1.5px solid rgba(36,23,18,0.2);
   background: #fff;
@@ -855,7 +855,7 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
 }
 .qty-btn:hover { border-color: var(--red); }
 .qty-count {
-  min-width: 18px;
+  min-width: 28px;
   text-align: center;
   font-weight: 600;
 }
@@ -976,6 +976,11 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
 .form-field textarea:focus {
   outline: none;
   border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(217,43,35,0.18);
+}
+a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
 }
 .order-type-group {
   display: flex;
@@ -983,6 +988,7 @@ body.has-live-update .hero-open-badge { top: calc(84px + var(--strip-h)); }
   gap: 8px;
 }
 .order-type-btn {
+  min-height: 44px;
   padding: 10px 18px;
   border-radius: 100px;
   border: 1.5px solid rgba(36,23,18,0.15);
