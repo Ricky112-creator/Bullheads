@@ -36,6 +36,8 @@ header small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 .bell:disabled{opacity:.5}
 
 .wrap{padding:0 20px calc(120px + env(safe-area-inset-bottom))}
+body:has(.bar:not([hidden])) .wrap{padding-bottom:calc(200px + env(safe-area-inset-bottom))}
+html{scroll-padding-bottom:210px}
 #app,#gate{max-width:920px;margin:0 auto}
 #lt{font:700 2.1rem/1.1 'Fraunces',serif;letter-spacing:-.02em;margin:22px 0 16px}
 .sec{font-size:13px;font-weight:600;color:var(--mute);margin:22px 4px 8px}
@@ -465,7 +467,7 @@ textarea{min-height:84px;resize:vertical}
     fetch('/api/updates?translate=1', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ text: $('text').value.trim() }) })
       .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Failed'); return d; }); })
       .then(function (d) { $('textSw').value = d.text; refresh(); toast('Draft ready — please read it over'); })
-      .catch(function (e) { toast(e.message + ' — type the Swahili yourself', true); })
+      .catch(function (e) { if (/not enabled/i.test(e.message)) { $('trBtn').hidden = true; toast('Auto-draft isn\u2019t switched on yet. Type the Swahili yourself.', true); } else toast(e.message + ' — type the Swahili yourself', true); })
       .finally(function () { $('trBtn').textContent = '🌍 Draft it for me'; });
   };
 
