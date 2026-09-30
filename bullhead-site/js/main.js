@@ -44,6 +44,30 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
 
   const dismissed = () => { try { return JSON.parse(sessionStorage.getItem('bhDismissed') || '[]'); } catch (e) { return []; } };
 
+  // The loop scrolls by exactly half the track (translateX(-50%)), so each half must be at least as wide as the
+  // visible strip, or wide screens show an empty gap. Repeat the text until one half covers the strip.
+  let fitN = 0, fitTimer;
+  function fit() {
+    const ticker = bar.querySelector('.lu-ticker'), track = ticker && ticker.firstChild;
+    if (!track || !track.firstChild || !current.length) return;
+    const w = ticker.clientWidth, one = track.firstChild.offsetWidth;
+    if (!w || !one) return;
+    const n = Math.max(1, Math.ceil(w / one));
+    if (n === fitN) return;
+    fitN = n;
+    const text = current.map(say).join('   •   ');
+    track.innerHTML = '';
+    for (let k = 0; k < n * 2; k++) {
+      const s = document.createElement('span');
+      s.textContent = text;
+      if (k) s.setAttribute('aria-hidden', 'true');
+      track.appendChild(s);
+    }
+    track.style.animationDuration = Math.max(14, (n * one) / 40) + 's';   // ~40px per second on any screen
+  }
+  window.addEventListener('resize', () => { clearTimeout(fitTimer); fitTimer = setTimeout(fit, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(fit));
+
   function build(items) {
     const first = items[0];
     bar.className = 'live-update-bar type-' + first.type;
@@ -68,6 +92,7 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
     track.style.animationDuration = Math.max(14, text.length * 0.22) + 's';
     ticker.appendChild(track);
     bar.append(pill, ticker);
+    fitN = 0;
 
     const cta = items.find((u) => u.cta !== false);
     if (cta) {
@@ -101,13 +126,14 @@ window.addEventListener('load', () => window.scrollTo(0, 0));
       build(items);
       bar.hidden = false;
       document.body.classList.add('has-live-update'); // pushes the hero badge down, see CSS
+      requestAnimationFrame(fit);
     })
     .catch(() => {});
 
   // Re-render when the visitor flips the EN/SW toggle (each page's own toggle
   // script updates localStorage first; the timeout lets it finish).
   const tg = document.getElementById('langToggle');
-  if (tg) tg.addEventListener('click', () => setTimeout(() => { if (current.length && !bar.hidden) build(current); }, 0));
+  if (tg) tg.addEventListener('click', () => setTimeout(() => { if (current.length && !bar.hidden) { build(current); requestAnimationFrame(fit); } }, 0));
 })();
 
 // --- Live Emali clock in the "Open now" badge (Nairobi time, whatever the visitor's timezone) ---
