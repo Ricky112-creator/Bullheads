@@ -7,16 +7,28 @@ input,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid 
 button.g{background:#3a2c24;border:1px solid #5a4236}pre{white-space:pre-wrap;background:#241712;padding:12px;border-radius:10px;font:inherit}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}[hidden]{display:none!important}input[type=file]{max-width:100%}small{opacity:.7}.pc{background:#241712;border-radius:12px;padding:8px;position:relative}.pc .pcap{width:100%;box-sizing:border-box;margin:6px 0}.pc .row{margin:4px 0}.pc button{padding:6px 10px;font-size:.85rem}.tag{position:absolute;top:14px;left:14px;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:99px}.tag.live{background:#2e9e5b}.tag.draft{background:#c98a1b}a{color:#f6efe6}
+
+:root{color-scheme:dark}
+input,select,button{min-height:44px;font-size:16px}
+input,select{padding:10px 14px;border-radius:12px}
+select{-webkit-appearance:none;appearance:none;padding-right:38px;background:#241712 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23b9a99a' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px}
+.row>input,.row>select{flex:1 1 170px;min-width:0}.row>input[type=date]{flex:1 1 160px}
+input::placeholder{color:#b9a99a;opacity:.8}
+input[type=file]{padding:6px;color:#b9a99a}
+input[type=file]::file-selector-button{font:inherit;font-weight:600;margin-right:12px;padding:8px 14px;border:0;border-radius:9px;background:#3a2c24;color:#f6efe6;cursor:pointer}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #ff8577;outline-offset:2px}
+small{opacity:.85;line-height:1.45}
+@media(max-width:480px){.row>button{flex:1 1 100%}}
 </style></head><body><main>
 <h1>Bullhead owner tools</h1>
-<section id="login"><h2>Owner code</h2><div class="row"><input id="tok" type="password" placeholder="Owner access code"><button id="go">Unlock</button></div><small>Same code as the dashboard. Staff codes do not work here.</small></section>
+<section id="login"><h2>Owner code</h2><div class="row"><input id="tok" type="password" placeholder="Owner access code" aria-label="Owner access code" autocomplete="current-password"><button id="go">Unlock</button></div><small>Same code as the dashboard. Staff codes do not work here.</small></section>
 <div id="app" hidden>
-<section><h2>📊 Daily summary</h2><div class="row"><input type="date" id="day"><select id="sumBr"><option value="">Both branches</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select><button id="sum">Load</button></div><pre id="sumText" hidden></pre>
+<section><h2>📊 Daily summary</h2><div class="row"><input type="date" id="day" aria-label="Date"><select id="sumBr" aria-label="Branch"><option value="">Both branches</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option></select><button id="sum">Load</button></div><pre id="sumText" hidden></pre>
 <div class="row" id="sumBtns" hidden><button id="copy" class="g">Copy</button><a id="wa" target="_blank" rel="noopener"><button type="button">Send on WhatsApp</button></a></div></section>
-<section><h2>👥 Staff logins</h2><div class="row"><input id="sname" placeholder="Staff name"><select id="sbr"><option value="" selected disabled>Which branch?</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option><option value="all">Both (manager)</option></select><button id="sadd">Create login</button></div>
+<section><h2>👥 Staff logins</h2><div class="row"><input id="sname" placeholder="Staff name" aria-label="Staff name"><select id="sbr" aria-label="Branch for this login"><option value="" selected disabled>Which branch?</option><option value="one">Bullhead One</option><option value="two">Bullhead Two</option><option value="all">Both (manager)</option></select><button id="sadd">Create login</button></div>
 <p id="newCode" hidden></p><div id="slist"></div><small>Staff enter their code on the dashboard. A branch login sees only that branch's orders (and orders where the customer picked "either"), can confirm them and mark them preparing, ready, done or cancelled, and gets that branch's phone alerts. Nothing else.</small></section>
 <section><h2>📷 Photos</h2><p><small>New photos are saved as <b>drafts</b>. Fix the caption, rotate if needed, then press Publish. Only published photos show on <a href="/gallery" target="_blank">/gallery</a>.</small></p>
-<div class="row"><input id="cap" placeholder="Caption for new photos (optional)"><input type="file" id="file" accept="image/*" multiple></div><small id="pmsg"></small><div class="row"><button id="thbtn" class="g" hidden>Make small thumbnails for older photos (faster gallery)</button></div><div class="grid" id="plist"></div></section>
+<div class="row"><input id="cap" placeholder="Caption for new photos (optional)" aria-label="Caption for new photos"><input type="file" id="file" aria-label="Choose photos" accept="image/*" multiple></div><small id="pmsg"></small><div class="row"><button id="thbtn" class="g" hidden>Make small thumbnails for older photos (faster gallery)</button></div><div class="grid" id="plist"></div></section>
 </div></main>
 <script>
 var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||'';

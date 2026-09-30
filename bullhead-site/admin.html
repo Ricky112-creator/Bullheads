@@ -257,9 +257,9 @@ textarea{min-height:84px;resize:vertical}
 
     <div data-tab="insights" hidden>
       <div class="stats">
-        <div class="stat"><b id="iOrders">0</b><span>orders · 7 days</span></div>
+        <div class="stat"><b id="iOrders">0</b><span>confirmed orders · 7 days</span></div>
         <div class="stat hot"><b id="iSales">0</b><span>KES from completed orders · 7 days</span></div>
-        <div class="stat"><b id="iWay">0</b><span>"on my way"</span></div>
+        <div class="stat"><b id="iWay">0</b><span>\u201cOn my way\u201d orders</span></div>
       </div>
       <section class="card"><h2>By counter</h2><div id="iBranch"><p class="empty">No orders yet.</p></div></section>
       <section class="card"><h2>Most ordered this week</h2><div id="iTop"><p class="empty">No orders yet.</p></div></section>
@@ -632,7 +632,7 @@ textarea{min-height:84px;resize:vertical}
 
   // ---------- Insights ----------
   function drawInsights() {
-    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk && o.status !== 'cancelled'; });
+    var wk = Date.now() - 7 * 864e5, o7 = orders.filter(function (o) { return new Date(o.ts) > wk && o.status !== 'cancelled' && o.status !== 'unconfirmed'; });   // ghost (never-confirmed) orders don't count as real business
     $('iOrders').textContent = o7.length; $('iSales').textContent = o7.filter(function (o) { return o.status === 'done'; }).reduce(function (s, o) { return s + (o.total || 0); }, 0).toLocaleString('en-KE');
     $('iWay').textContent = o7.filter(function (o) { return o.type === 'on-the-way'; }).length;
     var ib = $('iBranch'); ib.innerHTML = '';
@@ -648,7 +648,7 @@ textarea{min-height:84px;resize:vertical}
     top.forEach(function (n) { var r = mk('div', 'bar-row'), t = mk('div', 't'); t.appendChild(mk('span', '', n)); t.appendChild(mk('b', '', cnt[n] + (cnt[n] === 1 ? ' order' : ' orders'))); var b = mk('div', 'b'), i = mk('i'); i.style.width = (cnt[n] / cnt[top[0]] * 100) + '%'; b.appendChild(i); r.appendChild(t); r.appendChild(b); $('iTop').appendChild(r); });
     var hrs = {}; o7.forEach(function (o) { var h = new Date(new Date(o.ts).toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })).getHours(); hrs[h] = (hrs[h] || 0) + 1; });
     var best = Object.keys(hrs).sort(function (a, b) { return hrs[b] - hrs[a]; })[0];
-    $('iHours').innerHTML = ''; if (best != null) { var h12 = (best % 12) || 12, ap = best < 12 ? 'AM' : 'PM'; var p = mk('p', '', 'Busiest around ' + h12 + ' ' + ap + ' — ' + hrs[best] + ' order' + (hrs[best] === 1 ? '' : 's') + ' this week.'); p.style.cssText = 'font-size:1.05rem;font-weight:600;margin:0'; $('iHours').appendChild(p); } else $('iHours').appendChild(mk('p', 'empty', 'No orders yet.'));
+    $('iHours').innerHTML = ''; if (best != null) { var h12 = (best % 12) || 12, ap = best < 12 ? 'AM' : 'PM'; var p = mk('p', '', 'Around ' + h12 + ' ' + ap + ' \u00b7 ' + hrs[best] + ' order' + (hrs[best] === 1 ? '' : 's') + ' this week'); p.style.cssText = 'font-size:1.05rem;font-weight:600;margin:0'; $('iHours').appendChild(p); } else $('iHours').appendChild(mk('p', 'empty', 'No orders yet.'));
   }
 
   // ---------- Menu board ----------
