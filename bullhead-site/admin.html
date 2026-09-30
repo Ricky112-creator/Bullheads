@@ -377,8 +377,7 @@ textarea{min-height:84px;resize:vertical}
   var DURS = [['4 hours', 4], ['12 hours', 12], ['24 hours', 24], ['3 days', 72], ['Until I remove it', '']];
   var type = 'special', dur = 24, pvLang = 'en', token = '', pastN = 0;
   // ---- branches ----
-  var BRN = { one: 'Bullhead One', two: 'Bullhead Two' };
-  var isStaff = false, myBranch = '';                                   // myBranch: a branch-scoped staff login's branch
+var BRN = { main: 'Main site only', one: 'Bullhead One', two: 'Bullhead Two' };  var isStaff = false, myBranch = '';                                   // myBranch: a branch-scoped staff login's branch
   var viewBranch = localStorage.getItem('bhView') || '', alertBr = localStorage.getItem('bhAlertBr') || '', updBranch = '', menuBranch = '';
   var BR_CHOICES = [{ k: '', label: 'Both' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }];
 
@@ -396,8 +395,7 @@ textarea{min-height:84px;resize:vertical}
   }
   function drawTypes() { chipGroup($('types'), Object.keys(TYPES).map(function (k) { return { k: k, label: TYPES[k][0] }; }), function (i) { return i.k === type; }, function (i) { type = i.k; refresh(); }); }
   function drawBrView() { chipGroup($('brView'), BR_CHOICES, function (i) { return i.k === viewBranch; }, function (i) { viewBranch = i.k; localStorage.setItem('bhView', viewBranch); seen = null; loadOrders(); }); }
-  function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'Both sites' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }], function (i) { return i.k === updBranch; }, function (i) { updBranch = i.k; }); }
-  function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
+function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'Both sites' }, { k: 'main', label: 'Main site only' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }], function (i) { return i.k === updBranch; }, function (i) { updBranch = i.k; }); }  function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
   chipGroup($('tpls'), TEMPLATES.map(function (t) { return { t: t, label: t[0] }; }), function () { return false; }, function (i) {
     $('text').value = i.t[1]; $('textSw').value = i.t[3]; type = i.t[2]; refresh(); $('text').focus();
     $('tpls').querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
