@@ -33,7 +33,7 @@ async function adminHost(context, url) {
   return out;
 }
 
-export async function onRequest(context) {
+async function handle(context) {
   const url = new URL(context.request.url);
   if (url.hostname === 'bullheads.pages.dev') {
     url.protocol = 'https:';
@@ -107,4 +107,25 @@ export async function onRequest(context) {
       },
     });
   return rw.transform(res);
+}
+
+// A missing binding (D1 "DB" or KV "UPDATES_KV" not attached in Cloudflare Pages -> Settings -> Bindings) makes the
+// handlers throw a TypeError, which Cloudflare turns into its raw crash page. Catch that here and say plainly what is
+// missing instead. Any other error is re-thrown exactly as before.
+const BINDINGS = { DB: 'D1 database', UPDATES_KV: 'KV namespace' };
+
+export async function onRequest(context) {
+  try {
+    return await handle(context);
+  } catch (e) {
+    const missing = Object.keys(BINDINGS).filter((b) => !context.env[b]);
+    if (!missing.length || !(e instanceof TypeError || /binding|no DB/i.test(String((e && e.message) || '')))) throw e;
+    const message = 'The ' + missing.map((b) => BINDINGS[b] + ' binding "' + b + '"').join(' and the ') +
+      (missing.length > 1 ? ' are' : ' is') + ' not set up. Add ' + (missing.length > 1 ? 'them' : 'it') + ' in Cloudflare Pages under Settings, Bindings, then redeploy.';
+    const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' };
+    if (new URL(context.request.url).pathname.startsWith('/api')) {
+      return new Response(JSON.stringify({ error: message, missing }), { status: 503, headers: { ...headers, 'Content-Type': 'application/json' } });
+    }
+    return new Response(message, { status: 503, headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
 }
