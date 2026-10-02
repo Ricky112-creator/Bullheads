@@ -3,7 +3,7 @@
 // app a basic offline fallback, and show the owner's "new order" phone alerts. Deliberately not a full caching strategy —
 // menu/pricing changes shouldn't risk being served stale.
 
-const CACHE = 'bullhead-shell-v4';
+const CACHE = 'bullhead-shell-v5';
 const SHELL = self.location.hostname.indexOf('admin.') === 0 ? ['/'] : ['/', '/menu', '/visit', '/contact'];
 
 self.addEventListener('install', (event) => {
