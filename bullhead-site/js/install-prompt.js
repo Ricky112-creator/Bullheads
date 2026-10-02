@@ -23,20 +23,17 @@
 
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
-    console.log('[install] beforeinstallprompt fired', { alreadyInstalled: alreadyInstalled() });
     if (alreadyInstalled()) return;
     deferredPrompt = e;
     btn.hidden = false;
   });
 
   btn.addEventListener('click', function () {
-    console.log('[install] button clicked', { hasDeferredPrompt: !!deferredPrompt });
     if (!deferredPrompt) return;
     btn.hidden = true;
     deferredPrompt.prompt();
     deferredPrompt.userChoice
       .then(function (choice) {
-        console.log('[install] userChoice resolved', choice);
       })
       .catch(function (err) {
         console.error('[install] prompt() failed', err);
