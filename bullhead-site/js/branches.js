@@ -6,24 +6,24 @@
 //   branch2.bullheadhotels.co.ke  Bullhead Two only
 // Everything that can differ between the two counters lives in CFG below, and nowhere else.
 // If a branch gets its own WhatsApp number or till, change it HERE and the whole site follows
-// (order messages, call/WhatsApp links, the M-Pesa card on /contact and /track).
+// (order messages, call/WhatsApp links, the M-Pesa card on /contact and /track, the till on /visit).
 // The server-side twin of this list is functions/_lib/branches.js (names + hostnames only).
 // ============================================
 (function () {
+  // The ONE place the shared contact details live. Per-branch overrides go in CFG below.
+  var DEFAULT_WA = '254720707323', DEFAULT_PHONE = '0720 707 323', DEFAULT_TILL = '3502492';
   var CFG = {
     one: {
       key: 'one', name: 'Bullhead One', short: 'Bullhead 1', counter: 'Bullhead One', host: 'branch1.bullheadhotels.co.ke',
-      whatsapp: '254720707323', phoneDisplay: '0720 707 323', till: '3502492',
+      whatsapp: DEFAULT_WA, phoneDisplay: DEFAULT_PHONE, till: DEFAULT_TILL,
       lat: -2.078670, lng: 37.469386, other: 'two',
     },
     two: {
       key: 'two', name: 'Bullhead Two', short: 'Bullhead 2', counter: 'Bullhead Two', host: 'branch2.bullheadhotels.co.ke',
-      whatsapp: '254720707323', phoneDisplay: '0720 707 323', till: '3502492',
+      whatsapp: DEFAULT_WA, phoneDisplay: DEFAULT_PHONE, till: DEFAULT_TILL,
       lat: -2.079304, lng: 37.473449, other: 'one',
     },
   };
-  var DEFAULT_WA = '254720707323', DEFAULT_TILL = '3502492';
-
   function detect() {
     var m = /^branch([12])\./.exec(location.hostname);
     if (m) return m[1] === '1' ? 'one' : 'two';
@@ -52,6 +52,12 @@
     till: function (cfg) { return (cfg && cfg.till) || DEFAULT_TILL; },
     origin: function (k) { return 'https://' + CFG[k].host; },
   };
+  // Visible phone number and till follow this file on every address, the main site included.
+  document.addEventListener('DOMContentLoaded', function () {
+    var c = BH.current;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bh-phone]'), function (e) { e.textContent = (c && c.phoneDisplay) || DEFAULT_PHONE; });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-bh-till]'), function (e) { e.textContent = BH.till(c); });
+  });
   if (!key) return;
 
   // Marks the page as a branch site: CSS hides main-site-only bits ([data-apex-only]) and the other branch's bits ([data-only]).
@@ -76,8 +82,6 @@
         if (h.indexOf(DEFAULT_WA) !== -1) a.setAttribute('href', h.split(DEFAULT_WA).join(cfg.whatsapp));
       });
     }
-    Array.prototype.forEach.call(document.querySelectorAll('[data-bh-phone]'), function (e) { e.textContent = cfg.phoneDisplay; });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-bh-till]'), function (e) { e.textContent = cfg.till; });
 
     // A quiet pointer to the other counter, so nobody is stranded on the wrong site.
     var f = document.querySelector('footer');
