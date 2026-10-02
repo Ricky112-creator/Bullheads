@@ -16,6 +16,42 @@ import { BRANCH_NAMES, BRANCH_HOSTS, hostBranch } from './_lib/branches.js';
 
 const MAIN = 'https://bullheadhotels.co.ke';
 
+// ---- Security headers ----
+// Added here (not only in _headers) because Cloudflare does not apply _headers to responses a Function produces:
+// that covers every /api reply, the admin host, the branch-rewritten pages and the 404 page.
+// The CSP allows only what the site really loads: its own files, GSAP/Lenis from jsDelivr, the QR library from cdnjs,
+// Google Fonts, and the Google Maps embeds on /visit. There are no inline scripts (they live in /js/); the single
+// hash below is the font-loading `onload` handler on the <link rel="preload"> tags, which needs 'unsafe-hashes'.
+// If a page ever needs a new outside host, add it here or the browser will block it (the console says which rule).
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-hashes' 'sha256-1jAmyYXcRq6zFldLe/GCgIDJBiOONdXjTLgEFMDnDSM='",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "frame-src https://www.google.com",
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join('; ');
+const BASE_SECURITY = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Permissions-Policy': 'camera=(), microphone=()',
+  // One year, this exact host only (no includeSubDomains / preload: those are hard to undo).
+  'Strict-Transport-Security': 'max-age=31536000',
+};
+function secure(res) {
+  let out;
+  try { out = new Response(res.body, res); } catch (e) { return res; }
+  for (const [k, v] of Object.entries(BASE_SECURITY)) if (!out.headers.has(k)) out.headers.set(k, v);
+  if ((out.headers.get('Content-Type') || '').includes('text/html')) out.headers.set('Content-Security-Policy', CSP);
+  return out;
+}
+
 // Owner-only pages live on their own address, admin.bullheadhotels.co.ke, so the owner's sign-in (kept in the
 // browser, scoped to the address) is never shared with the public site. On every other address these pages do not exist.
 const ADMIN_HOST = 'admin.bullheadhotels.co.ke';
@@ -116,16 +152,20 @@ const BINDINGS = { DB: 'D1 database', UPDATES_KV: 'KV namespace' };
 
 export async function onRequest(context) {
   try {
-    return await handle(context);
+    return secure(await handle(context));
   } catch (e) {
+    const isApi = new URL(context.request.url).pathname.startsWith('/api');
     const missing = Object.keys(BINDINGS).filter((b) => !context.env[b]);
-    if (!missing.length || !(e instanceof TypeError || /binding|no DB/i.test(String((e && e.message) || '')))) throw e;
-    const message = 'The ' + missing.map((b) => BINDINGS[b] + ' binding "' + b + '"').join(' and the ') +
-      (missing.length > 1 ? ' are' : ' is') + ' not set up. Add ' + (missing.length > 1 ? 'them' : 'it') + ' in Cloudflare Pages under Settings, Bindings, then redeploy.';
     const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' };
-    if (new URL(context.request.url).pathname.startsWith('/api')) {
-      return new Response(JSON.stringify({ error: message, missing }), { status: 503, headers: { ...headers, 'Content-Type': 'application/json' } });
+    if (missing.length && (e instanceof TypeError || /binding|no DB/i.test(String((e && e.message) || '')))) {
+      const message = 'The ' + missing.map((b) => BINDINGS[b] + ' binding \"' + b + '\"').join(' and the ') +
+        (missing.length > 1 ? ' are' : ' is') + ' not set up. Add ' + (missing.length > 1 ? 'them' : 'it') + ' in Cloudflare Pages under Settings, Bindings, then redeploy.';
+      if (isApi) return secure(new Response(JSON.stringify({ error: message, missing }), { status: 503, headers: { ...headers, 'Content-Type': 'application/json' } }));
+      return secure(new Response(message, { status: 503, headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' } }));
     }
-    return new Response(message, { status: 503, headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' } });
+    // Anything else: log the detail for the owner, show visitors a plain message (never the raw exception).
+    console.error('[middleware]', (e && e.stack) || e);
+    if (isApi) return secure(new Response(JSON.stringify({ error: 'Something went wrong on our side. Please try again in a moment.' }), { status: 500, headers: { ...headers, 'Content-Type': 'application/json' } }));
+    return secure(new Response('Something went wrong on our side. Please try again in a moment.', { status: 500, headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' } }));
   }
 }

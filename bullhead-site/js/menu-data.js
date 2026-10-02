@@ -80,3 +80,7 @@ const MENU_ITEMS = [
   { id: 'extra-ugali', category: 'Sides & Extras', name: 'Extra ugali', price: 30 },
   { id: 'kachumbari', category: 'Sides & Extras', name: 'Kachumbari', price: 50 }
 ];
+
+// The order API (functions/api/orders.js) imports this same file so it can work out every total itself
+// instead of trusting the browser. In a browser `module` does not exist, so this line does nothing there.
+if (typeof module !== 'undefined' && module.exports) module.exports = { MENU_ITEMS };

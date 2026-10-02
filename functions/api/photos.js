@@ -9,7 +9,7 @@
 // Public images are cached at Cloudflare's edge (Cache API, free) and in the visitor's browser for a day.
 // The URL carries the photo's revision (v), which changes whenever the picture or its published state
 // changes, so an edit shows up immediately and a 60-photo gallery does not cost 60 Function runs per visitor.
-import { json, requireRole } from '../_lib/auth.js';
+import { json, requireRole, serverError } from '../_lib/auth.js';
 
 const PREFIX = 'data:image/jpeg;base64,';
 const okData = (d) => typeof d === 'string' && d.startsWith(PREFIX) && d.length <= 600000;
@@ -48,7 +48,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     }
     const { results } = await env.DB.prepare('SELECT id, caption, rev AS v, (thumb IS NOT NULL) AS t FROM photos WHERE published = 1 ORDER BY ts DESC LIMIT 60').all();
     return json({ photos: results }, { headers: { 'Cache-Control': 'public, max-age=30' } });
-  } catch (e) { return json({ error: String(e.message || e) }, { status: 500 }); }
+  } catch (e) { return serverError(e, 'photos'); }
 }
 export async function onRequestPost({ request, env }) {
   const g = await requireRole(request, env, ['owner']);
