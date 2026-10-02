@@ -68,13 +68,12 @@ const MENU_ITEMS = [
   { id: 'matumbo', category: 'Butchery — per kg', name: 'Matumbo', price: 400, unit: 'kg' },
 
   // The Grill — prices to confirm with client
-  { id: 'grill-beef', category: 'The Grill', name: 'Grilled beef plate', price: null },
-  { id: 'grill-goat', category: 'The Grill', name: 'Grilled goat plate', price: null },
-  { id: 'grill-mixed', category: 'The Grill', name: 'Mixed grill plate', price: null },
+  { id: 'grill-beef', category: 'The Grill', name: 'Grilled beef plate', price: 400 },
+  { id: 'grill-goat', category: 'The Grill', name: 'Grilled goat plate', price: 400 },
+  { id: 'grill-mixed', category: 'The Grill', name: 'Mixed grill plate', price: 800 },
 
   // Fish Specialty — prices to confirm with client
-  { id: 'tilapia-whole', category: 'Fish Specialty', name: 'Tilapia & ugali — whole', price: null },
-  { id: 'tilapia-half', category: 'Fish Specialty', name: 'Tilapia & ugali — half', price: null },
+  { id: 'tilapia-whole', category: 'Fish Specialty', name: 'Tilapia & ugali — whole', price: 400 },
 
   // Sides & Extras
   { id: 'extra-ugali', category: 'Sides & Extras', name: 'Extra ugali', price: 30 },
