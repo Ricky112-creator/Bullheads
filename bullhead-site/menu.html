@@ -61,7 +61,7 @@
 <main id="main-content">
 
   <section class="page-hero">
-    <img src="assets/img/interior-seating-02.jpg" alt="Dining room at Bullhead" width="1600" height="720">
+    <picture><source srcset="assets/img/menu-hero-chips-point.webp" type="image/webp"><img src="assets/img/menu-hero-chips-point.jpg" alt="Chips Point and Bull Head Hotel on the main strip in Emali" fetchpriority="high" decoding="async" width="1920" height="865"></picture>
     <div class="page-hero-scrim"></div>
     <div class="page-hero-content">
       <p class="page-hero-kicker" data-sw="Menyu">The Menu</p>
@@ -76,15 +76,15 @@
     </div>
     <div class="kitchen-grid">
       <figure class="kitchen-card kitchen-card--wide">
-        <img loading="lazy" src="assets/img/interior-seating-01.jpg" alt="Dining room at Bullhead" width="1600" height="720">
-        <figcaption data-sw="Chumba cha kulia — kuta zenye vioo, meza za rangi ya machungwa, kiti daima kipo">The dining room — mirrored walls, orange tables, always a seat</figcaption>
+        <picture><source srcset="assets/img/menu-dining-room.webp" type="image/webp"><img src="assets/img/menu-dining-room.jpg" alt="The dining area at Bullhead, with orange tables and chairs" loading="lazy" decoding="async" width="1200" height="1547"></picture>
+        <figcaption data-sw="Chumba cha kulia — meza za rangi ya machungwa, kiti daima kipo">The dining room — orange tables, always a seat</figcaption>
       </figure>
       <figure class="kitchen-card">
-        <img loading="lazy" src="assets/img/interior-fridge-01.jpg" alt="Drinks fridge and entrance at Bullhead" width="1400" height="630">
-        <figcaption data-sw="Vinywaji baridi, mlangoni tu">Cold drinks, right at the door</figcaption>
+        <picture><source srcset="assets/img/menu-chips.webp" type="image/webp"><img src="assets/img/menu-chips.jpg" alt="Chips fried fresh and piled on the tray" loading="lazy" decoding="async" width="1400" height="933"></picture>
+        <figcaption data-sw="Chipsi mpya, zikikaangwa papo hapo">Chips, fried fresh to order</figcaption>
       </figure>
       <figure class="kitchen-card">
-        <img loading="lazy" src="assets/img/interior-seating-03.jpg" alt="Service counter at Bullhead" width="1600" height="720">
+        <picture><source srcset="assets/img/menu-counter.webp" type="image/webp"><img src="assets/img/menu-counter.jpg" alt="The service counter, display case and fish tank at Bullhead" loading="lazy" decoding="async" width="1400" height="1005"></picture>
         <figcaption data-sw="Kaunta — agiza, kaa, subiri harufu ikufikie">The counter — order, sit, wait for the smell to reach you</figcaption>
       </figure>
     </div>
@@ -130,94 +130,9 @@
 <script src="js/branches.js"></script>
 <script src="js/menu-data.js"></script>
 <script src="js/cart.js"></script>
-<script>
-(function () {
-  function encodeCart(cart) {
-    return Object.entries(cart).map(function (p) { return p[0] + ':' + p[1]; }).join(',');
-  }
-  function decodeCart(str) {
-    var cart = {};
-    str.split(',').forEach(function (pair) {
-      var parts = pair.split(':');
-      var id = parts[0];
-      var qty = parseFloat(parts[1]);
-      if (id && !isNaN(qty) && qty > 0 && MENU_ITEMS.some(function (i) { return i.id === id; })) {
-        cart[id] = qty;
-      }
-    });
-    return cart;
-  }
-
-  var params = new URLSearchParams(window.location.search);
-  var orderParam = params.get('order');
-  var loadedSharedOrder = false;
-
-  if (orderParam) {
-    var shared = decodeCart(orderParam);
-    if (Object.keys(shared).length > 0) {
-      setCart(shared);
-      loadedSharedOrder = true;
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var banner = document.getElementById('repeatOrderBanner');
-    if (!banner) return;
-
-    if (loadedSharedOrder) {
-      banner.hidden = false;
-      banner.textContent = 'Order loaded from a shared link — review it below.';
-      return;
-    }
-
-    var current = getCart();
-    if (Object.keys(current).length > 0) return;
-
-    var raw = localStorage.getItem('bullheadLastOrder');
-    if (!raw) return;
-    try {
-      var saved = JSON.parse(raw);
-      var items = saved.items || {};
-      if (Object.keys(items).length === 0) return;
-
-      banner.hidden = false;
-      banner.innerHTML = 'Order the same as last time? <button type="button" id="repeatOrderBtn" style="margin-left:8px; text-decoration:underline; background:none; border:none; cursor:pointer; color:inherit;">Repeat order</button>';
-      document.getElementById('repeatOrderBtn').addEventListener('click', function () {
-        setCart(items);
-        window.location.reload();
-      });
-    } catch (e) {}
-  });
-})();
-</script>
+<script src="js/menu-share.js"></script>
 <script src="js/menu-page.js"></script>
 <script src="js/main.js?v=11"></script>
-<script>
-(function () {
-  var STORAGE_KEY = 'bullheadLang';
-  var els = document.querySelectorAll('[data-sw]');
-  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
-  var toggle = document.getElementById('langToggle');
-
-  function apply(lang) {
-    els.forEach(function (el) {
-      el.innerHTML = lang === 'sw' ? el.dataset.sw : el.dataset.en;
-    });
-    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
-  }
-
-  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
-  apply(saved);
-
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var current = localStorage.getItem(STORAGE_KEY) || 'en';
-      var next = current === 'en' ? 'sw' : 'en';
-      localStorage.setItem(STORAGE_KEY, next);
-      apply(next);
-    });
-  }
-})();
-</script>
+<script src="js/lang-toggle.js"></script>
 </body>
 </html>

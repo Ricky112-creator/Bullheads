@@ -1,0 +1,75 @@
+{
+ "_note": "Photos shown on the branch sites' gallery (branch1./branch2.). Images live in /assets/img/<name>.jpg (+ .webp). The main site's gallery uses the admin uploads instead.",
+ "photos": [
+  {
+   "name": "hero-storefront",
+   "w": 1920,
+   "h": 832,
+   "webp": true,
+   "caption": "Fish Point, Chips Point, Bull Head Hotel and the butchery side by side on the main strip"
+  },
+  {
+   "name": "visit-hero-strip",
+   "w": 1920,
+   "h": 965,
+   "webp": true,
+   "caption": "Bullhead One's row of shopfronts on the main strip in Emali"
+  },
+  {
+   "name": "menu-hero-chips-point",
+   "w": 1920,
+   "h": 865,
+   "webp": true,
+   "caption": "Chips Point and Bull Head Hotel"
+  },
+  {
+   "name": "contact-hero-signboard",
+   "w": 1920,
+   "h": 871,
+   "webp": true,
+   "caption": "The Bull Head Hotel signboard"
+  },
+  {
+   "name": "visit-bullhead-one",
+   "w": 1400,
+   "h": 1050,
+   "webp": true,
+   "caption": "Fish Point, part of Bullhead One"
+  },
+  {
+   "name": "story-chef-oven",
+   "w": 1200,
+   "h": 1440,
+   "webp": true,
+   "caption": "A cook tending the charcoal oven"
+  },
+  {
+   "name": "explore-grill",
+   "w": 1200,
+   "h": 800,
+   "webp": true,
+   "caption": "Grilled beef straight from the hot plate"
+  },
+  {
+   "name": "menu-chips",
+   "w": 1400,
+   "h": 933,
+   "webp": true,
+   "caption": "Chips fried fresh and piled on the tray"
+  },
+  {
+   "name": "menu-counter",
+   "w": 1400,
+   "h": 1005,
+   "webp": true,
+   "caption": "The service counter, display case and fish tank"
+  },
+  {
+   "name": "menu-dining-room",
+   "w": 1200,
+   "h": 1547,
+   "webp": true,
+   "caption": "The dining area"
+  }
+ ]
+}

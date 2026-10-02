@@ -27,6 +27,125 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="css/style.css?v=11">
 <link rel="stylesheet" href="css/relay.css?v=2">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://bullheadhotels.co.ke/#organization",
+      "name": "Bullhead Hotel & Butchery",
+      "url": "https://bullheadhotels.co.ke/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://bullheadhotels.co.ke/assets/img/icon-512.png",
+        "width": 512,
+        "height": 512
+      },
+      "telephone": "+254720707323"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://bullheadhotels.co.ke/#website",
+      "name": "Bullhead Hotel & Butchery",
+      "url": "https://bullheadhotels.co.ke/",
+      "publisher": {
+        "@id": "https://bullheadhotels.co.ke/#organization"
+      },
+      "inLanguage": [
+        "en",
+        "sw"
+      ]
+    },
+    {
+      "@type": "Restaurant",
+      "@id": "https://bullheadhotels.co.ke/visit#bullhead-one",
+      "name": "Bullhead Hotel & Butchery 1",
+      "image": "https://bullheadhotels.co.ke/assets/img/visit-bullhead-one.jpg",
+      "servesCuisine": [
+        "Nyama Choma",
+        "Butchery",
+        "Fish"
+      ],
+      "telephone": "+254720707323",
+      "url": "https://bullheadhotels.co.ke/visit",
+      "menu": "https://bullheadhotels.co.ke/menu",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "00:00",
+        "closes": "23:59"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -2.07867,
+        "longitude": 37.469386
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Emali",
+        "addressRegion": "Makueni County",
+        "addressCountry": "KE"
+      },
+      "parentOrganization": {
+        "@id": "https://bullheadhotels.co.ke/#organization"
+      },
+      "acceptsReservations": "https://bullheadhotels.co.ke/contact"
+    },
+    {
+      "@type": "Restaurant",
+      "@id": "https://bullheadhotels.co.ke/visit#bullhead-two",
+      "name": "Bullhead Hotel & Butchery 2",
+      "image": "https://bullheadhotels.co.ke/assets/img/location-bullhead-two.jpg",
+      "servesCuisine": [
+        "Nyama Choma",
+        "Butchery",
+        "Fish"
+      ],
+      "telephone": "+254720707323",
+      "url": "https://bullheadhotels.co.ke/visit",
+      "menu": "https://bullheadhotels.co.ke/menu",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "00:00",
+        "closes": "23:59"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -2.079304,
+        "longitude": 37.473449
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Emali",
+        "addressRegion": "Makueni County",
+        "addressCountry": "KE"
+      },
+      "parentOrganization": {
+        "@id": "https://bullheadhotels.co.ke/#organization"
+      },
+      "acceptsReservations": "https://bullheadhotels.co.ke/contact"
+    }
+  ]
+}
+</script>
 </head>
 <body>
 <a class="skip-link" href="#top" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
@@ -66,7 +185,7 @@
   <!-- HERO -->
   <section class="hero" id="hero">
     <div class="hero-media">
-      <img src="assets/img/hero-bullhead-one.jpg" alt="Bullhead Butchery & Hotel storefront lit up at dusk in Emali" id="heroImg" fetchpriority="high" decoding="async" width="1920" height="864">
+      <picture><source srcset="assets/img/hero-storefront.webp" type="image/webp"><img src="assets/img/hero-storefront.jpg" alt="Bullhead Hotel, Chips Point, Fish Point and the butchery side by side on the main strip in Emali" id="heroImg" fetchpriority="high" decoding="async" width="1920" height="832"></picture>
       <div class="hero-scrim"></div>
       <div id="splineLayer" class="spline-hero-layer"></div>
     </div>
@@ -105,7 +224,7 @@
   <!-- CONDENSED STORY -->
   <section class="story">
     <div class="story-media">
-      <img loading="lazy" src="assets/img/story-truckstop.jpg" alt="Trucks parked outside Bullhead in Emali town" width="1600" height="720">
+      <picture><source srcset="assets/img/story-chef-oven.webp" type="image/webp"><img src="assets/img/story-chef-oven.jpg" alt="A Bullhead cook tending the charcoal oven" loading="lazy" decoding="async" width="1200" height="1440"></picture>
     </div>
     <div class="story-copy">
       <h2 data-sw="Ilianza kama bucha moja katika mtaa huu.">It started as one butchery on this street.</h2>
@@ -146,7 +265,7 @@
     <h2 data-sw="Angalia Karibu">Look around</h2>
     <div class="explore-grid">
       <a href="/menu" class="explore-card">
-        <img loading="lazy" src="assets/img/interior-seating-01.jpg" alt="Dining room at Bullhead" width="1600" height="720">
+        <picture><source srcset="assets/img/explore-grill.webp" type="image/webp"><img src="assets/img/explore-grill.jpg" alt="Grilled beef served from the hot plate at Bullhead" loading="lazy" decoding="async" width="1200" height="800"></picture>
         <div class="explore-card-scrim"></div>
         <div class="explore-card-label">
           <h3 data-sw="Menyu">The Menu</h3>
@@ -203,121 +322,7 @@
 <script src="js/main.js?v=11"></script>
 <script src="js/relay.js?v=2"></script>
 <script src="js/rightnow.js?v=1"></script>
-<script>
-(function () {
-  var INSTALLED_KEY = 'bullheadInstalled';
-
-  var deferredPrompt = null;
-  var btn = document.getElementById('installBtn');
-  if (!btn) return;
-
-  function isStandalone() {
-    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  }
-  function markInstalled() {
-    try { localStorage.setItem(INSTALLED_KEY, '1'); } catch (e) {}
-  }
-  function alreadyInstalled() {
-    try { return localStorage.getItem(INSTALLED_KEY) === '1' || isStandalone(); } catch (e) { return isStandalone(); }
-  }
-
-  if (isStandalone()) {
-    markInstalled(); // caught here even if 'appinstalled' never fired (e.g. manual Add to Home Screen)
-    btn.hidden = true;
-    return; // running as the installed app itself — nothing to prompt, no listeners needed
-  }
-
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    console.log('[install] beforeinstallprompt fired', { alreadyInstalled: alreadyInstalled() });
-    if (alreadyInstalled()) return;
-    deferredPrompt = e;
-    btn.hidden = false;
-  });
-
-  btn.addEventListener('click', function () {
-    console.log('[install] button clicked', { hasDeferredPrompt: !!deferredPrompt });
-    if (!deferredPrompt) return;
-    btn.hidden = true;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice
-      .then(function (choice) {
-        console.log('[install] userChoice resolved', choice);
-      })
-      .catch(function (err) {
-        console.error('[install] prompt() failed', err);
-      })
-      .finally(function () {
-        deferredPrompt = null;
-      });
-  });
-
-  window.addEventListener('appinstalled', function () {
-    btn.hidden = true;
-    deferredPrompt = null;
-    markInstalled();
-  });
-})();
-</script>
-<script>
-(function () {
-  var STORAGE_KEY = 'bullheadLang';
-  var els = document.querySelectorAll('[data-sw]');
-  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
-  var toggle = document.getElementById('langToggle');
-  var stripLine = document.getElementById('stripLine');
-
-  // Plain-text (tag-stripped) version of a data-en/data-sw value, used to
-  // rebuild stripLine's word-by-word <span> markup so the scroll reveal
-  // (main.js) keeps working after a language switch.
-  function textOf(html) {
-    var t = document.createElement('div');
-    t.innerHTML = html;
-    return t.textContent.trim();
-  }
-
-  function apply(lang) {
-    els.forEach(function (el) {
-      var target = lang === 'sw' ? el.dataset.sw : el.dataset.en;
-
-      if (el === stripLine) {
-        var wrapped = textOf(target).split(' ').map(function (w) {
-          return '<span class="word">' + w + '</span>';
-        }).join(' ');
-        // Same language already rendered — skip the rewrite entirely so we
-        // don't silently swap out the exact spans GSAP's reveal is
-        // animating (or already animated) for freshly-parsed duplicates.
-        if (el.innerHTML === wrapped) return;
-        el.innerHTML = wrapped;
-        // If the reveal already ran (or never needed to, e.g. reduced
-        // motion), the new spans should appear at full opacity right away
-        // instead of falling back to their dim, unrevealed default —
-        // otherwise switching language would re-hide already-shown text.
-        if (stripLine.dataset.revealed === '1') {
-          stripLine.classList.add('in-view');
-          stripLine.querySelectorAll('.word').forEach(function (w) { w.style.opacity = 1; });
-        }
-        return;
-      }
-
-      if (el.innerHTML === target) return; // nothing changed, avoid pointless DOM churn
-      el.innerHTML = target;
-    });
-    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
-  }
-
-  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
-  apply(saved);
-
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var current = localStorage.getItem(STORAGE_KEY) || 'en';
-      var next = current === 'en' ? 'sw' : 'en';
-      localStorage.setItem(STORAGE_KEY, next);
-      apply(next);
-    });
-  }
-})();
-</script>
+<script src="js/install-prompt.js"></script>
+<script src="js/home-lang.js"></script>
 </body>
 </html>

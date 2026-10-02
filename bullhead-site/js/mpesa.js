@@ -1,17 +1,14 @@
 // ============================================
 // BULLHEAD — M-Pesa "pay ahead" card
-// One place for the Till number. Used by the order confirmation (contact.html)
-// and the tracking page (track.html). Change the number here and both update.
-// (visit.html still has its own copy of the number in its text.)
+// Draws the pay-ahead card on the order confirmation (contact.html) and the tracking page (track.html).
+// It holds NO till number of its own: the number comes from js/branches.js (BH.till), which must load first.
 // ============================================
-
-const MPESA_TILL = '3502492'; // Lipa na M-Pesa, Buy Goods Till
 
 // Returns a ready-made <div> card. `total` is the order amount in KES (0 = don't show an amount).
 // `counter` ("Bullhead One" / "Bullhead Two") picks that branch's till; on a branch site the site's own branch wins.
-// Tills live in js/branches.js. MPESA_TILL above is only the fallback.
+// Tills live in js/branches.js.
 function mpesaCard(total, counter) {
-  const till = window.BH ? BH.till(BH.current || BH.byCounter(counter)) : MPESA_TILL;
+  const till = BH.till(BH.current || BH.byCounter(counter));
   const el = (tag, css, text) => {
     const e = document.createElement(tag);
     if (css) e.style.cssText = css;

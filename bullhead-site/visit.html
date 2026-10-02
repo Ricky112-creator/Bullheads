@@ -25,21 +25,34 @@
   "@graph": [
     {
       "@type": "Restaurant",
+      "@id": "https://bullheadhotels.co.ke/visit#bullhead-one",
       "name": "Bullhead Hotel & Butchery 1",
-      "image": "https://bullheadhotels.co.ke/assets/img/gallery-01.jpg",
-      "servesCuisine": ["Nyama Choma", "Butchery", "Fish"],
+      "image": "https://bullheadhotels.co.ke/assets/img/visit-bullhead-one.jpg",
+      "servesCuisine": [
+        "Nyama Choma",
+        "Butchery",
+        "Fish"
+      ],
       "telephone": "+254720707323",
       "url": "https://bullheadhotels.co.ke/visit",
       "menu": "https://bullheadhotels.co.ke/menu",
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
         "opens": "00:00",
         "closes": "23:59"
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": -2.078670,
+        "latitude": -2.07867,
         "longitude": 37.469386
       },
       "address": {
@@ -47,19 +60,36 @@
         "addressLocality": "Emali",
         "addressRegion": "Makueni County",
         "addressCountry": "KE"
-      }
+      },
+      "parentOrganization": {
+        "@id": "https://bullheadhotels.co.ke/#organization"
+      },
+      "acceptsReservations": "https://bullheadhotels.co.ke/contact"
     },
     {
       "@type": "Restaurant",
+      "@id": "https://bullheadhotels.co.ke/visit#bullhead-two",
       "name": "Bullhead Hotel & Butchery 2",
       "image": "https://bullheadhotels.co.ke/assets/img/location-bullhead-two.jpg",
-      "servesCuisine": ["Nyama Choma", "Butchery", "Fish"],
+      "servesCuisine": [
+        "Nyama Choma",
+        "Butchery",
+        "Fish"
+      ],
       "telephone": "+254720707323",
       "url": "https://bullheadhotels.co.ke/visit",
       "menu": "https://bullheadhotels.co.ke/menu",
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
         "opens": "00:00",
         "closes": "23:59"
       },
@@ -73,7 +103,11 @@
         "addressLocality": "Emali",
         "addressRegion": "Makueni County",
         "addressCountry": "KE"
-      }
+      },
+      "parentOrganization": {
+        "@id": "https://bullheadhotels.co.ke/#organization"
+      },
+      "acceptsReservations": "https://bullheadhotels.co.ke/contact"
     }
   ]
 }
@@ -120,7 +154,7 @@
 <main id="main-content">
 
   <section class="page-hero">
-    <img src="assets/img/gallery-02.jpg" alt="Bullhead storefront in Emali" width="720" height="1600">
+    <picture><source srcset="assets/img/visit-hero-strip.webp" type="image/webp"><img src="assets/img/visit-hero-strip.jpg" alt="Bullhead One's row of shopfronts on the main strip in Emali" fetchpriority="high" decoding="async" width="1920" height="965"></picture>
     <div class="page-hero-scrim"></div>
     <div class="page-hero-content">
       <p class="page-hero-kicker" data-sw="Tembelea">Visit</p>
@@ -138,7 +172,7 @@
     <div class="locations-grid">
       <article class="location-card" data-branch="one">
         <div class="location-media">
-          <img loading="lazy" src="assets/img/gallery-01.jpg" alt="Bullhead One storefront in Emali" width="720" height="1600">
+          <picture><source srcset="assets/img/visit-bullhead-one.webp" type="image/webp"><img src="assets/img/visit-bullhead-one.jpg" alt="Fish Point, part of Bullhead One in Emali" loading="lazy" decoding="async" width="1400" height="1050"></picture>
         </div>
         <div class="location-info">
           <h3>Bullhead One</h3>
@@ -185,7 +219,7 @@
         </div>
         <div class="visit-block">
           <h3 data-sw="Lipa jinsi unavyozoea">Pay how you already do</h3>
-          <p style="color:var(--ink-soft);">Lipa na M-Pesa<br>Buy Goods Till: <span data-bh-till>3502492</span></p>
+          <p style="color:var(--ink-soft);">Lipa na M-Pesa<br>Buy Goods Till: <span data-bh-till>ask at the counter</span></p>
         </div>
       </div>
     </div>
@@ -218,32 +252,6 @@
 <script src="js/branches.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/main.js?v=11"></script>
-<script>
-(function () {
-  var STORAGE_KEY = 'bullheadLang';
-  var els = document.querySelectorAll('[data-sw]');
-  els.forEach(function (el) { el.dataset.en = el.innerHTML; });
-  var toggle = document.getElementById('langToggle');
-
-  function apply(lang) {
-    els.forEach(function (el) {
-      el.innerHTML = lang === 'sw' ? el.dataset.sw : el.dataset.en;
-    });
-    if (toggle) toggle.textContent = lang === 'sw' ? 'EN' : 'SW';
-  }
-
-  var saved = localStorage.getItem(STORAGE_KEY) || 'en';
-  apply(saved);
-
-  if (toggle) {
-    toggle.addEventListener('click', function () {
-      var current = localStorage.getItem(STORAGE_KEY) || 'en';
-      var next = current === 'en' ? 'sw' : 'en';
-      localStorage.setItem(STORAGE_KEY, next);
-      apply(next);
-    });
-  }
-})();
-</script>
+<script src="js/lang-toggle.js"></script>
 </body>
 </html>
