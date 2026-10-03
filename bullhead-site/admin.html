@@ -363,5 +363,61 @@ textarea{min-height:84px;resize:vertical}
 <script src="js/menu-data.js"></script>
 <script src="js/order-utils.js"></script>
 <script src="js/admin-page.js"></script>
+ <script>
+  // Function to clear all input fields in the Settings modal
+  function clearSettingsFields() {
+    const setModal = document.getElementById('setModal');
+    if (!setModal) return;
+
+    // Reset password inputs
+    const inputs = setModal.querySelectorAll('input[type="password"], input[type="text"]');
+    inputs.forEach(input => input.value = '');
+
+    // Reset toggle checkbox for password visibility
+    const pwShow = document.getElementById('pwShow');
+    if (pwShow) pwShow.checked = false;
+
+    // Hide password form collapse if open
+    const pwForm = document.getElementById('pwForm');
+    if (pwForm) pwForm.hidden = true;
+  }
+
+  // Clear inputs when clicking "Done" in Settings
+  document.getElementById('setDone')?.addEventListener('click', () => {
+    clearSettingsFields();
+  });
+
+  // Clear inputs if modal is closed or hidden via any trigger
+  const observer = new MutationObserver(() => {
+    const setModal = document.getElementById('setModal');
+    if (setModal && setModal.hasAttribute('hidden')) {
+      clearSettingsFields();
+    }
+  });
+
+  const setModalEl = document.getElementById('setModal');
+  if (setModalEl) {
+    observer.observe(setModalEl, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
+  // Ensure settings button is hidden on login screen, and shown only when logged in
+  function updateSettingsVisibility(isLoggedIn) {
+    const setBtn = document.getElementById('setBtn');
+    if (setBtn) {
+      setBtn.hidden = !isLoggedIn;
+    }
+  }
+
+  // Hide settings on sign-out
+  document.getElementById('logout')?.addEventListener('click', () => {
+    clearSettingsFields();
+    updateSettingsVisibility(false);
+  });
+
+  document.getElementById('signOutRow')?.addEventListener('click', () => {
+    clearSettingsFields();
+    updateSettingsVisibility(false);
+  });
+</script> 
 </body>
 </html>
