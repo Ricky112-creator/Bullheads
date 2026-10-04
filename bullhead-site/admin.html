@@ -40,6 +40,7 @@ header small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 .hb svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bell.on{background:var(--acc)}
 .bell:disabled{opacity:.5}
+@media(max-width:400px){.hin{padding:0 12px;gap:4px}.bell,.hb{width:40px;height:40px}}
 
 .wrap{padding:0 20px calc(120px + env(safe-area-inset-bottom))}
 select option,select optgroup{background:var(--card);color:var(--txt)}
@@ -234,6 +235,7 @@ textarea{min-height:84px;resize:vertical}
 <header><div class="hin">
   <img src="assets/img/logo-mark.png" alt="">
   <div class="ht"><p class="bn">Bullhead</p><small>Owner dashboard</small></div>
+  <button class="hb" id="installBtn" type="button" hidden title="Install app" aria-label="Install app"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg></button>
   <button class="bell" id="alertsBtn" type="button" hidden title="Order alerts" aria-label="Order alerts">🔕</button>
   <a class="hb" href="https://bullheadhotels.co.ke/" target="_blank" rel="noopener" title="View site" aria-label="View site"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
   <button class="hb" id="setBtn" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -371,61 +373,6 @@ textarea{min-height:84px;resize:vertical}
 <script src="js/menu-data.js"></script>
 <script src="js/order-utils.js"></script>
 <script src="js/admin-page.js"></script>
- <script>
-  // Function to clear all input fields in the Settings modal
-  function clearSettingsFields() {
-    const setModal = document.getElementById('setModal');
-    if (!setModal) return;
-
-    // Reset password inputs
-    const inputs = setModal.querySelectorAll('input[type="password"], input[type="text"]');
-    inputs.forEach(input => input.value = '');
-
-    // Reset toggle checkbox for password visibility
-    const pwShow = document.getElementById('pwShow');
-    if (pwShow) pwShow.checked = false;
-
-    // Hide password form collapse if open
-    const pwForm = document.getElementById('pwForm');
-    if (pwForm) pwForm.hidden = true;
-  }
-
-  // Clear inputs when clicking "Done" in Settings
-  document.getElementById('setDone')?.addEventListener('click', () => {
-    clearSettingsFields();
-  });
-
-  // Clear inputs if modal is closed or hidden via any trigger
-  const observer = new MutationObserver(() => {
-    const setModal = document.getElementById('setModal');
-    if (setModal && setModal.hasAttribute('hidden')) {
-      clearSettingsFields();
-    }
-  });
-
-  const setModalEl = document.getElementById('setModal');
-  if (setModalEl) {
-    observer.observe(setModalEl, { attributes: true, attributeFilter: ['hidden'] });
-  }
-
-  // Ensure settings button is hidden on login screen, and shown only when logged in
-  function updateSettingsVisibility(isLoggedIn) {
-    const setBtn = document.getElementById('setBtn');
-    if (setBtn) {
-      setBtn.hidden = !isLoggedIn;
-    }
-  }
-
-  // Hide settings on sign-out
-  document.getElementById('logout')?.addEventListener('click', () => {
-    clearSettingsFields();
-    updateSettingsVisibility(false);
-  });
-
-  document.getElementById('signOutRow')?.addEventListener('click', () => {
-    clearSettingsFields();
-    updateSettingsVisibility(false);
-  });
-</script> 
+<script src="js/admin-extras.js"></script>
 </body>
 </html>
