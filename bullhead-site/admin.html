@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#241712" media="(prefers-color-scheme: dark)">
 <title>Bullhead — Owner Dashboard</title>
 <link rel="icon" type="image/png" href="assets/img/logo-mark.png">
+<link rel="manifest" href="/admin.webmanifest">
+<link rel="apple-touch-icon" href="/assets/img/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bullhead Admin">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -151,8 +157,8 @@ textarea{min-height:84px;resize:vertical}
 .signed .link{padding:0;min-height:44px}
 
 /* floating tab bar (phone) / sidebar (desktop) */
-.tabs{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));width:min(420px,calc(100% - 24px));display:grid;grid-template-columns:repeat(4,1fr);padding:6px;border-radius:28px;background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--line);box-shadow:0 10px 40px rgba(0,0,0,.18)}
-.tabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;padding:6px 0;border:0;border-radius:22px;background:none;color:var(--mute);font-size:11px;font-weight:600;transition:background .2s,color .2s}
+.tabs{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom));width:min(420px,calc(100% - 24px));display:grid;grid-template-columns:repeat(6,1fr);padding:6px;border-radius:28px;background:var(--glass);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--line);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+.tabs button,.tabs a{position:relative;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;padding:6px 0;border:0;border-radius:22px;background:none;color:var(--mute);font-size:11px;font-weight:600;transition:background .2s,color .2s}
 .tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tabs button.on{color:var(--accT);background:var(--fill)}
 .tabs .n{position:absolute;top:3px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
@@ -193,7 +199,7 @@ textarea{min-height:84px;resize:vertical}
 @media(min-width:960px){
   .wrap{padding-left:264px;padding-right:32px}#app,#gate{margin-left:0}#gate{margin:8vh auto 0}
   .tabs{left:0;transform:none;top:calc(76px + env(safe-area-inset-top));bottom:auto;width:232px;grid-template-columns:1fr;padding:0 16px;gap:4px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .tabs button{flex-direction:row;justify-content:flex-start;gap:12px;min-height:46px;padding:0 14px;font-size:15px;border-radius:14px}
+  .tabs button,.tabs a{flex-direction:row;justify-content:flex-start;gap:12px;min-height:46px;padding:0 14px;font-size:15px;border-radius:14px}
   .tabs .n{position:static;margin-left:auto}
   .bar{bottom:24px;left:232px}
 }
@@ -256,6 +262,8 @@ textarea{min-height:84px;resize:vertical}
       <button type="button" data-t="updates"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>Updates</button>
       <button type="button" data-t="menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1.5-3 4-3 7v3h3"/></svg>Menu</button>
       <button type="button" data-t="insights"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Insights</button>
+      <a class="tl" id="tabTools" href="/tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>Tools</a>
+      <a class="tl" id="tabQr" href="/qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>QR</a>
     </nav>
 
     <div data-tab="orders">

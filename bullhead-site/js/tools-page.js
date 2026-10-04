@@ -1,4 +1,4 @@
-var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||'';
+var $=function(i){return document.getElementById(i)},tok=sessionStorage.bhTok||localStorage.getItem('bullheadAdminToken')||sessionStorage.getItem('bullheadAdminToken')||'';
 
 // Toggle owner code visibility
 var eyeOpen = '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
@@ -18,7 +18,7 @@ $('toggleTok').onclick = function() {
 
 function api(p,o){o=o||{};o.headers=Object.assign({'Content-Type':'application/json',Authorization:'Bearer '+tok},o.headers);return fetch(p,o).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||r.status);return d})})}
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function unlock(){api('/api/staff').then(function(d){sessionStorage.bhTok=tok;$('login').hidden=true;$('app').hidden=false;$('logout').hidden=false;$('day').value=new Date(Date.now()+108e5).toISOString().slice(0,10);drawStaff(d.staff);loadPhotos()}).catch(function(){alert('Wrong code, or the database is not connected.')})}
+function unlock(quiet){api('/api/staff').then(function(d){sessionStorage.bhTok=tok;$('login').hidden=true;$('app').hidden=false;$('logout').hidden=false;$('day').value=new Date(Date.now()+108e5).toISOString().slice(0,10);drawStaff(d.staff);loadPhotos()}).catch(function(){delete sessionStorage.bhTok;tok='';if(!quiet)alert('Wrong code, or the database is not connected.')})}
 
 // Sign out logic
 $('logout').onclick = function() {
@@ -30,7 +30,7 @@ $('logout').onclick = function() {
   $('logout').hidden = true;
 };
 
-$('go').onclick=function(){tok=$('tok').value.trim();unlock()};if(tok)unlock();
+$('go').onclick=function(){tok=$('tok').value.trim();unlock()};if(tok)unlock(true);
 $('sum').onclick=function(){api('/api/summary?date='+$('day').value+($('sumBr').value?'&branch='+$('sumBr').value:'')).then(function(d){$('sumText').textContent=d.text;$('sumText').hidden=false;$('sumBtns').hidden=false;$('wa').href='https://wa.me/?text='+encodeURIComponent(d.text)}).catch(function(e){alert(e.message)})};
 $('copy').onclick=function(){navigator.clipboard.writeText($('sumText').textContent).then(function(){$('copy').textContent='Copied ✓'})};
 function drawStaff(l){$('slist').innerHTML=l.map(function(s){var o=function(v,t){return '<option value="'+v+'"'+((s.branch||'')===v?' selected':'')+'>'+t+'</option>'};return '<div class="row">'+esc(s.name)+' <select data-bid="'+s.id+'">'+o('one','Bullhead One')+o('two','Bullhead Two')+o('','Both (manager)')+'</select> <button class="g" data-id="'+s.id+'">Remove</button></div>'}).join('')||'<small>No staff logins yet.</small>'}

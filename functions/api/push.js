@@ -82,7 +82,8 @@ export async function notifyOwner(env, branch = '') {
       });
       if (res.ok) sent++;
       else if (res.status === 404 || res.status === 410) await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(r.endpoint).run();
-    } catch (e) { /* one dead phone must never block the others */ }
+      else console.error('[push] ' + new URL(r.endpoint).host + ' refused the alert: ' + res.status + ' ' + (await res.text().catch(() => '')).slice(0, 200));
+    } catch (e) { console.error('[push] send failed', (e && e.message) || e); /* one dead phone must never block the others */ }
   }));
   return sent;
 }

@@ -56,7 +56,7 @@ function secure(res) {
 // browser, scoped to the address) is never shared with the public site. On every other address these pages do not exist.
 const ADMIN_HOST = 'admin.bullheadhotels.co.ke';
 const OWNER_PAGE = /^\/(admin|tools|qr)(\.html)?\/?$/i;
-const ADMIN_OK = /^\/(admin|tools|qr)(\.html)?\/?$|^\/api(\/|$)|^\/(sw\.js|favicon\.ico|site\.webmanifest)$/i;
+const ADMIN_OK = /^\/(admin|tools|qr)(\.html)?\/?$|^\/api(\/|$)|^\/(sw\.js|favicon\.ico|site\.webmanifest|admin\.webmanifest)$/i;
 const notFound = () => new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Not found</title><body style="font-family:system-ui,sans-serif;padding:12vh 24px;text-align:center"><h1>Page not found</h1><p><a href="https://bullheadhotels.co.ke/">Go to Bullhead</a></p>', { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex, nofollow' } });
 
 async function adminHost(context, url) {
