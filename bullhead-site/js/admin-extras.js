@@ -41,6 +41,8 @@
   if (app && gear) {
     var sync = function () { gear.hidden = app.hidden; };
     sync();
+    // Belt and braces: even if the gear were somehow clicked while signed out, the Settings sheet must not open.
+    gear.addEventListener('click', function (e) { if (app.hidden) { e.stopImmediatePropagation(); e.preventDefault(); if (sm) sm.hidden = true; } }, true);
     new MutationObserver(sync).observe(app, { attributes: true, attributeFilter: ['hidden'] });
   }
 })();
