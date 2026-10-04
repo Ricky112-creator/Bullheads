@@ -247,8 +247,17 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
     alertsOn = on; var b = $('alertsBtn'), t = on ? 'Order alerts are on. Tap to turn off' : 'Turn on order alerts';
     b.textContent = on ? '🔔' : '🔕'; b.className = 'bell' + (on ? ' on' : ''); b.title = t; b.setAttribute('aria-label', t); $('testAlert').disabled = !on;
   }
+  function noPushMsg() {
+    var ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var app = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (/FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(ua)) return 'Open this page in Safari or Chrome itself (not inside WhatsApp or another app), then try again';
+    if (ios && !app) return 'On iPhone, alerts only work from the Home Screen app. Tap Share, then Add to Home Screen, open Bullhead Admin from your Home Screen, and tap the bell there';
+    if (ios) return 'This iPhone needs iOS 16.4 or newer for order alerts. Update it in Settings, then try again';
+    return 'This browser cannot send order alerts. Use Chrome on Android, or Safari from the Home Screen on iPhone';
+  }
   function checkAlerts() {
-    if (!pushOK) return; $('alertsBtn').hidden = false; $('setNotif').hidden = isStaff; $('alertBr').value = alertBr;
+    $('alertsBtn').hidden = false; $('setNotif').hidden = isStaff; $('alertBr').value = alertBr;
+    if (!pushOK) return alertsUI(false);
     if (Notification.permission === 'denied') return alertsUI(false);
     swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
       if (sub && Notification.permission === 'granted') { alertsUI(true); saveSub(sub).catch(function () {}); } else alertsUI(false);
@@ -289,6 +298,7 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
   }
   $('alertsBtn').onclick = function () {
     var b = $('alertsBtn');
+    if (!pushOK) return toast(noPushMsg(), true);
     if (!alertsOn && Notification.permission === 'denied') return toast('Notifications are blocked for this site. Allow them in your browser settings, then reload.', true);
     b.disabled = true;
     (alertsOn ? disableAlerts() : enableAlerts()).catch(function (e) { console.error(e); toast(alertErr(e), true); }).then(function () { b.disabled = false; });

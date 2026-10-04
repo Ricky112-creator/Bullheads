@@ -89,7 +89,8 @@ export async function onRequestGet({ request, env }) {
   } catch (e) { return fail(e); }
 }
 
-export async function onRequestPost({ request, env, waitUntil }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   let b; try { b = await request.json(); } catch { return json({ error: 'Invalid JSON' }, { status: 400 }); }
   const type = str(b.type, 20);
   if (!TYPES.includes(type)) return json({ error: 'Bad order type' }, { status: 400 });
@@ -155,7 +156,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   // Buzz the owner's phone(s) after the response has gone back to the customer.
   const push = notifyOwner(env, order.branch).catch(() => {});
-  if (waitUntil) waitUntil(push);
+  try { context.waitUntil(push); } catch (e) { /* the push still runs, it just is not kept alive past the reply */ }
   return json({ ok: true, id: order.id, status: order.status });
 }
 

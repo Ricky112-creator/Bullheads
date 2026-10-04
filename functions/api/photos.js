@@ -23,7 +23,8 @@ const ensure = (env) => (ready = ready || (async () => {
   }
 })().catch((e) => { ready = null; throw e; }));
 
-export async function onRequestGet({ request, env, waitUntil }) {
+export async function onRequestGet(context) {
+  const { request, env } = context;
   try {
     await ensure(env);
     const u = new URL(request.url), img = u.searchParams.get('img');
@@ -39,7 +40,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
       const res = new Response(Uint8Array.from(atob(src.slice(PREFIX.length)), (c) => c.charCodeAt(0)), {
         headers: { 'Content-Type': 'image/jpeg', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': me ? 'private, no-store' : 'public, max-age=86400' },
       });
-      if (cache) { const p = cache.put(key, res.clone()); if (waitUntil) waitUntil(p); else await p; }
+      if (cache) { const p = cache.put(key, res.clone()); try { context.waitUntil(p); } catch (e) { await p; } }
       return res;
     }
     if (u.searchParams.get('all') && me) {
