@@ -13,6 +13,18 @@
 //      - sitemap.xml, robots.txt and site.webmanifest are generated for the branch's own address
 //    The main site (bullheadhotels.co.ke) is left exactly as it was.
 import { BRANCH_NAMES, BRANCH_HOSTS, hostBranch } from './_lib/branches.js';
+import { menuJsonLd } from './_lib/menuld.js';
+
+// /menu gets a schema.org Menu block built from the live board. Never allowed to break the page: any failure serves it untouched.
+const MENU_PATH = /^\/menu\/?$/;
+async function withMenuLd(res, env, bk, origin) {
+  try {
+    if (!res.ok || !(res.headers.get('content-type') || '').includes('text/html')) return res;
+    const tag = await menuJsonLd(env, bk, origin);
+    if (!tag) return res;
+    return new HTMLRewriter().on('head', { element(e) { e.append(tag, { html: true }); } }).transform(res);
+  } catch (e) { console.error('[menu-ld]', (e && e.message) || e); return res; }
+}
 
 const MAIN = 'https://bullheadhotels.co.ke';
 
@@ -81,7 +93,10 @@ async function handle(context) {
   if (OWNER_PAGE.test(url.pathname)) return notFound();
 
   const bk = hostBranch(url.hostname);
-  if (!bk) return context.next();
+  if (!bk) {
+    const plain = await context.next();
+    return MENU_PATH.test(url.pathname) ? withMenuLd(plain, context.env, null, MAIN) : plain;
+  }
   const origin = 'https://' + BRANCH_HOSTS[bk], name = BRANCH_NAMES[bk];
   const res = await context.next();
   const path = url.pathname;
@@ -107,8 +122,11 @@ async function handle(context) {
   const attr = (selector, a, fn) => [selector, { element(e) { const v = e.getAttribute(a); if (v != null) e.setAttribute(a, fn(v)); } }];
 
   let ld = '', ttl = '';
+  let menuTag = '';
+  if (MENU_PATH.test(path)) { try { menuTag = await menuJsonLd(context.env, bk, origin); } catch (e) { console.error('[menu-ld]', (e && e.message) || e); } }
   const rw = new HTMLRewriter()
     .on('html', { element(e) { e.setAttribute('data-branch', bk); } })
+    .on('head', { element(e) { if (menuTag) e.append(menuTag, { html: true }); } })
     .on(...attr('link[rel="canonical"]', 'href', swap))
     .on(...attr('meta[property="og:url"]', 'content', swap))
     .on(...attr('meta[name="description"]', 'content', oneCounter))
