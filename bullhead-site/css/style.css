@@ -1207,3 +1207,7 @@ html[data-branch] .locations-grid { grid-template-columns: 1fr; max-width: 760px
   .menu-photo-dots button.on { width: 24px; border-radius: 6px; background: #fff; }
 }
 @media (prefers-reduced-motion: reduce) { .menu-photo { transition: none; } }
+
+/* Agency credit, shown in every page footer */
+.apex-credit { margin-top: 12px; font-size: 0.8rem; opacity: 0.65; text-align: center; }
+.apex-credit a { text-decoration: underline; color: inherit; }

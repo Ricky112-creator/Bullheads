@@ -44,6 +44,7 @@ header small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 
 .wrap{padding:0 20px calc(120px + env(safe-area-inset-bottom))}
 select option,select optgroup{background:var(--card);color:var(--txt)}
+.credit{margin:28px 0 0;font-size:12.5px;text-align:center;opacity:.6}.credit a{color:inherit;text-decoration:underline}
 body:has(.bar:not([hidden])) .wrap{padding-bottom:calc(200px + env(safe-area-inset-bottom))}
 html{scroll-padding-bottom:210px}
 #app,#gate{max-width:920px;margin:0 auto}
@@ -331,6 +332,7 @@ textarea{min-height:84px;resize:vertical}
 
     <div class="signed"><i></i> Signed in <button class="link" id="logout">Sign out</button></div>
   </main>
+  <p class="credit">Digital ordering platform built by <a href="https://wa.me/254789077483?text=Hi%20Apex%2C%20I%27m%20using%20the%20Bullhead%20owner%20dashboard%20and%20need%20help%20with%20something." target="_blank" rel="noopener">Apex Studio</a>.</p>
 </div>
 
 <div class="bar" id="menuBar" hidden><div style="display:flex;gap:8px"><button class="btn ghost" id="mDiscard" type="button" style="flex:1">Discard</button><button class="btn" id="mReview" type="button" style="flex:2">Review &amp; save</button></div></div>
