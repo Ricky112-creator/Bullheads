@@ -163,7 +163,23 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
   // ---------- Orders ----------
   var orders = [], seen = null, ordTimer = null;
   var TYPE_LBL = { 'dine-in': 'Dine in', delivery: 'Delivery', 'drive-through': 'Drive-through', reserve: 'Reservation', 'on-the-way': 'On my way' };
-  function beep() { try { var a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .15; o.start(); o.stop(a.currentTime + .18); setTimeout(function () { var o2 = a.createOscillator(); o2.connect(g); o2.frequency.value = 1175; o2.start(); o2.stop(a.currentTime + .22); }, 220); } catch (e) {} }
+  // iPhone/iPad: sound only plays from an AudioContext that was resumed by a tap, and Safari allows only a few contexts.
+  // So: one shared context, woken on every tap (iOS can put it back to sleep after the app was in the background).
+  var actx = null;
+  function audioCtx() { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; if (!actx) actx = new C(); return actx; }
+  function wakeAudio() { try { var a = audioCtx(); if (a && a.state !== 'running') a.resume(); } catch (e) {} }
+  ['touchend', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, wakeAudio, { passive: true }); });
+  function beep() {
+    try {
+      var a = audioCtx(); if (!a) return;
+      var play = function () {
+        try { if (navigator.audioSession) { navigator.audioSession.type = 'playback'; setTimeout(function () { try { navigator.audioSession.type = 'auto'; } catch (e) {} }, 900); } } catch (e) {}   // lets the chime through the silent switch where iOS allows it
+        var t = a.currentTime + .02, g = a.createGain(); g.connect(a.destination); g.gain.value = .15;
+        [[880, 0, .18], [1175, .22, .22]].forEach(function (n) { var o = a.createOscillator(); o.frequency.value = n[0]; o.connect(g); o.start(t + n[1]); o.stop(t + n[1] + n[2]); });
+      };
+      if (a.state === 'running') play(); else a.resume().then(play).catch(function () {});
+    } catch (e) {}
+  }
   function ago(iso) {
     var ms = Date.now() - new Date(iso).getTime();
     if (ms < 0) return 'just now';
@@ -320,7 +336,7 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
     var top = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 6);
     $('iTop').innerHTML = ''; if (!top.length) $('iTop').appendChild(mk('p', 'empty', 'No orders yet — this fills up as customers order.'));
     top.forEach(function (n) { var r = mk('div', 'bar-row'), t = mk('div', 't'); t.appendChild(mk('span', '', n)); t.appendChild(mk('b', '', cnt[n] + (cnt[n] === 1 ? ' order' : ' orders'))); var b = mk('div', 'b'), i = mk('i'); i.style.width = (cnt[n] / cnt[top[0]] * 100) + '%'; b.appendChild(i); r.appendChild(t); r.appendChild(b); $('iTop').appendChild(r); });
-    var hrs = {}; o7.forEach(function (o) { var h = new Date(new Date(o.ts).toLocaleString('en-US', { timeZone: 'Africa/Nairobi' })).getHours(); hrs[h] = (hrs[h] || 0) + 1; });
+    var hrs = {}; o7.forEach(function (o) { var h = new Date(new Date(o.ts).getTime() + 3 * 36e5).getUTCHours(); hrs[h] = (hrs[h] || 0) + 1; });
     var best = Object.keys(hrs).sort(function (a, b) { return hrs[b] - hrs[a]; })[0];
     $('iHours').innerHTML = ''; if (best != null) { var h12 = (best % 12) || 12, ap = best < 12 ? 'AM' : 'PM'; var p = mk('p', '', 'Around ' + h12 + ' ' + ap + ' \u00b7 ' + hrs[best] + ' order' + (hrs[best] === 1 ? '' : 's') + ' this week'); p.style.cssText = 'font-size:1.05rem;font-weight:600;margin:0'; $('iHours').appendChild(p); } else $('iHours').appendChild(mk('p', 'empty', 'No orders yet.'));
   }
