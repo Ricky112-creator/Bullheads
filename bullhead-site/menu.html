@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="css/style.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
 <a class="skip-link" href="#main-content" data-sw="Rukia hadi maudhui makuu">Skip to main content</a>
@@ -32,7 +32,7 @@
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
 <header class="site-nav" id="siteNav">
-  <a href="/" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
+  <a href="/" class="nav-mark"><img src="assets/img/logo-mark-208.webp" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
   <nav class="nav-links">
     <a href="/" data-sw="Nyumbani">Home</a>
     <a href="/menu" class="active" aria-current="page" data-sw="Menyu">Menu</a>
@@ -61,7 +61,7 @@
 <main id="main-content">
 
   <section class="page-hero">
-    <picture><source srcset="assets/img/menu-hero-chips-point.webp" type="image/webp"><img src="assets/img/menu-hero-chips-point.jpg" alt="Chips Point and Bull Head Hotel on the main strip in Emali" fetchpriority="high" decoding="async" width="1920" height="865"></picture>
+    <picture><source srcset="assets/img/menu-hero-chips-point-480.webp 480w, assets/img/menu-hero-chips-point-800.webp 800w, assets/img/menu-hero-chips-point-1200.webp 1200w, assets/img/menu-hero-chips-point.webp 1920w" sizes="100vw" type="image/webp"><img src="assets/img/menu-hero-chips-point.jpg" alt="Chips Point and Bull Head Hotel on the main strip in Emali" fetchpriority="high" decoding="async" width="1920" height="865"></picture>
     <div class="page-hero-scrim"></div>
     <div class="page-hero-content">
       <p class="page-hero-kicker" data-sw="Menyu">The Menu</p>
@@ -76,15 +76,15 @@
     </div>
     <div class="kitchen-grid">
       <figure class="kitchen-card kitchen-card--wide">
-        <picture><source srcset="assets/img/menu-dining-room.webp" type="image/webp"><img src="assets/img/menu-dining-room.jpg" alt="The dining area at Bullhead, with orange tables and chairs" loading="lazy" decoding="async" width="1200" height="1547"></picture>
+        <picture><source srcset="assets/img/menu-dining-room-480.webp 480w, assets/img/menu-dining-room-800.webp 800w, assets/img/menu-dining-room.webp 1200w" sizes="100vw" type="image/webp"><img src="assets/img/menu-dining-room.jpg" alt="The dining area at Bullhead, with orange tables and chairs" loading="lazy" decoding="async" width="1200" height="1547"></picture>
         <figcaption data-sw="Chumba cha kulia — meza za rangi ya machungwa, kiti daima kipo">The dining room — orange tables, always a seat</figcaption>
       </figure>
       <figure class="kitchen-card">
-        <picture><source srcset="assets/img/menu-chips.webp" type="image/webp"><img src="assets/img/menu-chips.jpg" alt="Chips fried fresh and piled on the tray" loading="lazy" decoding="async" width="1400" height="933"></picture>
+        <picture><source srcset="assets/img/menu-chips-480.webp 480w, assets/img/menu-chips-800.webp 800w, assets/img/menu-chips-1200.webp 1200w, assets/img/menu-chips.webp 1400w" sizes="100vw" type="image/webp"><img src="assets/img/menu-chips.jpg" alt="Chips fried fresh and piled on the tray" loading="lazy" decoding="async" width="1400" height="933"></picture>
         <figcaption data-sw="Chipsi mpya, zikikaangwa papo hapo">Chips, fried fresh to order</figcaption>
       </figure>
       <figure class="kitchen-card">
-        <picture><source srcset="assets/img/menu-counter.webp" type="image/webp"><img src="assets/img/menu-counter.jpg" alt="The service counter, display case and fish tank at Bullhead" loading="lazy" decoding="async" width="1400" height="1005"></picture>
+        <picture><source srcset="assets/img/menu-counter-480.webp 480w, assets/img/menu-counter-800.webp 800w, assets/img/menu-counter-1200.webp 1200w, assets/img/menu-counter.webp 1400w" sizes="100vw" type="image/webp"><img src="assets/img/menu-counter.jpg" alt="The service counter, display case and fish tank at Bullhead" loading="lazy" decoding="async" width="1400" height="1005"></picture>
         <figcaption data-sw="Kaunta — agiza, kaa, subiri harufu ikufikie">The counter — order, sit, wait for the smell to reach you</figcaption>
       </figure>
     </div>
@@ -92,11 +92,11 @@
 
   <section class="menu-stage" style="background: var(--rose); padding-top: 8px;">
     <div class="menu-photos" id="menuPhotos" role="group" aria-label="Photos from the menu">
-      <figure class="menu-photo on" data-cats="*" data-stock="false"><img src="assets/img/menu-dining-room.webp" alt="The dining area at Bullhead, with orange tables and chairs" width="1200" height="1547"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Chumba cha kulia — meza za rangi ya machungwa, kiti daima kipo">The dining room — orange tables, always a seat</figcaption></figure>
-      <figure class="menu-photo" data-cats="main dishes" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-ugali-beef.webp" alt="Beef stew with green and red peppers, a mound of ugali and sukuma wiki on a white plate" width="900" height="1117"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Ugali na nyama ya ng’ombe">Ugali and beef</figcaption></figure>
-      <figure class="menu-photo" data-cats="main dishes" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-rice-beef.webp" alt="Beef and potato stew with peas and carrots, white rice and fried cabbage on a white plate" width="793" height="1043"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Wali na nyama ya ng’ombe">Rice and beef</figcaption></figure>
-      <figure class="menu-photo" data-cats="the grill" data-stock="false"><img loading="lazy" decoding="async" src="assets/img/explore-grill.webp" alt="Grilled beef served from the hot plate at Bullhead" width="1200" height="800"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Nyama ya kuchoma, moja kwa moja kutoka kwenye bamba la moto">Grilled beef, straight from the hot plate</figcaption></figure>
-      <figure class="menu-photo" data-cats="fish specialty" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-tilapia.webp" alt="Three whole fried tilapia on a white plate" width="768" height="591"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Tilapia ya kukaanga">Fried tilapia</figcaption></figure>
+      <figure class="menu-photo on" data-cats="*" data-stock="false"><img src="assets/img/menu-dining-room.webp" srcset="assets/img/menu-dining-room-480.webp 480w, assets/img/menu-dining-room-800.webp 800w, assets/img/menu-dining-room.webp 1200w" sizes="100vw" alt="The dining area at Bullhead, with orange tables and chairs" width="1200" height="1547"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Chumba cha kulia — meza za rangi ya machungwa, kiti daima kipo">The dining room — orange tables, always a seat</figcaption></figure>
+      <figure class="menu-photo" data-cats="main dishes" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-ugali-beef.webp" srcset="assets/img/dish-ugali-beef-480.webp 480w, assets/img/dish-ugali-beef.webp 900w" sizes="100vw" alt="Beef stew with green and red peppers, a mound of ugali and sukuma wiki on a white plate" width="900" height="1117"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Ugali na nyama ya ng’ombe">Ugali and beef</figcaption></figure>
+      <figure class="menu-photo" data-cats="main dishes" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-rice-beef.webp" srcset="assets/img/dish-rice-beef-480.webp 480w, assets/img/dish-rice-beef.webp 793w" sizes="100vw" alt="Beef and potato stew with peas and carrots, white rice and fried cabbage on a white plate" width="793" height="1043"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Wali na nyama ya ng’ombe">Rice and beef</figcaption></figure>
+      <figure class="menu-photo" data-cats="the grill" data-stock="false"><img loading="lazy" decoding="async" src="assets/img/explore-grill.webp" srcset="assets/img/explore-grill-480.webp 480w, assets/img/explore-grill-800.webp 800w, assets/img/explore-grill.webp 1200w" sizes="100vw" alt="Grilled beef served from the hot plate at Bullhead" width="1200" height="800"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Nyama ya kuchoma, moja kwa moja kutoka kwenye bamba la moto">Grilled beef, straight from the hot plate</figcaption></figure>
+      <figure class="menu-photo" data-cats="fish specialty" data-stock="true"><img loading="lazy" decoding="async" src="assets/img/dish-tilapia.webp" srcset="assets/img/dish-tilapia-480.webp 480w, assets/img/dish-tilapia.webp 768w" sizes="100vw" alt="Three whole fried tilapia on a white plate" width="768" height="591"><span class="menu-photo-tag" data-sw="Picha ya mfano">Illustrative photo</span><figcaption data-sw="Tilapia ya kukaanga">Fried tilapia</figcaption></figure>
       <div class="menu-photo-dots"></div>
     </div>
     <div style="max-width:720px; margin:0 auto; padding: 48px var(--edge) 0;">

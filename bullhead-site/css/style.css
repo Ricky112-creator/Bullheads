@@ -128,7 +128,7 @@ h1, h2, h3 {
   font-weight: 600;
   padding: 9px 18px;
   border-radius: 100px;
-  background: var(--red);
+  background: #D12B24;
   color: #fff;
   white-space: nowrap;
 }
@@ -276,7 +276,7 @@ h1, h2, h3 {
   transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 .btn-primary {
-  background: var(--red);
+  background: #D12B24;
   color: #fff;
 }
 .btn-primary:hover { transform: translateY(-2px); }

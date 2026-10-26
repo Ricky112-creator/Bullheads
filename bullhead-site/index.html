@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="css/style.css?v=11">
+<link rel="stylesheet" href="css/style.css?v=12">
 <link rel="stylesheet" href="css/relay.css?v=2">
 <script type="application/ld+json">
 {
@@ -164,7 +164,7 @@
 <div class="progress-rail" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
 
 <header class="site-nav" id="siteNav">
-  <a href="/" class="nav-mark"><img src="assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
+  <a href="/" class="nav-mark"><img fetchpriority="high" src="assets/img/logo-mark-208.webp" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
   <nav class="nav-links">
     <a href="/" class="active" aria-current="page" data-sw="Nyumbani">Home</a>
     <a href="/menu" data-sw="Menyu">Menu</a>
@@ -196,12 +196,12 @@
   <!-- HERO -->
   <section class="hero" id="hero">
     <div class="hero-media">
-      <picture><source srcset="assets/img/hero-storefront.webp" type="image/webp"><img src="assets/img/hero-storefront.jpg" alt="Bullhead Hotel, Chips Point, Fish Point and the butchery side by side on the main strip in Emali" id="heroImg" fetchpriority="high" decoding="async" width="1920" height="832"></picture>
+      <picture><source srcset="assets/img/hero-storefront-480.webp 480w, assets/img/hero-storefront-800.webp 800w, assets/img/hero-storefront-1200.webp 1200w, assets/img/hero-storefront.webp 1920w" sizes="100vw" type="image/webp"><img src="assets/img/hero-storefront.jpg" alt="Bullhead Hotel, Chips Point, Fish Point and the butchery side by side on the main strip in Emali" id="heroImg" fetchpriority="high" decoding="async" width="1920" height="832"></picture>
       <div class="hero-scrim"></div>
       <div id="splineLayer" class="spline-hero-layer"></div>
     </div>
     <div class="hero-content">
-      <img src="assets/img/logo-mark.png" alt="Bullhead" class="hero-logo" width="254" height="223">
+      <img src="assets/img/logo-mark-208.webp" alt="Bullhead" class="hero-logo" width="254" height="223">
       <p class="hero-kicker" data-sw="Emali, kwenye barabara ya Nairobi–Mombasa">Emali, on the Nairobi–Mombasa road</p>
       <h1 class="hero-headline" data-sw="Kituo ambacho hakuna<br>anayekipangia — hadi<br>anaposhindwa kukisahau.">The stop nobody plans for<br>— until they can't stop<br>thinking about it.</h1>
       <p class="hero-sub" data-sw="Bucha na hoteli isiyofunga kamwe, kwa sababu barabara nayo haifungi. Muulize dereva yeyote aliyepita hapa mara mbili — atakuambia hasa pa kusimama.">A butchery and hotel that never closes, because the road doesn't either. Ask any driver who's done this route twice — they'll tell you exactly where to pull over.</p>
@@ -235,7 +235,7 @@
   <!-- CONDENSED STORY -->
   <section class="story">
     <div class="story-media">
-      <picture><source srcset="assets/img/story-chef-oven.webp" type="image/webp"><img src="assets/img/story-chef-oven.jpg" alt="A Bullhead cook tending the charcoal oven" loading="lazy" decoding="async" width="1200" height="1440"></picture>
+      <picture><source srcset="assets/img/story-chef-oven-480.webp 480w, assets/img/story-chef-oven-800.webp 800w, assets/img/story-chef-oven.webp 1200w" sizes="100vw" type="image/webp"><img src="assets/img/story-chef-oven.jpg" alt="A Bullhead cook tending the charcoal oven" loading="lazy" decoding="async" width="1200" height="1440"></picture>
     </div>
     <div class="story-copy">
       <h2 data-sw="Ilianza kama bucha moja katika mtaa huu.">It started as one butchery on this street.</h2>
@@ -276,7 +276,7 @@
     <h2 data-sw="Angalia Karibu">Look around</h2>
     <div class="explore-grid">
       <a href="/menu" class="explore-card">
-        <picture><source srcset="assets/img/explore-grill.webp" type="image/webp"><img src="assets/img/explore-grill.jpg" alt="Grilled beef served from the hot plate at Bullhead" loading="lazy" decoding="async" width="1200" height="800"></picture>
+        <picture><source srcset="assets/img/explore-grill-480.webp 480w, assets/img/explore-grill-800.webp 800w, assets/img/explore-grill.webp 1200w" sizes="100vw" type="image/webp"><img src="assets/img/explore-grill.jpg" alt="Grilled beef served from the hot plate at Bullhead" loading="lazy" decoding="async" width="1200" height="800"></picture>
         <div class="explore-card-scrim"></div>
         <div class="explore-card-label">
           <h3 data-sw="Menyu">The Menu</h3>
@@ -284,7 +284,7 @@
         </div>
       </a>
       <a href="/visit" class="explore-card">
-        <img loading="lazy" src="assets/img/bullhead-two-storefront.jpg" alt="Bullhead Two storefront in Emali" width="1200" height="900">
+        <img loading="lazy" src="assets/img/bullhead-two-storefront.webp" srcset="assets/img/bullhead-two-storefront-480.webp 480w, assets/img/bullhead-two-storefront-800.webp 800w, assets/img/bullhead-two-storefront.webp 1200w" sizes="100vw" alt="Bullhead Two storefront in Emali" width="1200" height="900">
         <div class="explore-card-scrim"></div>
         <div class="explore-card-label">
           <h3 data-sw="Tembelea">Visit</h3>
