@@ -32,16 +32,17 @@ const MAIN = 'https://bullheadhotels.co.ke';
 // Added here (not only in _headers) because Cloudflare does not apply _headers to responses a Function produces:
 // that covers every /api reply, the admin host, the branch-rewritten pages and the 404 page.
 // The CSP allows only what the site really loads: its own files, GSAP/Lenis from jsDelivr, the QR library from cdnjs,
-// Google Fonts, and the Google Maps embeds on /visit. There are no inline scripts (they live in /js/); the single
+// Google Fonts, the Google Maps embeds on /visit, Google Analytics (gtag.js + its collect endpoints) and the Cloudflare
+// Web Analytics beacon. There are no inline scripts (they live in /js/, incl. js/gtag-init.js); the single
 // hash below is the font-loading `onload` handler on the <link rel="preload"> tags, which needs 'unsafe-hashes'.
 // If a page ever needs a new outside host, add it here or the browser will block it (the console says which rule).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-hashes' 'sha256-1jAmyYXcRq6zFldLe/GCgIDJBiOONdXjTLgEFMDnDSM='",
+  "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://static.cloudflareinsights.com 'unsafe-hashes' 'sha256-1jAmyYXcRq6zFldLe/GCgIDJBiOONdXjTLgEFMDnDSM='",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob:",
-  "connect-src 'self'",
+  "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com https://*.googletagmanager.com",
+  "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com",
   "frame-src https://www.google.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
