@@ -97,3 +97,12 @@
   .ring-copy { padding: 0 0 0 var(--edge); align-self: center; max-width: none; }
   .ring-stage { --w: clamp(200px, min(17vw, 33vh), 330px); height: 100%; perspective-origin: 50% 40%; }
 }
+
+/* ---- hero reel: photos crossfade, each with a slow push ---- */
+.hero-media .hero-slide { opacity: 0; transition: opacity 1.5s ease; }
+.hero-media > img.hero-slide:not(#heroImg) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 60%; transform: none; will-change: opacity, scale, translate; }
+.hero-media .hero-slide.is-on { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-media > img.hero-slide:not(#heroImg).is-on { animation: bhHeroPan 9.5s cubic-bezier(.3, .1, .3, 1) both; }
+  @keyframes bhHeroPan { from { scale: 1.04; translate: calc(var(--dir, 1) * -1.2%) 0; } to { scale: 1.13; translate: calc(var(--dir, 1) * 1.2%) -1%; } }
+}
