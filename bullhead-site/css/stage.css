@@ -34,8 +34,8 @@
 
 /* ---- headings: clipped, then lifted into view once ---- */
 @media (prefers-reduced-motion: no-preference) {
-  .bh-rise { clip-path: inset(0 0 104% 0); translate: 0 .45em; opacity: .01; }
-  .bh-rise.in { clip-path: inset(-12% -6% -12% -6%); translate: 0 0; opacity: 1; transition: clip-path 1s cubic-bezier(.16, 1, .3, 1), translate 1s cubic-bezier(.16, 1, .3, 1), opacity .5s ease; }
+  .bh-rise { translate: 0 .5em; opacity: .01; }
+  .bh-rise.in { translate: 0 0; opacity: 1; transition: translate 1s cubic-bezier(.16, 1, .3, 1), opacity .7s ease; }
 }
 
 /* ---- magnetic buttons ---- */
@@ -86,4 +86,14 @@
 @media (min-width: 800px) {
   .arrive-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
   .arrive-fig:nth-child(1) { rotate: 0 1 0 5deg; } .arrive-fig:nth-child(3) { rotate: 0 1 0 -5deg; } .arrive-fig:nth-child(2) { margin-top: 26px; }
+}
+
+/* photographs that drift must stay inside their frames */
+.story-media, .location-media { overflow: hidden; }
+
+/* the ring on wide screens: copy on the left, the turntable centred on the right, nothing cropped */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .ring-pin { grid-template-rows: 1fr; grid-template-columns: minmax(320px, 5fr) 7fr; align-items: center; }
+  .ring-copy { padding: 0 0 0 var(--edge); align-self: center; max-width: none; }
+  .ring-stage { --w: clamp(200px, min(17vw, 33vh), 330px); height: 100%; perspective-origin: 50% 40%; }
 }

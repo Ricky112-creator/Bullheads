@@ -54,6 +54,8 @@
     var hs = $('main h2, .ring-copy h2').filter(function (h) { return !h.closest('.hero') && !h.closest('[hidden]'); });
     var hio = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); hio.unobserve(e.target); } }); }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
     hs.forEach(function (h) { h.classList.add('bh-rise'); hio.observe(h); });
+    var sweep = (function () { var w = false; return function () { if (w) return; w = true; requestAnimationFrame(function () { w = false; var vh = window.innerHeight || 800; hs.forEach(function (h) { if (h.classList.contains('in')) return; var r = h.getBoundingClientRect(); if (r.top < vh * 0.94 && r.bottom > 0) { h.classList.add('in'); hio.unobserve(h); } }); }); }; })();
+    window.addEventListener('scroll', sweep, { passive: true }); window.addEventListener('resize', sweep); setTimeout(sweep, 400);
   }
 
   /* ---- magnetic buttons ---- */

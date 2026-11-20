@@ -1,5 +1,6 @@
 /* Bullhead depth: canvas backgrounds sit behind content and never take a click. */
-.bh-depth-host { position: relative; isolation: isolate; }
+.bh-depth-host { isolation: isolate; }
+footer.visit.bh-depth-host, .page-hero.bh-depth-host { position: relative; }
 .bh-depth { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: block; }
 footer.visit.bh-depth-host { overflow: hidden; }
 footer.visit.bh-depth-host > *:not(canvas) { position: relative; z-index: 1; }
