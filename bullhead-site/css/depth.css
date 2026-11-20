@@ -1,0 +1,18 @@
+/* Bullhead depth: canvas backgrounds sit behind content and never take a click. */
+.bh-depth-host { isolation: isolate; }
+footer.visit.bh-depth-host, .page-hero.bh-depth-host { position: relative; }
+.bh-depth { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: block; }
+footer.visit.bh-depth-host { overflow: hidden; }
+footer.visit.bh-depth-host > *:not(canvas) { position: relative; z-index: 1; }
+.bh-depth--embers { z-index: 0; opacity: .95; }
+.bh-depth--sparks { z-index: 1; opacity: .85; mix-blend-mode: screen; }
+.bh-depth--road { z-index: 1; opacity: .7; mix-blend-mode: screen; }
+.hero-media.bh-depth-host, .page-hero.bh-depth-host { overflow: hidden; }
+@media print { .bh-depth { display: none; } }
+
+/* The "grill never goes out" strip: a dark photograph behind the line, under a green wash so the text stays readable. */
+.strip { position: relative; isolation: isolate; overflow: hidden; --strip-img: url("/assets/img/reel/r-a15-s.webp"); }
+.strip::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(rgba(22, 63, 44, .88), rgba(22, 63, 44, .82)), var(--strip-img) center / cover no-repeat; }
+
+.apex-credit { margin-top: 12px; font-size: .8rem; opacity: .65; text-align: center; }
+.apex-credit a { text-decoration: underline; color: inherit; }

@@ -21,61 +21,58 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap"></noscript>
-<link rel="stylesheet" href="/css/style.css?v=9">
-<style>
-  .gal { max-width: 1100px; margin: 0 auto; padding: 130px 20px 70px; }
-  .gal-kicker { color: var(--cognac); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; margin: 0 0 8px; }
-  .gal h1 { font-family: var(--font-display); font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.1; margin: 0 0 8px; }
-  .gal-sub { color: var(--ink-soft); margin: 0 0 30px; max-width: 46ch; }
-  .gal-grid { columns: 3 260px; column-gap: 14px; }
-  .gal-grid figure { margin: 0 0 14px; break-inside: avoid; background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--cream-deep); box-shadow: 0 8px 24px rgba(36, 23, 18, .07); cursor: zoom-in; transition: transform .2s ease; }
-  .gal-grid figure:hover { transform: translateY(-3px); }
-  .gal-grid img { width: 100%; display: block; }
-  .gal-grid figcaption { padding: 10px 14px 12px; font-size: .9rem; color: var(--ink-soft); }
-  .gal-empty { color: var(--ink-soft); padding: 40px 0; }
-  .lb { position: fixed; inset: 0; background: rgba(20, 12, 9, .92); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200; cursor: zoom-out; flex-direction: column; gap: 12px; }
-  .lb.on { display: flex; }
-  .lb img { max-width: 100%; max-height: 82vh; border-radius: 12px; }
-  .lb p { color: #f6efe6; margin: 0; }
-  @media (prefers-reduced-motion: reduce) { .gal-grid figure { transition: none; } }
-  /* Sticky footer: page fills the screen, footer always sits at the very bottom */
-  html { height: 100%; }
-  body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
-  .gal { flex: 1 0 auto; width: 100%; box-sizing: border-box; }
-  footer.visit { flex-shrink: 0; margin-top: auto; }
-</style>
+<link rel="stylesheet" href="/css/style.css?v=11">
+<link rel="stylesheet" href="/css/reel.css?v=1">
+<link rel="stylesheet" href="/css/stage.css?v=1">
+<link rel="stylesheet" href="/css/depth.css?v=1">
 </head>
-<body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
+<body class="reel-page">
+<a class="skip-link" href="#reel">Skip to main content</a>
 <header class="site-nav" id="siteNav">
   <a href="/" class="nav-mark"><img src="/assets/img/logo-mark.png" alt="" class="nav-logo" width="254" height="223">Bullhead</a>
   <nav class="nav-links">
-    <a href="/">Home</a>
-    <a href="/menu">Menu</a>
-    <a href="/visit">Visit</a>
-    <a href="/contact">Contact</a>
+    <a href="/" data-sw="Nyumbani">Home</a>
+    <a href="/menu" data-sw="Menyu">Menu</a>
+    <a href="/visit" data-sw="Tembelea">Visit</a>
+    <a href="/contact" data-sw="Wasiliana">Contact</a>
+    <a href="/gallery" class="active" aria-current="page" data-sw="Picha">Gallery</a>
   </nav>
   <div style="display:flex; align-items:center;">
+    <button id="langToggle" type="button" style="margin-right:10px; background:none; border:1px solid currentColor; border-radius:999px; padding:4px 10px; font-size:0.8rem; cursor:pointer;">SW</button>
     <a href="https://wa.me/254720707323" class="nav-cta" target="_blank" rel="noopener">WhatsApp</a>
     <button class="nav-burger" id="navBurger" aria-label="Open menu"><span></span><span></span><span></span></button>
   </div>
 </header>
 <div class="mobile-menu" id="mobileMenu">
-  <a href="/">Home</a>
-  <a href="/menu">Menu</a>
-  <a href="/visit">Visit</a>
-  <a href="/contact">Contact</a>
+  <a href="/" data-sw="Nyumbani">Home</a>
+  <a href="/menu" data-sw="Menyu">Menu</a>
+  <a href="/visit" data-sw="Tembelea">Visit</a>
+  <a href="/contact" data-sw="Wasiliana">Contact</a>
+  <a href="/gallery" class="active" data-sw="Picha">Gallery</a>
 </div>
 
-<main class="gal" id="main-content">
-  <p class="gal-kicker">Gallery</p>
-  <h1>Life at Bullhead</h1>
-  <p class="gal-sub">The counter, the grill and the road outside. We never close, so there's always something to see.</p>
-  <div class="gal-grid" id="gg"><p class="gal-empty">Loading…</p></div>
+<main class="reel" id="reel">
+  <div class="reel-head">
+    <h1 data-sw="Maisha ya Bullhead">Life at Bullhead</h1>
+    <p data-sw="Telezesha, buruta au tumia mishale. Bonyeza picha ya katikati kuifungua kubwa.">Swipe, drag or use the arrow keys. Press the middle photo to open it full size.</p>
+  </div>
+  <ul class="reel-chips" id="reelChips" aria-label="Choose a part of Bullhead"></ul>
+  <div class="reel-stage" id="reelStage" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Bullhead in pictures"></div>
+  <div class="reel-bar">
+    <div class="reel-ticket" aria-live="polite">
+      <div class="no"><span id="tkNo">No. 01</span><span id="tkOf"></span></div>
+      <p class="cap" id="tkCap"></p>
+      <div class="no" style="margin:8px 0 0;color:var(--ink-soft)"><span id="tkCh"></span></div>
+    </div>
+    <div class="reel-ctl">
+      <button type="button" id="reelPrev" aria-label="Previous photo">&#8592;</button>
+      <button type="button" class="play" id="reelPlay" aria-pressed="false" aria-label="Play slideshow">&#9654;</button>
+      <button type="button" id="reelNext" aria-label="Next photo">&#8594;</button>
+      <button type="button" id="reelOpen" aria-label="Open full size">&#10530;</button>
+    </div>
+  </div>
+  <div class="reel-film" id="reelFilm" aria-label="All photos"></div>
 </main>
-
-<div class="lb" id="lb" aria-hidden="true"><img alt="" id="lbImg"><p id="lbCap"></p></div>
-
 <footer class="visit" style="padding-top:48px;">
   <div class="visit-footer" style="border-top:none; padding-top:0;">
     <span>Bullhead Butchery &amp; Hotel — Emali</span>
@@ -88,11 +85,14 @@
     </div>
   </div>
   <p class="footer-legal">&copy; <span class="js-year">2026</span> Bullhead Butchery &amp; Hotel. All rights reserved.</p>
-  <p class="apex-credit">Digital ordering platform built by <a href="https://wa.me/254789077483?text=Hi%20Apex%2C%20I%20saw%20the%20Bullhead%20site%20and%20I%27d%20like%20to%20inquire%20about%20a%20custom%20web%20system." target="_blank" rel="noopener">Apex Studio</a>.</p>
+    <p class="apex-credit">Digital ordering platform built by <a href="https://apex-studios-8xq.pages.dev/" target="_blank" rel="noopener">Apex Studio</a>.</p>
   </footer>
-
 <script src="/js/branches.js"></script>
-<script src="/js/main.js?v=9"></script>
-<script src="/js/gallery-page.js"></script>
+<script src="/js/main.js?v=11"></script>
+<script src="/js/reel-data.js?v=1"></script>
+<script src="/js/reel.js?v=1"></script>
+<script src="/js/stage.js?v=1"></script>
+<script defer src="/js/depth.js?v=1"></script>
+<script src="/js/lang-toggle.js"></script>
 </body>
 </html>
