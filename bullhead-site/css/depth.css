@@ -13,3 +13,6 @@ footer.visit.bh-depth-host > *:not(canvas) { position: relative; z-index: 1; }
 /* The "grill never goes out" strip: a dark photograph behind the line, under a green wash so the text stays readable. */
 .strip { position: relative; isolation: isolate; overflow: hidden; --strip-img: url("/assets/img/reel/r-a15-s.webp"); }
 .strip::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(rgba(22, 63, 44, .88), rgba(22, 63, 44, .82)), var(--strip-img) center / cover no-repeat; }
+
+.apex-credit { margin-top: 12px; font-size: .8rem; opacity: .65; text-align: center; }
+.apex-credit a { text-decoration: underline; color: inherit; }
