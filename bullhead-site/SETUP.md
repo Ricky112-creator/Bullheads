@@ -77,8 +77,3 @@ One repo, one Pages project, one database. Three addresses serve the same files:
 - The cart is stored per address, so a cart started on the main site does not follow a customer to a branch site.
 - Every page view on a branch address still counts once against the 100,000 daily Functions requests (as the main site already did), and all three addresses share that quota.
 - To add a third branch: `functions/_lib/branches.js`, `js/branches.js`, a Custom domain, and mark its blocks with `data-branch` / `data-only`.
-
-
-## Gallery: main site vs branch sites
-- **bullheadhotels.co.ke/gallery** shows only the photos you upload and publish in the admin panel (Photos).
-- **branch1. / branch2.** show a fixed, full set of photos from `assets/gallery/branch-gallery.json` (each entry points to `assets/img/<name>.jpg` and its `.webp`). Add a photo there to add it to both branch galleries.
