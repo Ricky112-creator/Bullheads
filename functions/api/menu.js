@@ -42,7 +42,7 @@ export async function onRequestPost({ request, env }) {
   } else if (scope === 'main') {
     // pin first: a branch with no board of its own was following the shared one, so freeze it at what it shows today
     const shared = (await env.UPDATES_KV.get('menu')) || '{}';
-    for (const k of BRANCH_KEYS) if (!(await env.UPDATES_KV.get('menu:' + k))) await env.UPDATES_KV.put('menu:' + k, shared, { metadata: { ts: 1 } });
+    for (const k of BRANCH_KEYS) if (!(await env.UPDATES_KV.get('menu:' + k))) await env.UPDATES_KV.put('menu:' + k, shared, { metadata: { ts: 0 } });
     await env.UPDATES_KV.put('menu', val, meta);
   } else {
     await env.UPDATES_KV.put('menu', val, meta);
