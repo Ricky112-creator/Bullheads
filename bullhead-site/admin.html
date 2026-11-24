@@ -283,9 +283,9 @@ textarea{min-height:84px;resize:vertical}
 
     <div data-tab="menu" hidden>
       <section class="card">
-        <label class="l" for="mBranch" style="margin-top:0">Editing the board for</label>
-        <select id="mBranch"><option value="">Both branches (shared board)</option><option value="one">Bullhead One only</option><option value="two">Bullhead Two only</option></select>
-        <p class="sub" style="margin:10px 0 16px">A branch's own board overrides the shared one on that branch's site. Nothing goes live until you review and save. Tap ★ to make an item today's special.</p>
+        <label class="l" style="margin-top:0">Editing the board for</label>
+        <div class="row" id="mscope"></div>
+        <p class="sub" style="margin:10px 0 16px">All sites saves this board to every site (it replaces each site's own board). Main site, Branch 1 or Branch 2 changes only that one. Nothing goes live until you review and save. Tap ★ to make an item today's special.</p>
         <div style="display:flex;gap:8px"><input type="text" id="mSearch" placeholder="Search the menu" aria-label="Search the menu"><button class="btn" id="addItemBtn" type="button" style="width:auto;white-space:nowrap;font-size:16px">Add item</button></div>
         <div id="mList" style="margin-top:6px"></div>
       </section>
@@ -332,7 +332,7 @@ textarea{min-height:84px;resize:vertical}
 
     <div class="signed"><i></i> Signed in <button class="link" id="logout">Sign out</button></div>
   </main>
-  <p class="credit">Digital ordering platform built by <a href="https://apex-studios-8xq.pages.dev/" target="_blank" rel="noopener">Apex Studio</a>.</p>
+  <p class="credit">Digital ordering platform built by <a href="https://wa.me/254789077483?text=Hi%20Apex%20Studio%2C%20I%27m%20using%20the%20Bullhead%20dashboard%20and%20need%20help." target="_blank" rel="noopener">Apex Studio</a>.</p>
 </div>
 
 <div class="bar" id="menuBar" hidden><div style="display:flex;gap:8px"><button class="btn ghost" id="mDiscard" type="button" style="flex:1">Discard</button><button class="btn" id="mReview" type="button" style="flex:2">Review &amp; save</button></div></div>

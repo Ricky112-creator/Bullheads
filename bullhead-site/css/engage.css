@@ -1,0 +1,68 @@
+/* Bullhead engagement layer: purely additive. Add-to-order feedback, "goes well with" strip, kilo guide, save/share, order-ahead line, reviews. */
+
+/* ---- add-to-order feedback ---- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes bhPop { 0% { scale: 1; } 40% { scale: 1.32; } 100% { scale: 1; } }
+  .bh-pop { display: inline-block; animation: bhPop .32s cubic-bezier(.2, .8, .2, 1); }
+}
+
+/* ---- "goes well with" strip: sits just above the floating order bar ---- */
+.bh-ups { position: fixed; left: var(--edge); right: var(--edge); bottom: 98px; z-index: 59; display: none; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--cream); color: var(--ink); box-shadow: 0 10px 26px rgba(0, 0, 0, .2), inset 0 0 0 1px rgba(36, 23, 18, .08);
+  font: 600 .8rem/1.2 var(--font-body); }
+.bh-ups.on { display: flex; }
+.bh-ups > span { color: var(--ink-soft); }
+.bh-ups button { font: 600 .82rem/1 var(--font-body); color: var(--ink); background: #fff; border: 1px solid rgba(36, 23, 18, .18); border-radius: 999px; padding: 9px 13px; cursor: pointer; }
+.bh-ups button:active { transform: scale(.96); }
+.bh-ups button:focus-visible, .bh-ups .bh-x:focus-visible, .bh-est summary:focus-visible, .bh-est button:focus-visible { outline: 2px solid var(--cognac); outline-offset: 2px; }
+.bh-ups button b { color: var(--red); font-weight: 700; }
+.bh-ups .bh-x { margin-left: auto; border: 0; background: none; font-size: 1.1rem; padding: 6px 8px; color: var(--ink-soft); }
+
+/* ---- how much meat? ---- */
+.bh-est { width: min(1240px, 100% - 2 * var(--edge-narrow)); margin: 6px auto 14px; border-radius: 18px; background: var(--cream); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(36, 23, 18, .1); }
+.bh-est summary { cursor: pointer; padding: 14px 18px; font: 600 .95rem/1.2 var(--font-body); list-style: none; }
+.bh-est summary::-webkit-details-marker { display: none; }
+.bh-est summary::after { content: "+"; float: right; font-weight: 700; color: var(--red); }
+.bh-est[open] summary::after { content: "–"; }
+.bh-est-body { display: grid; gap: 12px; padding: 0 18px 18px; }
+.bh-est label { display: grid; gap: 6px; font: 600 .78rem/1 var(--font-body); color: var(--ink-soft); }
+.bh-est select, .bh-est input[type="number"] { font: 500 1rem var(--font-body); padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(36, 23, 18, .2); background: #fff; color: var(--ink); width: 100%; box-sizing: border-box; }
+.bh-est-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.bh-est-out { font: 500 1.05rem/1.35 var(--font-display); }
+.bh-est-out b { font-weight: 600; }
+.bh-est-out small { display: block; margin-top: 4px; font: 500 .78rem var(--font-body); color: var(--ink-soft); }
+.bh-est .bh-add { justify-self: start; font: 600 .92rem var(--font-body); color: #fff; background: var(--red); border: 0; border-radius: 999px; padding: 12px 20px; cursor: pointer; }
+.bh-est .bh-add:active { transform: scale(.97); }
+
+/* ---- order-ahead line (home) ---- */
+.rn-ahead { margin: 0; flex: 1 1 100%; font: 500 .95rem/1.4 var(--font-body); color: var(--ink-soft); }
+.rn-ahead a { color: var(--ink); font-weight: 600; border-bottom: 2px solid var(--red); text-decoration: none; padding-bottom: 1px; white-space: nowrap; }
+
+/* ---- save number / send to a friend (visit) ---- */
+.bh-share { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.bh-share button { font: 600 .85rem/1 var(--font-body); color: var(--ink); background: #fff; border: 1px solid rgba(36, 23, 18, .2); border-radius: 999px; padding: 11px 15px; cursor: pointer; }
+.bh-share button:active { transform: scale(.97); }
+.bh-share button:focus-visible { outline: 2px solid var(--cognac); outline-offset: 2px; }
+
+/* ---- reviews strip (renders only when real reviews are added in engage.js) ---- */
+.bh-rev { padding: clamp(24px, 4vw, 44px) var(--edge); background: var(--cream); }
+.bh-rev h2 { margin: 0 0 14px; font: 600 clamp(1.3rem, 2.6vw, 1.8rem)/1.2 var(--font-display); color: var(--ink); }
+.bh-rev-row { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+.bh-rev figure { flex: 0 0 min(320px, 82%); scroll-snap-align: start; margin: 0; padding: 18px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 1px rgba(36, 23, 18, .08); }
+.bh-rev .st { color: var(--cognac); letter-spacing: 2px; font-size: .95rem; }
+.bh-rev blockquote { margin: 8px 0 10px; font: 500 1rem/1.45 var(--font-body); color: var(--ink); }
+.bh-rev figcaption { font: 600 .8rem var(--font-body); color: var(--ink-soft); }
+
+/* greeting strip: warm gold, matches the cognac accent */
+.live-update-bar.type-greeting { --a: #8a4b1f; --b: #c77e3f; }
+
+/* offline notice */
+.bh-off { position: fixed; left: 50%; top: calc(var(--nav-h, 76px) + 60px); translate: -50% 0; z-index: 95; display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+  max-width: min(560px, calc(100% - 24px)); padding: 11px 14px; border-radius: 16px; background: #241712; color: #fff3e6; box-shadow: 0 12px 30px rgba(0, 0, 0, .3);
+  font: 500 .85rem/1.35 var(--font-body); }
+.bh-off.on { display: flex; }
+.bh-off.is-on { background: #1f5f3b; }
+.bh-off span { flex: 1 1 220px; }
+.bh-off a { color: #241712; background: #fff3e6; border-radius: 999px; padding: 9px 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.bh-off button { background: none; border: 0; color: inherit; font-size: 1.15rem; padding: 4px 8px; cursor: pointer; }
+.bh-off a:focus-visible, .bh-off button:focus-visible { outline: 2px solid #fff3e6; outline-offset: 2px; }
