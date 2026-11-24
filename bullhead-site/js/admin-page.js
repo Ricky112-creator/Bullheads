@@ -15,6 +15,8 @@
 var BRN = { main: 'Main site only', one: 'Bullhead One', two: 'Bullhead Two' };  var isStaff = false, myBranch = '';                                   // myBranch: a branch-scoped staff login's branch
   var viewBranch = localStorage.getItem('bhView') || '', alertBr = localStorage.getItem('bhAlertBr') || '', updBranch = '', menuBranch = '';
   var BR_CHOICES = [{ k: '', label: 'Both' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }];
+  var SCOPES = [{ k: '', label: 'All sites' }, { k: 'main', label: 'Main site' }, { k: 'one', label: 'Branch 1' }, { k: 'two', label: 'Branch 2' }];
+  var SCOPE_NAME = { '': 'All sites', main: 'Main site', one: 'Branch 1', two: 'Branch 2' };
 
   function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : ''); clearTimeout(toast.h); toast.h = setTimeout(function () { t.className = ''; }, err ? 8000 : 3200); }
   function auth() { return 'Bearer ' + token; }
@@ -30,7 +32,7 @@ var BRN = { main: 'Main site only', one: 'Bullhead One', two: 'Bullhead Two' }; 
   }
   function drawTypes() { chipGroup($('types'), Object.keys(TYPES).map(function (k) { return { k: k, label: TYPES[k][0] }; }), function (i) { return i.k === type; }, function (i) { type = i.k; refresh(); }); }
   function drawBrView() { chipGroup($('brView'), BR_CHOICES, function (i) { return i.k === viewBranch; }, function (i) { viewBranch = i.k; localStorage.setItem('bhView', viewBranch); seen = null; loadOrders(); }); }
-function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'main', label: 'Main site only' }, { k: 'one', label: 'Bullhead One' }, { k: 'two', label: 'Bullhead Two' }], function (i) { return i.k === updBranch; }, function (i) { updBranch = i.k; }); }  function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
+function drawUBr() { chipGroup($('ubr'), SCOPES, function (i) { return i.k === updBranch; }, function (i) { updBranch = i.k; }); }  function drawDurs() { chipGroup($('durs'), DURS.map(function (d) { return { v: d[1], label: d[0] }; }), function (i) { return i.v === dur; }, function (i) { dur = i.v; }); }
   chipGroup($('tpls'), TEMPLATES.map(function (t) { return { t: t, label: t[0] }; }), function () { return false; }, function (i) {
     $('text').value = i.t[1]; $('textSw').value = i.t[3]; type = i.t[2]; refresh(); $('text').focus();
     $('tpls').querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
@@ -62,7 +64,7 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
     var d = mk('span', 'dot'); d.style.background = T[4]; r.appendChild(d);
     var b = mk('div', 'body'); b.appendChild(mk('p', '', u.text));
     if (u.textSw) b.appendChild(mk('p', '', u.textSw)).style.opacity = .65;
-    b.appendChild(mk('small', '', (live ? '● Live · ' + (u.expiresAt ? 'ends ' + ends(u.expiresAt) : 'until removed') + ' · ' : 'Ended · ') + (u.branch ? BRN[u.branch] + ' only · ' : 'Both sites · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
+    b.appendChild(mk('small', '', (live ? '● Live · ' + (u.expiresAt ? 'ends ' + ends(u.expiresAt) : 'until removed') + ' · ' : 'Ended · ') + (u.branch ? SCOPE_NAME[u.branch] + ' only · ' : 'All sites · ') + 'posted ' + when(u.postedAt) + ' · ' + (u.taps || 0) + ' WhatsApp tap' + (u.taps === 1 ? '' : 's')));
     r.appendChild(b);
     var a = mk('div', 'acts');
     function act(label, cls, fn) { var x = mk('button', 'mini ' + cls, label); x.type = 'button'; x.onclick = fn; a.appendChild(x); }
@@ -344,7 +346,7 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
   // ---------- Menu board ----------
   var menuState = {}, menuLoaded = false, customState = [], customSaved = [];
   var allItems = function () { return MENU_ITEMS.concat(customState); };
-  function loadMenu() { if (menuLoaded) return; fetch('/api/menu' + (menuBranch ? '?branch=' + menuBranch : '')).then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); customState = (d.custom || []).map(function (c) { c.custom = true; return c; }); customSaved = clone(customState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
+  function loadMenu() { if (menuLoaded) return; fetch('/api/menu' + (menuBranch === 'one' || menuBranch === 'two' ? '?branch=' + menuBranch : '')).then(function (r) { return r.json(); }).then(function (d) { menuState = d.menu || {}; menuSaved = clone(menuState); customState = (d.custom || []).map(function (c) { c.custom = true; return c; }); customSaved = clone(customState); menuLoaded = true; drawMenu(); updateBars(); }).catch(function () { toast('Could not load the menu', true); }); }
   var menuSaved = {};
   var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
   var norm = function (e) { e = e || {}; return { price: typeof e.price === 'number' ? e.price : null, special: !!e.special, soldOut: !!e.soldOut, until: e.soldOut && e.until ? e.until : null }; };
@@ -392,9 +394,9 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
   $('mDiscard').onclick = function () { ask('Discard changes?', 'Your unsaved menu changes will be thrown away. The live menu stays as it is.', 'Discard').then(function (ok) { if (!ok) return; menuState = clone(menuSaved); customState = clone(customSaved); drawMenu(); updateBars(); toast('Changes discarded'); }); };
   $('mSave').onclick = function () {
     $('mSave').disabled = true; $('mSave').textContent = 'Saving…';
-    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState, branch: menuBranch || undefined }) })
+    fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth() }, body: JSON.stringify({ menu: menuState, custom: customState, branch: menuBranch || 'all' }) })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); customSaved = clone(customState); $('modal').hidden = true; drawMenu(); updateBars(); toast(menuBranch ? 'Saved — live on ' + BRN[menuBranch] + ' ✓' : 'Saved — live on the menu ✓'); })
+      .then(function (d) { menuState = d.menu || menuState; menuSaved = clone(menuState); customSaved = clone(customState); $('modal').hidden = true; drawMenu(); updateBars(); toast('Saved — live on ' + (menuBranch ? SCOPE_NAME[menuBranch] : 'all sites') + ' ✓'); })
       .catch(function () { toast('Could not save — check your connection', true); })
       .finally(function () { $('mSave').disabled = false; $('mSave').textContent = 'Save & publish'; });
   };
@@ -547,17 +549,20 @@ function drawUBr() { chipGroup($('ubr'), [{ k: '', label: 'All sites' }, { k: 'm
   };
 
   try { var dr = JSON.parse(localStorage.getItem('bhDraft') || 'null'); if (dr && (dr.t || dr.s)) { $('text').value = dr.t || ''; $('textSw').value = dr.s || ''; if (TYPES[dr.y]) type = dr.y; } } catch (e) {}
-  drawDurs(); refresh(); drawBrView(); drawUBr();
+  drawDurs(); refresh(); drawBrView(); drawUBr(); drawMScope();
   $('alertBr').onchange = function () {
     alertBr = this.value; localStorage.setItem('bhAlertBr', alertBr);
     if (alertsOn) swReady().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) { if (sub) return saveSub(sub); })
       .then(function () { toast(alertBr ? 'Alerts: ' + BRN[alertBr] + ' orders only' : 'Alerts: both branches'); }).catch(function () { toast('Could not change alerts', true); });
   };
-  $('mBranch').onchange = function () {
-    var nb = this.value, sel = this, go = function () { menuBranch = nb; menuLoaded = false; loadMenu(); };
-    if (menuLoaded && typeof diffs === 'function' && diffs().length) ask('Switch boards?', 'Your unsaved menu changes will be thrown away.', 'Switch').then(function (ok) { if (ok) go(); else sel.value = menuBranch; });
-    else go();
-  };
+  function drawMScope() {
+    chipGroup($('mscope'), SCOPES, function (i) { return i.k === menuBranch; }, function (i) {
+      if (i.k === menuBranch) return;
+      var go = function () { menuBranch = i.k; menuLoaded = false; loadMenu(); };
+      if (menuLoaded && typeof diffs === 'function' && diffs().length) ask('Switch boards?', 'Your unsaved menu changes will be thrown away.', 'Switch').then(function (ok) { if (ok) go(); drawMScope(); });
+      else go();
+    });
+  }
   token = localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
   if (token) { $('token').value = token; load().catch(function (e) {
     // A server problem or a dropped connection says nothing about the saved code, so keep it and let the owner retry.

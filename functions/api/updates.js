@@ -6,7 +6,7 @@
 //
 // Storage: a single JSON array under the KV key "updates", newest first,
 // capped at MAX_UPDATES entries. Each entry:
-//   { id, text, postedAt (ISO string), expiresAt (ISO string | null), branch ('' = both sites | 'one' | 'two') }
+//   { id, text, postedAt (ISO string), expiresAt (ISO string | null), branch ('' = ALL sites | 'main' = main site only | 'one' = Branch 1 only | 'two' = Branch 2 only) }
 //
 // Requires, set in the Cloudflare Pages dashboard under
 // Settings -> Functions -> Bindings/Variables:
@@ -17,6 +17,9 @@
 
 import { requireRole, ipHash, rlCount, rlHit } from '../_lib/auth.js';
 import { cleanBranch, hostBranch } from '../_lib/branches.js';
+
+// Where a notice shows: '' = every site, 'main' = the main site only, 'one' / 'two' = that branch only.
+const cleanScope = (v) => (v === 'main' ? 'main' : cleanBranch(v));
 
 const MAX_UPDATES = 30; // history kept for Repost + stats
 const TYPES = ['special', 'stock', 'notice', 'closing'];
@@ -77,7 +80,7 @@ export async function onRequestGet(context) {
   const u0 = new URL(request.url), site = hostBranch(u0.hostname) || cleanBranch(u0.searchParams.get('branch'));
   const live = updates
     .filter((u) => !u.expiresAt || new Date(u.expiresAt).getTime() > now)
-    .filter((u) => !u.branch || !site || u.branch === site)   // a branch site shows its own notices and the shared ones
+    .filter((u) => !u.branch || u.branch === (site || 'main'))   // every site shows the notices for ALL sites plus the ones aimed at it alone
     .slice(0, 5)
     .map(({ taps, ...pub }) => pub); // keep stats private
 
@@ -129,7 +132,7 @@ export async function onRequestPost(context) {
     textSw: String(body.textSw || '').trim().slice(0, MAX_TEXT_LENGTH) || undefined,
     type: TYPES.includes(body.type) ? body.type : 'notice',
     cta: body.cta !== false, // show "Order on WhatsApp" button
-    branch: cleanBranch(body.branch),   // '' = shows on every site
+    branch: cleanScope(body.branch),   // '' = every site, 'main' = main site only, 'one' / 'two' = that branch only
     taps: 0,
     postedAt: new Date().toISOString(),
     expiresAt: hours > 0 ? new Date(Date.now() + hours * 3600 * 1000).toISOString() : null,

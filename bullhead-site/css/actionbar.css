@@ -1,0 +1,19 @@
+/* ---------- Mobile action bar: the four things a hungry traveller does next ---------- */
+.st-abar { display: none; }
+@media (max-width: 759px) {
+  body.has-abar { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .st-abar { position: fixed; z-index: 70; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr; gap: 6px; padding: 6px; border-radius: 22px;
+    background: rgba(28, 17, 12, .88); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); box-shadow: 0 14px 34px rgba(0, 0, 0, .38), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    transform: translateY(140%); transition: transform .5s cubic-bezier(.2, .8, .2, 1); }
+  .st-abar.is-in { transform: none; }
+  .st-abar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 52px; border-radius: 16px; color: #fff; font: 600 .72rem/1 var(--font-body); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: transform .15s ease, background .2s ease; }
+  .st-abar a:active { transform: scale(.94); }
+  .st-abar a.st-go { background: var(--red); flex-direction: row; gap: 8px; font-size: .9rem; }
+  .st-abar svg { width: 20px; height: 20px; }
+  .st-abar a.st-go svg { width: 18px; height: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .st-abar { transition: none; } }
+
+/* the "Open now" pill is fixed; once the hero is gone it only sits on top of body copy */
+.hero-open-badge { transition: opacity .35s ease, transform .35s ease; }
+body.st-past .hero-open-badge { opacity: 0; transform: translateY(-8px); pointer-events: none; }
